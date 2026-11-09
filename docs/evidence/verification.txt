@@ -1,0 +1,43 @@
+✔ Catalog pagination, image/variant requirements, brand/price/category filtering and four sorts (361.240167ms)
+✔ CSRF and RBAC reject unauthorized mutations and admin access (72.224416ms)
+✔ Guest comments and authenticated ratings persist without purchase requirement (109.536084ms)
+✔ Cart mutation and payment failure preserve stock/coupon/points; invalid coupon preview is explicit (77.241875ms)
+✔ Concurrent identical guest checkout creates one order, one coupon use, one outbox row; receipt is private (1015.71925ms)
+✔ Guest using existing email does not gain session; OTP grants access to saved order (1349.975917ms)
+✔ Two checkouts contend for one remaining stock unit without overselling (73.74725ms)
+✔ Two checkouts contend for one coupon use without over-redemption (61.604333ms)
+✔ Registration only allows email/name/address; recovery tokens single-use; addresses support defaults (1946.872959ms)
+✔ Admin sequential status transitions, coupon limits, user bans and actual analytics (235.510084ms)
+✔ Two API replicas share sessions and carts; both are healthy (72.46ms)
+✔ Loyalty redemption and zero-amount payments reconcile exactly with the ledger (143.738375ms)
+✔ Cross-replica WebSocket comments and ratings arrive without reload (268.701542ms)
+✔ Refresh tokens rotate, foreign Origin fails, another customer cannot read an order (77.584791ms)
+✔ PDF loyalty example: 1,000,000 paid earns 100 points (0.781291ms)
+✔ Redemption never consumes a fraction of a point (0.156542ms)
+✔ Coupon is capped at merchandise and points can cover shipping (0.065875ms)
+✔ Points and exhausted coupons cannot create a negative total (0.074958ms)
+✔ Integer revenue allocation reconciles across items (21.261208ms)
+✔ Calendar analytics ranges respect Vietnam timezone and leap years (27.453041ms)
+ℹ tests 20
+ℹ suites 0
+ℹ pass 20
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6502.804459
+
+Running 7 tests using 1 worker
+
+(node:40563) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 tests/e2e/app.spec.js:36:1 › Homepage has working numbered sections, local imagery and responsive layout (1.6s)
+  ✓  2 tests/e2e/app.spec.js:67:1 › Catalog combines category, brand and price with sorts, pagination and empty state (609ms)
+  ✓  3 tests/e2e/app.spec.js:90:1 › Guest can update cart and complete a coupon checkout without signing in (1.3s)
+  ✓  4 tests/e2e/app.spec.js:137:1 › Customer account shows persisted purchases, address editing and rewards (881ms)
+  ✓  5 tests/e2e/app.spec.js:179:1 › Admin dashboards and time filters render actual data; coupon form saves (3.1s)
+  ✓  6 tests/e2e/app.spec.js:220:1 › Admin can create, edit and archive a product with uploaded photos and variant stock (4.8s)
+  ✓  7 tests/e2e/app.spec.js:280:1 › Mobile catalog, product, cart and navigation fit the viewport (637ms)
+
+  7 passed (13.7s)
+Validation complete. The isolated stack remains available at http://localhost:8081.

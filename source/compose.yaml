@@ -1,0 +1,114 @@
+name: obsidian-compute
+x-app: &app
+  build:
+    context: .
+    dockerfile: backend/Dockerfile
+  environment: &env
+    NODE_ENV: development
+    APP_BASE_URL: ${APP_BASE_URL:-http://localhost:8080}
+    DATABASE_URL: postgres://obsidian:local-db-password@postgres:5432/obsidian
+    REDIS_URL: redis://redis:6379
+    JWT_SECRET: ${JWT_SECRET:-obsidian-local-demo-replace-before-public-hosting}
+    GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+    GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+    GOOGLE_CALLBACK_URL: ${GOOGLE_CALLBACK_URL:-http://localhost:8080/api/v1/auth/google/callback}
+    SMTP_HOST: mailpit
+    SMTP_PORT: 1025
+    MEDIA_DIR: /media
+    DEMO_PAYMENT_ENABLED: ${DEMO_PAYMENT_ENABLED:-true}
+    SEED_DEMO_DATA: ${SEED_DEMO_DATA:-true}
+    ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@obsidian.local}
+    ADMIN_PASSWORD: ${ADMIN_PASSWORD:-ObsidianAdmin!2026}
+  volumes:
+    - ./media/catalog:/media/catalog:ro
+    - uploads:/media/uploads
+  depends_on:
+    init:
+      condition: service_completed_successfully
+    redis:
+      condition: service_healthy
+  healthcheck:
+    test:
+      [
+        CMD,
+        node,
+        -e,
+        "fetch('http://localhost:3000/api/v1/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+      ]
+    interval: 10s
+    timeout: 5s
+    retries: 10
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: obsidian
+      POSTGRES_PASSWORD: local-db-password
+      POSTGRES_DB: obsidian
+    volumes:
+      - db:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U obsidian -d obsidian]
+      interval: 3s
+      retries: 20
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 3s
+      retries: 20
+  init:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment: *env
+    command: [node, backend/src/init.js]
+    depends_on:
+      postgres:
+        condition: service_healthy
+  api-a:
+    <<: *app
+    environment:
+      <<: *env
+      INSTANCE_ID: api-a
+  api-b:
+    <<: *app
+    environment:
+      <<: *env
+      INSTANCE_ID: api-b
+  worker:
+    <<: *app
+    command: [node, worker/index.js]
+    healthcheck:
+      disable: true
+    depends_on:
+      init:
+        condition: service_completed_successfully
+      mailpit:
+        condition: service_started
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./media/catalog:/media/catalog:ro
+      - uploads:/media/uploads:ro
+    depends_on:
+      api-a:
+        condition: service_healthy
+      api-b:
+        condition: service_healthy
+      frontend:
+        condition: service_started
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "127.0.0.1:8025:8025"
+volumes:
+  db:
+  uploads:

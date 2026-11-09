@@ -1,0 +1,3422 @@
+[
+  {
+    "slug": "obsidian-air-13-laptop",
+    "name": "Obsidian Air 13",
+    "brand": "Obsidian",
+    "categorySlug": "laptop",
+    "shortDescription": "A considered 13-inch workspace. Lightweight design, fast storage and room to create.",
+    "descriptionLines": [
+      "13-inch display in a portable notebook configuration.",
+      "Integrated graphics for everyday creative and productivity workflows.",
+      "Choose 16 GB memory with 512 GB storage or 32 GB memory with 1 TB storage.",
+      "USB-C connectivity and a full-size keyboard for a tidy mobile workspace.",
+      "Solid-state storage keeps applications and project files close at hand.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "portable",
+      "work",
+      "laptop"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/laptop-1.webp",
+        "alt": "Illustrative laptop photograph 1; not the exact Obsidian Air 13 configuration."
+      },
+      {
+        "url": "/media/catalog/laptop-2.webp",
+        "alt": "Illustrative laptop photograph 2; not the exact Obsidian Air 13 configuration."
+      },
+      {
+        "url": "/media/catalog/laptop-3.webp",
+        "alt": "Illustrative laptop photograph 3; not the exact Obsidian Air 13 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "LAPTOP-01-01",
+        "attributes": {
+          "memory": "16 GB",
+          "storage": "512 GB SSD"
+        },
+        "priceVnd": 14990000,
+        "costPriceVnd": 10792000,
+        "stock": 8
+      },
+      {
+        "sku": "LAPTOP-01-02",
+        "attributes": {
+          "memory": "32 GB",
+          "storage": "1 TB SSD"
+        },
+        "priceVnd": 17990000,
+        "costPriceVnd": 12952000,
+        "stock": 0
+      }
+    ]
+  },
+  {
+    "slug": "forma-air-14-laptop",
+    "name": "Forma Air 14",
+    "brand": "Forma",
+    "categorySlug": "laptop",
+    "shortDescription": "A considered 14-inch workspace. Lightweight design, fast storage and room to create.",
+    "descriptionLines": [
+      "14-inch display in a portable notebook configuration.",
+      "Integrated graphics for everyday creative and productivity workflows.",
+      "Choose 16 GB memory with 512 GB storage or 32 GB memory with 1 TB storage.",
+      "USB-C connectivity and a full-size keyboard for a tidy mobile workspace.",
+      "Solid-state storage keeps applications and project files close at hand.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "portable",
+      "work",
+      "laptop"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/laptop-1.webp",
+        "alt": "Illustrative laptop photograph 1; not the exact Forma Air 14 configuration."
+      },
+      {
+        "url": "/media/catalog/laptop-2.webp",
+        "alt": "Illustrative laptop photograph 2; not the exact Forma Air 14 configuration."
+      },
+      {
+        "url": "/media/catalog/laptop-3.webp",
+        "alt": "Illustrative laptop photograph 3; not the exact Forma Air 14 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "LAPTOP-02-01",
+        "attributes": {
+          "memory": "16 GB",
+          "storage": "512 GB SSD"
+        },
+        "priceVnd": 16690000,
+        "costPriceVnd": 12016000,
+        "stock": 11
+      },
+      {
+        "sku": "LAPTOP-02-02",
+        "attributes": {
+          "memory": "32 GB",
+          "storage": "1 TB SSD"
+        },
+        "priceVnd": 19690000,
+        "costPriceVnd": 14176000,
+        "stock": 15
+      }
+    ]
+  },
+  {
+    "slug": "northstar-studio-14-laptop",
+    "name": "Northstar Studio 14",
+    "brand": "Northstar",
+    "categorySlug": "laptop",
+    "shortDescription": "A considered 14-inch workspace. Lightweight design, fast storage and room to create.",
+    "descriptionLines": [
+      "14-inch display in a portable notebook configuration.",
+      "Integrated graphics for everyday creative and productivity workflows.",
+      "Choose 16 GB memory with 512 GB storage or 32 GB memory with 1 TB storage.",
+      "USB-C connectivity and a full-size keyboard for a tidy mobile workspace.",
+      "Solid-state storage keeps applications and project files close at hand.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "portable",
+      "work",
+      "laptop"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/laptop-1.webp",
+        "alt": "Illustrative laptop photograph 1; not the exact Northstar Studio 14 configuration."
+      },
+      {
+        "url": "/media/catalog/laptop-2.webp",
+        "alt": "Illustrative laptop photograph 2; not the exact Northstar Studio 14 configuration."
+      },
+      {
+        "url": "/media/catalog/laptop-3.webp",
+        "alt": "Illustrative laptop photograph 3; not the exact Northstar Studio 14 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "LAPTOP-03-01",
+        "attributes": {
+          "memory": "16 GB",
+          "storage": "512 GB SSD"
+        },
+        "priceVnd": 18390000,
+        "costPriceVnd": 13240000,
+        "stock": 14
+      },
+      {
+        "sku": "LAPTOP-03-02",
+        "attributes": {
+          "memory": "32 GB",
+          "storage": "1 TB SSD"
+        },
+        "priceVnd": 21390000,
+        "costPriceVnd": 15400000,
+        "stock": 18
+      }
+    ]
+  },
+  {
+    "slug": "obsidian-studio-16-laptop",
+    "name": "Obsidian Studio 16",
+    "brand": "Obsidian",
+    "categorySlug": "laptop",
+    "shortDescription": "A considered 16-inch workspace. Lightweight design, fast storage and room to create.",
+    "descriptionLines": [
+      "16-inch display in a portable notebook configuration.",
+      "Integrated graphics for everyday creative and productivity workflows.",
+      "Choose 16 GB memory with 512 GB storage or 32 GB memory with 1 TB storage.",
+      "USB-C connectivity and a full-size keyboard for a tidy mobile workspace.",
+      "Solid-state storage keeps applications and project files close at hand.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "portable",
+      "work",
+      "laptop"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/laptop-1.webp",
+        "alt": "Illustrative laptop photograph 1; not the exact Obsidian Studio 16 configuration."
+      },
+      {
+        "url": "/media/catalog/laptop-2.webp",
+        "alt": "Illustrative laptop photograph 2; not the exact Obsidian Studio 16 configuration."
+      },
+      {
+        "url": "/media/catalog/laptop-3.webp",
+        "alt": "Illustrative laptop photograph 3; not the exact Obsidian Studio 16 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "LAPTOP-04-01",
+        "attributes": {
+          "memory": "16 GB",
+          "storage": "512 GB SSD"
+        },
+        "priceVnd": 20090000,
+        "costPriceVnd": 14464000,
+        "stock": 17
+      },
+      {
+        "sku": "LAPTOP-04-02",
+        "attributes": {
+          "memory": "32 GB",
+          "storage": "1 TB SSD"
+        },
+        "priceVnd": 23090000,
+        "costPriceVnd": 16624000,
+        "stock": 21
+      }
+    ]
+  },
+  {
+    "slug": "forma-work-15-laptop",
+    "name": "Forma Work 15",
+    "brand": "Forma",
+    "categorySlug": "laptop",
+    "shortDescription": "A considered 15-inch workspace. Lightweight design, fast storage and room to create.",
+    "descriptionLines": [
+      "15-inch display in a portable notebook configuration.",
+      "Integrated graphics for everyday creative and productivity workflows.",
+      "Choose 16 GB memory with 512 GB storage or 32 GB memory with 1 TB storage.",
+      "USB-C connectivity and a full-size keyboard for a tidy mobile workspace.",
+      "Solid-state storage keeps applications and project files close at hand.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "portable",
+      "work",
+      "laptop"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/laptop-1.webp",
+        "alt": "Illustrative laptop photograph 1; not the exact Forma Work 15 configuration."
+      },
+      {
+        "url": "/media/catalog/laptop-2.webp",
+        "alt": "Illustrative laptop photograph 2; not the exact Forma Work 15 configuration."
+      },
+      {
+        "url": "/media/catalog/laptop-3.webp",
+        "alt": "Illustrative laptop photograph 3; not the exact Forma Work 15 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "LAPTOP-05-01",
+        "attributes": {
+          "memory": "16 GB",
+          "storage": "512 GB SSD"
+        },
+        "priceVnd": 21790000,
+        "costPriceVnd": 15688000,
+        "stock": 20
+      },
+      {
+        "sku": "LAPTOP-05-02",
+        "attributes": {
+          "memory": "32 GB",
+          "storage": "1 TB SSD"
+        },
+        "priceVnd": 24790000,
+        "costPriceVnd": 17848000,
+        "stock": 24
+      }
+    ]
+  },
+  {
+    "slug": "northstar-work-pro-16-laptop",
+    "name": "Northstar Work Pro 16",
+    "brand": "Northstar",
+    "categorySlug": "laptop",
+    "shortDescription": "A considered 16-inch workspace. Lightweight design, fast storage and room to create.",
+    "descriptionLines": [
+      "16-inch display in a portable notebook configuration.",
+      "Integrated graphics for everyday creative and productivity workflows.",
+      "Choose 16 GB memory with 512 GB storage or 32 GB memory with 1 TB storage.",
+      "USB-C connectivity and a full-size keyboard for a tidy mobile workspace.",
+      "Solid-state storage keeps applications and project files close at hand.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "portable",
+      "work",
+      "laptop"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/laptop-1.webp",
+        "alt": "Illustrative laptop photograph 1; not the exact Northstar Work Pro 16 configuration."
+      },
+      {
+        "url": "/media/catalog/laptop-2.webp",
+        "alt": "Illustrative laptop photograph 2; not the exact Northstar Work Pro 16 configuration."
+      },
+      {
+        "url": "/media/catalog/laptop-3.webp",
+        "alt": "Illustrative laptop photograph 3; not the exact Northstar Work Pro 16 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "LAPTOP-06-01",
+        "attributes": {
+          "memory": "16 GB",
+          "storage": "512 GB SSD"
+        },
+        "priceVnd": 23490000,
+        "costPriceVnd": 16912000,
+        "stock": 23
+      },
+      {
+        "sku": "LAPTOP-06-02",
+        "attributes": {
+          "memory": "32 GB",
+          "storage": "1 TB SSD"
+        },
+        "priceVnd": 26490000,
+        "costPriceVnd": 19072000,
+        "stock": 0
+      }
+    ]
+  },
+  {
+    "slug": "obsidian-slate-13-laptop",
+    "name": "Obsidian Slate 13",
+    "brand": "Obsidian",
+    "categorySlug": "laptop",
+    "shortDescription": "A considered 13-inch workspace. Lightweight design, fast storage and room to create.",
+    "descriptionLines": [
+      "13-inch display in a portable notebook configuration.",
+      "Integrated graphics for everyday creative and productivity workflows.",
+      "Choose 16 GB memory with 512 GB storage or 32 GB memory with 1 TB storage.",
+      "USB-C connectivity and a full-size keyboard for a tidy mobile workspace.",
+      "Solid-state storage keeps applications and project files close at hand.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "portable",
+      "work",
+      "laptop"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/laptop-1.webp",
+        "alt": "Illustrative laptop photograph 1; not the exact Obsidian Slate 13 configuration."
+      },
+      {
+        "url": "/media/catalog/laptop-2.webp",
+        "alt": "Illustrative laptop photograph 2; not the exact Obsidian Slate 13 configuration."
+      },
+      {
+        "url": "/media/catalog/laptop-3.webp",
+        "alt": "Illustrative laptop photograph 3; not the exact Obsidian Slate 13 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "LAPTOP-07-01",
+        "attributes": {
+          "memory": "16 GB",
+          "storage": "512 GB SSD"
+        },
+        "priceVnd": 25190000,
+        "costPriceVnd": 18136000,
+        "stock": 26
+      },
+      {
+        "sku": "LAPTOP-07-02",
+        "attributes": {
+          "memory": "32 GB",
+          "storage": "1 TB SSD"
+        },
+        "priceVnd": 28190000,
+        "costPriceVnd": 20296000,
+        "stock": 30
+      }
+    ]
+  },
+  {
+    "slug": "forma-slate-14-laptop",
+    "name": "Forma Slate 14",
+    "brand": "Forma",
+    "categorySlug": "laptop",
+    "shortDescription": "A considered 14-inch workspace. Lightweight design, fast storage and room to create.",
+    "descriptionLines": [
+      "14-inch display in a portable notebook configuration.",
+      "Integrated graphics for everyday creative and productivity workflows.",
+      "Choose 16 GB memory with 512 GB storage or 32 GB memory with 1 TB storage.",
+      "USB-C connectivity and a full-size keyboard for a tidy mobile workspace.",
+      "Solid-state storage keeps applications and project files close at hand.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "portable",
+      "work",
+      "laptop"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/laptop-1.webp",
+        "alt": "Illustrative laptop photograph 1; not the exact Forma Slate 14 configuration."
+      },
+      {
+        "url": "/media/catalog/laptop-2.webp",
+        "alt": "Illustrative laptop photograph 2; not the exact Forma Slate 14 configuration."
+      },
+      {
+        "url": "/media/catalog/laptop-3.webp",
+        "alt": "Illustrative laptop photograph 3; not the exact Forma Slate 14 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "LAPTOP-08-01",
+        "attributes": {
+          "memory": "16 GB",
+          "storage": "512 GB SSD"
+        },
+        "priceVnd": 26890000,
+        "costPriceVnd": 19360000,
+        "stock": 29
+      },
+      {
+        "sku": "LAPTOP-08-02",
+        "attributes": {
+          "memory": "32 GB",
+          "storage": "1 TB SSD"
+        },
+        "priceVnd": 29890000,
+        "costPriceVnd": 21520000,
+        "stock": 9
+      }
+    ]
+  },
+  {
+    "slug": "northstar-nomad-15-laptop",
+    "name": "Northstar Nomad 15",
+    "brand": "Northstar",
+    "categorySlug": "laptop",
+    "shortDescription": "A considered 15-inch workspace. Lightweight design, fast storage and room to create.",
+    "descriptionLines": [
+      "15-inch display in a portable notebook configuration.",
+      "Integrated graphics for everyday creative and productivity workflows.",
+      "Choose 16 GB memory with 512 GB storage or 32 GB memory with 1 TB storage.",
+      "USB-C connectivity and a full-size keyboard for a tidy mobile workspace.",
+      "Solid-state storage keeps applications and project files close at hand.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "portable",
+      "work",
+      "laptop"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/laptop-1.webp",
+        "alt": "Illustrative laptop photograph 1; not the exact Northstar Nomad 15 configuration."
+      },
+      {
+        "url": "/media/catalog/laptop-2.webp",
+        "alt": "Illustrative laptop photograph 2; not the exact Northstar Nomad 15 configuration."
+      },
+      {
+        "url": "/media/catalog/laptop-3.webp",
+        "alt": "Illustrative laptop photograph 3; not the exact Northstar Nomad 15 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "LAPTOP-09-01",
+        "attributes": {
+          "memory": "16 GB",
+          "storage": "512 GB SSD"
+        },
+        "priceVnd": 28590000,
+        "costPriceVnd": 20584000,
+        "stock": 8
+      },
+      {
+        "sku": "LAPTOP-09-02",
+        "attributes": {
+          "memory": "32 GB",
+          "storage": "1 TB SSD"
+        },
+        "priceVnd": 31590000,
+        "costPriceVnd": 22744000,
+        "stock": 12
+      }
+    ]
+  },
+  {
+    "slug": "obsidian-nomad-pro-16-laptop",
+    "name": "Obsidian Nomad Pro 16",
+    "brand": "Obsidian",
+    "categorySlug": "laptop",
+    "shortDescription": "A considered 16-inch workspace. Lightweight design, fast storage and room to create.",
+    "descriptionLines": [
+      "16-inch display in a portable notebook configuration.",
+      "Integrated graphics for everyday creative and productivity workflows.",
+      "Choose 16 GB memory with 512 GB storage or 32 GB memory with 1 TB storage.",
+      "USB-C connectivity and a full-size keyboard for a tidy mobile workspace.",
+      "Solid-state storage keeps applications and project files close at hand.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "portable",
+      "work",
+      "laptop"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/laptop-1.webp",
+        "alt": "Illustrative laptop photograph 1; not the exact Obsidian Nomad Pro 16 configuration."
+      },
+      {
+        "url": "/media/catalog/laptop-2.webp",
+        "alt": "Illustrative laptop photograph 2; not the exact Obsidian Nomad Pro 16 configuration."
+      },
+      {
+        "url": "/media/catalog/laptop-3.webp",
+        "alt": "Illustrative laptop photograph 3; not the exact Obsidian Nomad Pro 16 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "LAPTOP-10-01",
+        "attributes": {
+          "memory": "16 GB",
+          "storage": "512 GB SSD"
+        },
+        "priceVnd": 30290000,
+        "costPriceVnd": 21808000,
+        "stock": 11
+      },
+      {
+        "sku": "LAPTOP-10-02",
+        "attributes": {
+          "memory": "32 GB",
+          "storage": "1 TB SSD"
+        },
+        "priceVnd": 33290000,
+        "costPriceVnd": 23968000,
+        "stock": 15
+      }
+    ]
+  },
+  {
+    "slug": "obsidian-core-mini-desktop",
+    "name": "Obsidian Core Mini",
+    "brand": "Obsidian",
+    "categorySlug": "desktop",
+    "shortDescription": "A capable desktop foundation with balanced airflow and space for your next idea.",
+    "descriptionLines": [
+      "Desktop computer configuration in a ventilated tower or compact chassis.",
+      "Balanced component selection for productivity, study and creative projects.",
+      "Choose 16 GB memory with 1 TB storage or 32 GB memory with 2 TB storage.",
+      "Front and rear USB connectivity for everyday desk accessories.",
+      "Serviceable internal layout for routine maintenance and future upgrades.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "desktop",
+      "workstation",
+      "work"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/desktop-2.webp",
+        "alt": "Illustrative desktop pc photograph 2; not the exact Obsidian Core Mini configuration."
+      },
+      {
+        "url": "/media/catalog/desktop-3.webp",
+        "alt": "Illustrative desktop pc photograph 3; not the exact Obsidian Core Mini configuration."
+      },
+      {
+        "url": "/media/catalog/desktop-1.webp",
+        "alt": "Illustrative desktop pc photograph 1; not the exact Obsidian Core Mini configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "DESKTOP-01-01",
+        "attributes": {
+          "memory": "16 GB",
+          "storage": "1 TB SSD"
+        },
+        "priceVnd": 11990000,
+        "costPriceVnd": 8632000,
+        "stock": 8
+      },
+      {
+        "sku": "DESKTOP-01-02",
+        "attributes": {
+          "memory": "32 GB",
+          "storage": "2 TB SSD"
+        },
+        "priceVnd": 16190000,
+        "costPriceVnd": 11656000,
+        "stock": 0
+      }
+    ]
+  },
+  {
+    "slug": "forma-core-tower-desktop",
+    "name": "Forma Core Tower",
+    "brand": "Forma",
+    "categorySlug": "desktop",
+    "shortDescription": "A capable desktop foundation with balanced airflow and space for your next idea.",
+    "descriptionLines": [
+      "Desktop computer configuration in a ventilated tower or compact chassis.",
+      "Balanced component selection for productivity, study and creative projects.",
+      "Choose 16 GB memory with 1 TB storage or 32 GB memory with 2 TB storage.",
+      "Front and rear USB connectivity for everyday desk accessories.",
+      "Serviceable internal layout for routine maintenance and future upgrades.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "desktop",
+      "workstation",
+      "work"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/desktop-2.webp",
+        "alt": "Illustrative desktop pc photograph 2; not the exact Forma Core Tower configuration."
+      },
+      {
+        "url": "/media/catalog/desktop-3.webp",
+        "alt": "Illustrative desktop pc photograph 3; not the exact Forma Core Tower configuration."
+      },
+      {
+        "url": "/media/catalog/desktop-1.webp",
+        "alt": "Illustrative desktop pc photograph 1; not the exact Forma Core Tower configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "DESKTOP-02-01",
+        "attributes": {
+          "memory": "16 GB",
+          "storage": "1 TB SSD"
+        },
+        "priceVnd": 14490000,
+        "costPriceVnd": 10432000,
+        "stock": 11
+      },
+      {
+        "sku": "DESKTOP-02-02",
+        "attributes": {
+          "memory": "32 GB",
+          "storage": "2 TB SSD"
+        },
+        "priceVnd": 18690000,
+        "costPriceVnd": 13456000,
+        "stock": 15
+      }
+    ]
+  },
+  {
+    "slug": "northstar-studio-s1-desktop",
+    "name": "Northstar Studio S1",
+    "brand": "Northstar",
+    "categorySlug": "desktop",
+    "shortDescription": "A capable desktop foundation with balanced airflow and space for your next idea.",
+    "descriptionLines": [
+      "Desktop computer configuration in a ventilated tower or compact chassis.",
+      "Balanced component selection for productivity, study and creative projects.",
+      "Choose 16 GB memory with 1 TB storage or 32 GB memory with 2 TB storage.",
+      "Front and rear USB connectivity for everyday desk accessories.",
+      "Serviceable internal layout for routine maintenance and future upgrades.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "desktop",
+      "workstation",
+      "work"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/desktop-2.webp",
+        "alt": "Illustrative desktop pc photograph 2; not the exact Northstar Studio S1 configuration."
+      },
+      {
+        "url": "/media/catalog/desktop-3.webp",
+        "alt": "Illustrative desktop pc photograph 3; not the exact Northstar Studio S1 configuration."
+      },
+      {
+        "url": "/media/catalog/desktop-1.webp",
+        "alt": "Illustrative desktop pc photograph 1; not the exact Northstar Studio S1 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "DESKTOP-03-01",
+        "attributes": {
+          "memory": "16 GB",
+          "storage": "1 TB SSD"
+        },
+        "priceVnd": 16990000,
+        "costPriceVnd": 12232000,
+        "stock": 14
+      },
+      {
+        "sku": "DESKTOP-03-02",
+        "attributes": {
+          "memory": "32 GB",
+          "storage": "2 TB SSD"
+        },
+        "priceVnd": 21190000,
+        "costPriceVnd": 15256000,
+        "stock": 18
+      }
+    ]
+  },
+  {
+    "slug": "obsidian-studio-s2-desktop",
+    "name": "Obsidian Studio S2",
+    "brand": "Obsidian",
+    "categorySlug": "desktop",
+    "shortDescription": "A capable desktop foundation with balanced airflow and space for your next idea.",
+    "descriptionLines": [
+      "Desktop computer configuration in a ventilated tower or compact chassis.",
+      "Balanced component selection for productivity, study and creative projects.",
+      "Choose 16 GB memory with 1 TB storage or 32 GB memory with 2 TB storage.",
+      "Front and rear USB connectivity for everyday desk accessories.",
+      "Serviceable internal layout for routine maintenance and future upgrades.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "desktop",
+      "workstation",
+      "work"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/desktop-2.webp",
+        "alt": "Illustrative desktop pc photograph 2; not the exact Obsidian Studio S2 configuration."
+      },
+      {
+        "url": "/media/catalog/desktop-3.webp",
+        "alt": "Illustrative desktop pc photograph 3; not the exact Obsidian Studio S2 configuration."
+      },
+      {
+        "url": "/media/catalog/desktop-1.webp",
+        "alt": "Illustrative desktop pc photograph 1; not the exact Obsidian Studio S2 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "DESKTOP-04-01",
+        "attributes": {
+          "memory": "16 GB",
+          "storage": "1 TB SSD"
+        },
+        "priceVnd": 19490000,
+        "costPriceVnd": 14032000,
+        "stock": 17
+      },
+      {
+        "sku": "DESKTOP-04-02",
+        "attributes": {
+          "memory": "32 GB",
+          "storage": "2 TB SSD"
+        },
+        "priceVnd": 23690000,
+        "costPriceVnd": 17056000,
+        "stock": 21
+      }
+    ]
+  },
+  {
+    "slug": "forma-forge-g1-desktop",
+    "name": "Forma Forge G1",
+    "brand": "Forma",
+    "categorySlug": "desktop",
+    "shortDescription": "A capable desktop foundation with balanced airflow and space for your next idea.",
+    "descriptionLines": [
+      "Desktop computer configuration in a ventilated tower or compact chassis.",
+      "Balanced component selection for productivity, study and creative projects.",
+      "Choose 16 GB memory with 1 TB storage or 32 GB memory with 2 TB storage.",
+      "Front and rear USB connectivity for everyday desk accessories.",
+      "Serviceable internal layout for routine maintenance and future upgrades.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "desktop",
+      "workstation",
+      "work"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/desktop-2.webp",
+        "alt": "Illustrative desktop pc photograph 2; not the exact Forma Forge G1 configuration."
+      },
+      {
+        "url": "/media/catalog/desktop-3.webp",
+        "alt": "Illustrative desktop pc photograph 3; not the exact Forma Forge G1 configuration."
+      },
+      {
+        "url": "/media/catalog/desktop-1.webp",
+        "alt": "Illustrative desktop pc photograph 1; not the exact Forma Forge G1 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "DESKTOP-05-01",
+        "attributes": {
+          "memory": "16 GB",
+          "storage": "1 TB SSD"
+        },
+        "priceVnd": 21990000,
+        "costPriceVnd": 15832000,
+        "stock": 20
+      },
+      {
+        "sku": "DESKTOP-05-02",
+        "attributes": {
+          "memory": "32 GB",
+          "storage": "2 TB SSD"
+        },
+        "priceVnd": 26190000,
+        "costPriceVnd": 18856000,
+        "stock": 24
+      }
+    ]
+  },
+  {
+    "slug": "northstar-forge-g2-desktop",
+    "name": "Northstar Forge G2",
+    "brand": "Northstar",
+    "categorySlug": "desktop",
+    "shortDescription": "A capable desktop foundation with balanced airflow and space for your next idea.",
+    "descriptionLines": [
+      "Desktop computer configuration in a ventilated tower or compact chassis.",
+      "Balanced component selection for productivity, study and creative projects.",
+      "Choose 16 GB memory with 1 TB storage or 32 GB memory with 2 TB storage.",
+      "Front and rear USB connectivity for everyday desk accessories.",
+      "Serviceable internal layout for routine maintenance and future upgrades.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "desktop",
+      "workstation",
+      "work"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/desktop-2.webp",
+        "alt": "Illustrative desktop pc photograph 2; not the exact Northstar Forge G2 configuration."
+      },
+      {
+        "url": "/media/catalog/desktop-3.webp",
+        "alt": "Illustrative desktop pc photograph 3; not the exact Northstar Forge G2 configuration."
+      },
+      {
+        "url": "/media/catalog/desktop-1.webp",
+        "alt": "Illustrative desktop pc photograph 1; not the exact Northstar Forge G2 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "DESKTOP-06-01",
+        "attributes": {
+          "memory": "16 GB",
+          "storage": "1 TB SSD"
+        },
+        "priceVnd": 24490000,
+        "costPriceVnd": 17632000,
+        "stock": 23
+      },
+      {
+        "sku": "DESKTOP-06-02",
+        "attributes": {
+          "memory": "32 GB",
+          "storage": "2 TB SSD"
+        },
+        "priceVnd": 28690000,
+        "costPriceVnd": 20656000,
+        "stock": 0
+      }
+    ]
+  },
+  {
+    "slug": "obsidian-render-r1-desktop",
+    "name": "Obsidian Render R1",
+    "brand": "Obsidian",
+    "categorySlug": "desktop",
+    "shortDescription": "A capable desktop foundation with balanced airflow and space for your next idea.",
+    "descriptionLines": [
+      "Desktop computer configuration in a ventilated tower or compact chassis.",
+      "Balanced component selection for productivity, study and creative projects.",
+      "Choose 16 GB memory with 1 TB storage or 32 GB memory with 2 TB storage.",
+      "Front and rear USB connectivity for everyday desk accessories.",
+      "Serviceable internal layout for routine maintenance and future upgrades.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "desktop",
+      "workstation",
+      "work"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/desktop-2.webp",
+        "alt": "Illustrative desktop pc photograph 2; not the exact Obsidian Render R1 configuration."
+      },
+      {
+        "url": "/media/catalog/desktop-3.webp",
+        "alt": "Illustrative desktop pc photograph 3; not the exact Obsidian Render R1 configuration."
+      },
+      {
+        "url": "/media/catalog/desktop-1.webp",
+        "alt": "Illustrative desktop pc photograph 1; not the exact Obsidian Render R1 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "DESKTOP-07-01",
+        "attributes": {
+          "memory": "16 GB",
+          "storage": "1 TB SSD"
+        },
+        "priceVnd": 26990000,
+        "costPriceVnd": 19432000,
+        "stock": 26
+      },
+      {
+        "sku": "DESKTOP-07-02",
+        "attributes": {
+          "memory": "32 GB",
+          "storage": "2 TB SSD"
+        },
+        "priceVnd": 31190000,
+        "costPriceVnd": 22456000,
+        "stock": 30
+      }
+    ]
+  },
+  {
+    "slug": "forma-render-r2-desktop",
+    "name": "Forma Render R2",
+    "brand": "Forma",
+    "categorySlug": "desktop",
+    "shortDescription": "A capable desktop foundation with balanced airflow and space for your next idea.",
+    "descriptionLines": [
+      "Desktop computer configuration in a ventilated tower or compact chassis.",
+      "Balanced component selection for productivity, study and creative projects.",
+      "Choose 16 GB memory with 1 TB storage or 32 GB memory with 2 TB storage.",
+      "Front and rear USB connectivity for everyday desk accessories.",
+      "Serviceable internal layout for routine maintenance and future upgrades.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "desktop",
+      "workstation",
+      "work"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/desktop-2.webp",
+        "alt": "Illustrative desktop pc photograph 2; not the exact Forma Render R2 configuration."
+      },
+      {
+        "url": "/media/catalog/desktop-3.webp",
+        "alt": "Illustrative desktop pc photograph 3; not the exact Forma Render R2 configuration."
+      },
+      {
+        "url": "/media/catalog/desktop-1.webp",
+        "alt": "Illustrative desktop pc photograph 1; not the exact Forma Render R2 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "DESKTOP-08-01",
+        "attributes": {
+          "memory": "16 GB",
+          "storage": "1 TB SSD"
+        },
+        "priceVnd": 29490000,
+        "costPriceVnd": 21232000,
+        "stock": 29
+      },
+      {
+        "sku": "DESKTOP-08-02",
+        "attributes": {
+          "memory": "32 GB",
+          "storage": "2 TB SSD"
+        },
+        "priceVnd": 33690000,
+        "costPriceVnd": 24256000,
+        "stock": 9
+      }
+    ]
+  },
+  {
+    "slug": "northstar-quiet-q1-desktop",
+    "name": "Northstar Quiet Q1",
+    "brand": "Northstar",
+    "categorySlug": "desktop",
+    "shortDescription": "A capable desktop foundation with balanced airflow and space for your next idea.",
+    "descriptionLines": [
+      "Desktop computer configuration in a ventilated tower or compact chassis.",
+      "Balanced component selection for productivity, study and creative projects.",
+      "Choose 16 GB memory with 1 TB storage or 32 GB memory with 2 TB storage.",
+      "Front and rear USB connectivity for everyday desk accessories.",
+      "Serviceable internal layout for routine maintenance and future upgrades.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "desktop",
+      "workstation",
+      "work"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/desktop-2.webp",
+        "alt": "Illustrative desktop pc photograph 2; not the exact Northstar Quiet Q1 configuration."
+      },
+      {
+        "url": "/media/catalog/desktop-3.webp",
+        "alt": "Illustrative desktop pc photograph 3; not the exact Northstar Quiet Q1 configuration."
+      },
+      {
+        "url": "/media/catalog/desktop-1.webp",
+        "alt": "Illustrative desktop pc photograph 1; not the exact Northstar Quiet Q1 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "DESKTOP-09-01",
+        "attributes": {
+          "memory": "16 GB",
+          "storage": "1 TB SSD"
+        },
+        "priceVnd": 31990000,
+        "costPriceVnd": 23032000,
+        "stock": 8
+      },
+      {
+        "sku": "DESKTOP-09-02",
+        "attributes": {
+          "memory": "32 GB",
+          "storage": "2 TB SSD"
+        },
+        "priceVnd": 36190000,
+        "costPriceVnd": 26056000,
+        "stock": 12
+      }
+    ]
+  },
+  {
+    "slug": "obsidian-quiet-q2-desktop",
+    "name": "Obsidian Quiet Q2",
+    "brand": "Obsidian",
+    "categorySlug": "desktop",
+    "shortDescription": "A capable desktop foundation with balanced airflow and space for your next idea.",
+    "descriptionLines": [
+      "Desktop computer configuration in a ventilated tower or compact chassis.",
+      "Balanced component selection for productivity, study and creative projects.",
+      "Choose 16 GB memory with 1 TB storage or 32 GB memory with 2 TB storage.",
+      "Front and rear USB connectivity for everyday desk accessories.",
+      "Serviceable internal layout for routine maintenance and future upgrades.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "desktop",
+      "workstation",
+      "work"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/desktop-2.webp",
+        "alt": "Illustrative desktop pc photograph 2; not the exact Obsidian Quiet Q2 configuration."
+      },
+      {
+        "url": "/media/catalog/desktop-3.webp",
+        "alt": "Illustrative desktop pc photograph 3; not the exact Obsidian Quiet Q2 configuration."
+      },
+      {
+        "url": "/media/catalog/desktop-1.webp",
+        "alt": "Illustrative desktop pc photograph 1; not the exact Obsidian Quiet Q2 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "DESKTOP-10-01",
+        "attributes": {
+          "memory": "16 GB",
+          "storage": "1 TB SSD"
+        },
+        "priceVnd": 34490000,
+        "costPriceVnd": 24832000,
+        "stock": 11
+      },
+      {
+        "sku": "DESKTOP-10-02",
+        "attributes": {
+          "memory": "32 GB",
+          "storage": "2 TB SSD"
+        },
+        "priceVnd": 38690000,
+        "costPriceVnd": 27856000,
+        "stock": 15
+      }
+    ]
+  },
+  {
+    "slug": "obsidian-canvas-24-monitor",
+    "name": "Obsidian Canvas 24",
+    "brand": "Obsidian",
+    "categorySlug": "monitor",
+    "shortDescription": "A clear 24-inch view of your work, with a restrained design that belongs on any desk.",
+    "descriptionLines": [
+      "24-inch display configuration with a 1920 × 1080 working resolution.",
+      "Matte display surface designed to reduce distracting reflections.",
+      "Choose a tilt-adjustable stand or the height-adjustable stand configuration.",
+      "HDMI and DisplayPort input configuration for a flexible desktop setup.",
+      "Slim framing keeps attention on the workspace and content.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "display",
+      "desk",
+      "work"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/monitor-1.webp",
+        "alt": "Illustrative monitor photograph 1; not the exact Obsidian Canvas 24 configuration."
+      },
+      {
+        "url": "/media/catalog/monitor-2.webp",
+        "alt": "Illustrative monitor photograph 2; not the exact Obsidian Canvas 24 configuration."
+      },
+      {
+        "url": "/media/catalog/monitor-3.webp",
+        "alt": "Illustrative monitor photograph 3; not the exact Obsidian Canvas 24 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "MONITOR-01-01",
+        "attributes": {
+          "finish": "Graphite",
+          "stand": "Tilt adjustable"
+        },
+        "priceVnd": 3290000,
+        "costPriceVnd": 2368000,
+        "stock": 8
+      },
+      {
+        "sku": "MONITOR-01-02",
+        "attributes": {
+          "finish": "Graphite",
+          "stand": "Height adjustable"
+        },
+        "priceVnd": 3890000,
+        "costPriceVnd": 2800000,
+        "stock": 0
+      }
+    ]
+  },
+  {
+    "slug": "forma-canvas-27-monitor",
+    "name": "Forma Canvas 27",
+    "brand": "Forma",
+    "categorySlug": "monitor",
+    "shortDescription": "A clear 27-inch view of your work, with a restrained design that belongs on any desk.",
+    "descriptionLines": [
+      "27-inch display configuration with a 2560 × 1440 working resolution.",
+      "Matte display surface designed to reduce distracting reflections.",
+      "Choose a tilt-adjustable stand or the height-adjustable stand configuration.",
+      "HDMI and DisplayPort input configuration for a flexible desktop setup.",
+      "Slim framing keeps attention on the workspace and content.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "display",
+      "desk",
+      "work"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/monitor-1.webp",
+        "alt": "Illustrative monitor photograph 1; not the exact Forma Canvas 27 configuration."
+      },
+      {
+        "url": "/media/catalog/monitor-2.webp",
+        "alt": "Illustrative monitor photograph 2; not the exact Forma Canvas 27 configuration."
+      },
+      {
+        "url": "/media/catalog/monitor-3.webp",
+        "alt": "Illustrative monitor photograph 3; not the exact Forma Canvas 27 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "MONITOR-02-01",
+        "attributes": {
+          "finish": "Graphite",
+          "stand": "Tilt adjustable"
+        },
+        "priceVnd": 3990000,
+        "costPriceVnd": 2872000,
+        "stock": 11
+      },
+      {
+        "sku": "MONITOR-02-02",
+        "attributes": {
+          "finish": "Graphite",
+          "stand": "Height adjustable"
+        },
+        "priceVnd": 4590000,
+        "costPriceVnd": 3304000,
+        "stock": 15
+      }
+    ]
+  },
+  {
+    "slug": "northstar-focus-24-monitor",
+    "name": "Northstar Focus 24",
+    "brand": "Northstar",
+    "categorySlug": "monitor",
+    "shortDescription": "A clear 24-inch view of your work, with a restrained design that belongs on any desk.",
+    "descriptionLines": [
+      "24-inch display configuration with a 1920 × 1080 working resolution.",
+      "Matte display surface designed to reduce distracting reflections.",
+      "Choose a tilt-adjustable stand or the height-adjustable stand configuration.",
+      "HDMI and DisplayPort input configuration for a flexible desktop setup.",
+      "Slim framing keeps attention on the workspace and content.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "display",
+      "desk",
+      "work"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/monitor-1.webp",
+        "alt": "Illustrative monitor photograph 1; not the exact Northstar Focus 24 configuration."
+      },
+      {
+        "url": "/media/catalog/monitor-2.webp",
+        "alt": "Illustrative monitor photograph 2; not the exact Northstar Focus 24 configuration."
+      },
+      {
+        "url": "/media/catalog/monitor-3.webp",
+        "alt": "Illustrative monitor photograph 3; not the exact Northstar Focus 24 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "MONITOR-03-01",
+        "attributes": {
+          "finish": "Graphite",
+          "stand": "Tilt adjustable"
+        },
+        "priceVnd": 4690000,
+        "costPriceVnd": 3376000,
+        "stock": 14
+      },
+      {
+        "sku": "MONITOR-03-02",
+        "attributes": {
+          "finish": "Graphite",
+          "stand": "Height adjustable"
+        },
+        "priceVnd": 5290000,
+        "costPriceVnd": 3808000,
+        "stock": 18
+      }
+    ]
+  },
+  {
+    "slug": "obsidian-focus-27-monitor",
+    "name": "Obsidian Focus 27",
+    "brand": "Obsidian",
+    "categorySlug": "monitor",
+    "shortDescription": "A clear 27-inch view of your work, with a restrained design that belongs on any desk.",
+    "descriptionLines": [
+      "27-inch display configuration with a 2560 × 1440 working resolution.",
+      "Matte display surface designed to reduce distracting reflections.",
+      "Choose a tilt-adjustable stand or the height-adjustable stand configuration.",
+      "HDMI and DisplayPort input configuration for a flexible desktop setup.",
+      "Slim framing keeps attention on the workspace and content.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "display",
+      "desk",
+      "work"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/monitor-1.webp",
+        "alt": "Illustrative monitor photograph 1; not the exact Obsidian Focus 27 configuration."
+      },
+      {
+        "url": "/media/catalog/monitor-2.webp",
+        "alt": "Illustrative monitor photograph 2; not the exact Obsidian Focus 27 configuration."
+      },
+      {
+        "url": "/media/catalog/monitor-3.webp",
+        "alt": "Illustrative monitor photograph 3; not the exact Obsidian Focus 27 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "MONITOR-04-01",
+        "attributes": {
+          "finish": "Graphite",
+          "stand": "Tilt adjustable"
+        },
+        "priceVnd": 5390000,
+        "costPriceVnd": 3880000,
+        "stock": 17
+      },
+      {
+        "sku": "MONITOR-04-02",
+        "attributes": {
+          "finish": "Graphite",
+          "stand": "Height adjustable"
+        },
+        "priceVnd": 5990000,
+        "costPriceVnd": 4312000,
+        "stock": 21
+      }
+    ]
+  },
+  {
+    "slug": "forma-studio-27-monitor",
+    "name": "Forma Studio 27",
+    "brand": "Forma",
+    "categorySlug": "monitor",
+    "shortDescription": "A clear 27-inch view of your work, with a restrained design that belongs on any desk.",
+    "descriptionLines": [
+      "27-inch display configuration with a 2560 × 1440 working resolution.",
+      "Matte display surface designed to reduce distracting reflections.",
+      "Choose a tilt-adjustable stand or the height-adjustable stand configuration.",
+      "HDMI and DisplayPort input configuration for a flexible desktop setup.",
+      "Slim framing keeps attention on the workspace and content.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "display",
+      "desk",
+      "work"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/monitor-1.webp",
+        "alt": "Illustrative monitor photograph 1; not the exact Forma Studio 27 configuration."
+      },
+      {
+        "url": "/media/catalog/monitor-2.webp",
+        "alt": "Illustrative monitor photograph 2; not the exact Forma Studio 27 configuration."
+      },
+      {
+        "url": "/media/catalog/monitor-3.webp",
+        "alt": "Illustrative monitor photograph 3; not the exact Forma Studio 27 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "MONITOR-05-01",
+        "attributes": {
+          "finish": "Graphite",
+          "stand": "Tilt adjustable"
+        },
+        "priceVnd": 6090000,
+        "costPriceVnd": 4384000,
+        "stock": 20
+      },
+      {
+        "sku": "MONITOR-05-02",
+        "attributes": {
+          "finish": "Graphite",
+          "stand": "Height adjustable"
+        },
+        "priceVnd": 6690000,
+        "costPriceVnd": 4816000,
+        "stock": 24
+      }
+    ]
+  },
+  {
+    "slug": "northstar-studio-32-monitor",
+    "name": "Northstar Studio 32",
+    "brand": "Northstar",
+    "categorySlug": "monitor",
+    "shortDescription": "A clear 32-inch view of your work, with a restrained design that belongs on any desk.",
+    "descriptionLines": [
+      "32-inch display configuration with a 2560 × 1440 working resolution.",
+      "Matte display surface designed to reduce distracting reflections.",
+      "Choose a tilt-adjustable stand or the height-adjustable stand configuration.",
+      "HDMI and DisplayPort input configuration for a flexible desktop setup.",
+      "Slim framing keeps attention on the workspace and content.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "display",
+      "desk",
+      "work"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/monitor-1.webp",
+        "alt": "Illustrative monitor photograph 1; not the exact Northstar Studio 32 configuration."
+      },
+      {
+        "url": "/media/catalog/monitor-2.webp",
+        "alt": "Illustrative monitor photograph 2; not the exact Northstar Studio 32 configuration."
+      },
+      {
+        "url": "/media/catalog/monitor-3.webp",
+        "alt": "Illustrative monitor photograph 3; not the exact Northstar Studio 32 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "MONITOR-06-01",
+        "attributes": {
+          "finish": "Graphite",
+          "stand": "Tilt adjustable"
+        },
+        "priceVnd": 6790000,
+        "costPriceVnd": 4888000,
+        "stock": 23
+      },
+      {
+        "sku": "MONITOR-06-02",
+        "attributes": {
+          "finish": "Graphite",
+          "stand": "Height adjustable"
+        },
+        "priceVnd": 7390000,
+        "costPriceVnd": 5320000,
+        "stock": 0
+      }
+    ]
+  },
+  {
+    "slug": "obsidian-flow-27-monitor",
+    "name": "Obsidian Flow 27",
+    "brand": "Obsidian",
+    "categorySlug": "monitor",
+    "shortDescription": "A clear 27-inch view of your work, with a restrained design that belongs on any desk.",
+    "descriptionLines": [
+      "27-inch display configuration with a 2560 × 1440 working resolution.",
+      "Matte display surface designed to reduce distracting reflections.",
+      "Choose a tilt-adjustable stand or the height-adjustable stand configuration.",
+      "HDMI and DisplayPort input configuration for a flexible desktop setup.",
+      "Slim framing keeps attention on the workspace and content.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "display",
+      "desk",
+      "work"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/monitor-1.webp",
+        "alt": "Illustrative monitor photograph 1; not the exact Obsidian Flow 27 configuration."
+      },
+      {
+        "url": "/media/catalog/monitor-2.webp",
+        "alt": "Illustrative monitor photograph 2; not the exact Obsidian Flow 27 configuration."
+      },
+      {
+        "url": "/media/catalog/monitor-3.webp",
+        "alt": "Illustrative monitor photograph 3; not the exact Obsidian Flow 27 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "MONITOR-07-01",
+        "attributes": {
+          "finish": "Graphite",
+          "stand": "Tilt adjustable"
+        },
+        "priceVnd": 7490000,
+        "costPriceVnd": 5392000,
+        "stock": 26
+      },
+      {
+        "sku": "MONITOR-07-02",
+        "attributes": {
+          "finish": "Graphite",
+          "stand": "Height adjustable"
+        },
+        "priceVnd": 8090000,
+        "costPriceVnd": 5824000,
+        "stock": 30
+      }
+    ]
+  },
+  {
+    "slug": "forma-flow-32-monitor",
+    "name": "Forma Flow 32",
+    "brand": "Forma",
+    "categorySlug": "monitor",
+    "shortDescription": "A clear 32-inch view of your work, with a restrained design that belongs on any desk.",
+    "descriptionLines": [
+      "32-inch display configuration with a 2560 × 1440 working resolution.",
+      "Matte display surface designed to reduce distracting reflections.",
+      "Choose a tilt-adjustable stand or the height-adjustable stand configuration.",
+      "HDMI and DisplayPort input configuration for a flexible desktop setup.",
+      "Slim framing keeps attention on the workspace and content.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "display",
+      "desk",
+      "work"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/monitor-1.webp",
+        "alt": "Illustrative monitor photograph 1; not the exact Forma Flow 32 configuration."
+      },
+      {
+        "url": "/media/catalog/monitor-2.webp",
+        "alt": "Illustrative monitor photograph 2; not the exact Forma Flow 32 configuration."
+      },
+      {
+        "url": "/media/catalog/monitor-3.webp",
+        "alt": "Illustrative monitor photograph 3; not the exact Forma Flow 32 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "MONITOR-08-01",
+        "attributes": {
+          "finish": "Graphite",
+          "stand": "Tilt adjustable"
+        },
+        "priceVnd": 8190000,
+        "costPriceVnd": 5896000,
+        "stock": 29
+      },
+      {
+        "sku": "MONITOR-08-02",
+        "attributes": {
+          "finish": "Graphite",
+          "stand": "Height adjustable"
+        },
+        "priceVnd": 8790000,
+        "costPriceVnd": 6328000,
+        "stock": 9
+      }
+    ]
+  },
+  {
+    "slug": "northstar-wide-34-monitor",
+    "name": "Northstar Wide 34",
+    "brand": "Northstar",
+    "categorySlug": "monitor",
+    "shortDescription": "A clear 34-inch view of your work, with a restrained design that belongs on any desk.",
+    "descriptionLines": [
+      "34-inch display configuration with a 3440 × 1440 working resolution.",
+      "Matte display surface designed to reduce distracting reflections.",
+      "Choose a tilt-adjustable stand or the height-adjustable stand configuration.",
+      "HDMI and DisplayPort input configuration for a flexible desktop setup.",
+      "Slim framing keeps attention on the workspace and content.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "display",
+      "desk",
+      "work"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/monitor-1.webp",
+        "alt": "Illustrative monitor photograph 1; not the exact Northstar Wide 34 configuration."
+      },
+      {
+        "url": "/media/catalog/monitor-2.webp",
+        "alt": "Illustrative monitor photograph 2; not the exact Northstar Wide 34 configuration."
+      },
+      {
+        "url": "/media/catalog/monitor-3.webp",
+        "alt": "Illustrative monitor photograph 3; not the exact Northstar Wide 34 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "MONITOR-09-01",
+        "attributes": {
+          "finish": "Graphite",
+          "stand": "Tilt adjustable"
+        },
+        "priceVnd": 8890000,
+        "costPriceVnd": 6400000,
+        "stock": 8
+      },
+      {
+        "sku": "MONITOR-09-02",
+        "attributes": {
+          "finish": "Graphite",
+          "stand": "Height adjustable"
+        },
+        "priceVnd": 9490000,
+        "costPriceVnd": 6832000,
+        "stock": 12
+      }
+    ]
+  },
+  {
+    "slug": "obsidian-wide-pro-34-monitor",
+    "name": "Obsidian Wide Pro 34",
+    "brand": "Obsidian",
+    "categorySlug": "monitor",
+    "shortDescription": "A clear 34-inch view of your work, with a restrained design that belongs on any desk.",
+    "descriptionLines": [
+      "34-inch display configuration with a 3440 × 1440 working resolution.",
+      "Matte display surface designed to reduce distracting reflections.",
+      "Choose a tilt-adjustable stand or the height-adjustable stand configuration.",
+      "HDMI and DisplayPort input configuration for a flexible desktop setup.",
+      "Slim framing keeps attention on the workspace and content.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "display",
+      "desk",
+      "work"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/monitor-1.webp",
+        "alt": "Illustrative monitor photograph 1; not the exact Obsidian Wide Pro 34 configuration."
+      },
+      {
+        "url": "/media/catalog/monitor-2.webp",
+        "alt": "Illustrative monitor photograph 2; not the exact Obsidian Wide Pro 34 configuration."
+      },
+      {
+        "url": "/media/catalog/monitor-3.webp",
+        "alt": "Illustrative monitor photograph 3; not the exact Obsidian Wide Pro 34 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "MONITOR-10-01",
+        "attributes": {
+          "finish": "Graphite",
+          "stand": "Tilt adjustable"
+        },
+        "priceVnd": 9590000,
+        "costPriceVnd": 6904000,
+        "stock": 11
+      },
+      {
+        "sku": "MONITOR-10-02",
+        "attributes": {
+          "finish": "Graphite",
+          "stand": "Height adjustable"
+        },
+        "priceVnd": 10190000,
+        "costPriceVnd": 7336000,
+        "stock": 15
+      }
+    ]
+  },
+  {
+    "slug": "obsidian-vector-g1-gpu",
+    "name": "Obsidian Vector G1",
+    "brand": "Obsidian",
+    "categorySlug": "gpu",
+    "shortDescription": "Dedicated graphics for richer worlds and a more responsive creative workflow.",
+    "descriptionLines": [
+      "Dedicated PCI Express graphics configuration for a desktop computer.",
+      "Choose the dual-fan 8 GB or triple-fan 16 GB demo configuration.",
+      "Active cooling directs airflow across the graphics card heatsink.",
+      "Display outputs support a flexible multi-monitor workspace.",
+      "Check case clearance and power-supply compatibility before choosing a configuration.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "graphics",
+      "gaming",
+      "creative"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/gpu-1.webp",
+        "alt": "Illustrative graphics card photograph 1; not the exact Obsidian Vector G1 configuration."
+      },
+      {
+        "url": "/media/catalog/gpu-2.webp",
+        "alt": "Illustrative graphics card photograph 2; not the exact Obsidian Vector G1 configuration."
+      },
+      {
+        "url": "/media/catalog/gpu-3.webp",
+        "alt": "Illustrative graphics card photograph 3; not the exact Obsidian Vector G1 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "GPU-01-01",
+        "attributes": {
+          "cooling": "Dual fan",
+          "memory": "8 GB"
+        },
+        "priceVnd": 5990000,
+        "costPriceVnd": 4312000,
+        "stock": 8
+      },
+      {
+        "sku": "GPU-01-02",
+        "attributes": {
+          "cooling": "Triple fan",
+          "memory": "16 GB"
+        },
+        "priceVnd": 9490000,
+        "costPriceVnd": 6832000,
+        "stock": 0
+      }
+    ]
+  },
+  {
+    "slug": "forma-vector-g2-gpu",
+    "name": "Forma Vector G2",
+    "brand": "Forma",
+    "categorySlug": "gpu",
+    "shortDescription": "Dedicated graphics for richer worlds and a more responsive creative workflow.",
+    "descriptionLines": [
+      "Dedicated PCI Express graphics configuration for a desktop computer.",
+      "Choose the dual-fan 8 GB or triple-fan 16 GB demo configuration.",
+      "Active cooling directs airflow across the graphics card heatsink.",
+      "Display outputs support a flexible multi-monitor workspace.",
+      "Check case clearance and power-supply compatibility before choosing a configuration.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "graphics",
+      "gaming",
+      "creative"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/gpu-1.webp",
+        "alt": "Illustrative graphics card photograph 1; not the exact Forma Vector G2 configuration."
+      },
+      {
+        "url": "/media/catalog/gpu-2.webp",
+        "alt": "Illustrative graphics card photograph 2; not the exact Forma Vector G2 configuration."
+      },
+      {
+        "url": "/media/catalog/gpu-3.webp",
+        "alt": "Illustrative graphics card photograph 3; not the exact Forma Vector G2 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "GPU-02-01",
+        "attributes": {
+          "cooling": "Dual fan",
+          "memory": "8 GB"
+        },
+        "priceVnd": 7690000,
+        "costPriceVnd": 5536000,
+        "stock": 11
+      },
+      {
+        "sku": "GPU-02-02",
+        "attributes": {
+          "cooling": "Triple fan",
+          "memory": "16 GB"
+        },
+        "priceVnd": 11190000,
+        "costPriceVnd": 8056000,
+        "stock": 15
+      }
+    ]
+  },
+  {
+    "slug": "northstar-vector-g3-gpu",
+    "name": "Northstar Vector G3",
+    "brand": "Northstar",
+    "categorySlug": "gpu",
+    "shortDescription": "Dedicated graphics for richer worlds and a more responsive creative workflow.",
+    "descriptionLines": [
+      "Dedicated PCI Express graphics configuration for a desktop computer.",
+      "Choose the dual-fan 8 GB or triple-fan 16 GB demo configuration.",
+      "Active cooling directs airflow across the graphics card heatsink.",
+      "Display outputs support a flexible multi-monitor workspace.",
+      "Check case clearance and power-supply compatibility before choosing a configuration.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "graphics",
+      "gaming",
+      "creative"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/gpu-1.webp",
+        "alt": "Illustrative graphics card photograph 1; not the exact Northstar Vector G3 configuration."
+      },
+      {
+        "url": "/media/catalog/gpu-2.webp",
+        "alt": "Illustrative graphics card photograph 2; not the exact Northstar Vector G3 configuration."
+      },
+      {
+        "url": "/media/catalog/gpu-3.webp",
+        "alt": "Illustrative graphics card photograph 3; not the exact Northstar Vector G3 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "GPU-03-01",
+        "attributes": {
+          "cooling": "Dual fan",
+          "memory": "8 GB"
+        },
+        "priceVnd": 9390000,
+        "costPriceVnd": 6760000,
+        "stock": 14
+      },
+      {
+        "sku": "GPU-03-02",
+        "attributes": {
+          "cooling": "Triple fan",
+          "memory": "16 GB"
+        },
+        "priceVnd": 12890000,
+        "costPriceVnd": 9280000,
+        "stock": 18
+      }
+    ]
+  },
+  {
+    "slug": "obsidian-vector-g4-gpu",
+    "name": "Obsidian Vector G4",
+    "brand": "Obsidian",
+    "categorySlug": "gpu",
+    "shortDescription": "Dedicated graphics for richer worlds and a more responsive creative workflow.",
+    "descriptionLines": [
+      "Dedicated PCI Express graphics configuration for a desktop computer.",
+      "Choose the dual-fan 8 GB or triple-fan 16 GB demo configuration.",
+      "Active cooling directs airflow across the graphics card heatsink.",
+      "Display outputs support a flexible multi-monitor workspace.",
+      "Check case clearance and power-supply compatibility before choosing a configuration.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "graphics",
+      "gaming",
+      "creative"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/gpu-1.webp",
+        "alt": "Illustrative graphics card photograph 1; not the exact Obsidian Vector G4 configuration."
+      },
+      {
+        "url": "/media/catalog/gpu-2.webp",
+        "alt": "Illustrative graphics card photograph 2; not the exact Obsidian Vector G4 configuration."
+      },
+      {
+        "url": "/media/catalog/gpu-3.webp",
+        "alt": "Illustrative graphics card photograph 3; not the exact Obsidian Vector G4 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "GPU-04-01",
+        "attributes": {
+          "cooling": "Dual fan",
+          "memory": "8 GB"
+        },
+        "priceVnd": 11090000,
+        "costPriceVnd": 7984000,
+        "stock": 17
+      },
+      {
+        "sku": "GPU-04-02",
+        "attributes": {
+          "cooling": "Triple fan",
+          "memory": "16 GB"
+        },
+        "priceVnd": 14590000,
+        "costPriceVnd": 10504000,
+        "stock": 21
+      }
+    ]
+  },
+  {
+    "slug": "forma-prism-p1-gpu",
+    "name": "Forma Prism P1",
+    "brand": "Forma",
+    "categorySlug": "gpu",
+    "shortDescription": "Dedicated graphics for richer worlds and a more responsive creative workflow.",
+    "descriptionLines": [
+      "Dedicated PCI Express graphics configuration for a desktop computer.",
+      "Choose the dual-fan 8 GB or triple-fan 16 GB demo configuration.",
+      "Active cooling directs airflow across the graphics card heatsink.",
+      "Display outputs support a flexible multi-monitor workspace.",
+      "Check case clearance and power-supply compatibility before choosing a configuration.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "graphics",
+      "gaming",
+      "creative"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/gpu-1.webp",
+        "alt": "Illustrative graphics card photograph 1; not the exact Forma Prism P1 configuration."
+      },
+      {
+        "url": "/media/catalog/gpu-2.webp",
+        "alt": "Illustrative graphics card photograph 2; not the exact Forma Prism P1 configuration."
+      },
+      {
+        "url": "/media/catalog/gpu-3.webp",
+        "alt": "Illustrative graphics card photograph 3; not the exact Forma Prism P1 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "GPU-05-01",
+        "attributes": {
+          "cooling": "Dual fan",
+          "memory": "8 GB"
+        },
+        "priceVnd": 12790000,
+        "costPriceVnd": 9208000,
+        "stock": 20
+      },
+      {
+        "sku": "GPU-05-02",
+        "attributes": {
+          "cooling": "Triple fan",
+          "memory": "16 GB"
+        },
+        "priceVnd": 16290000,
+        "costPriceVnd": 11728000,
+        "stock": 24
+      }
+    ]
+  },
+  {
+    "slug": "northstar-prism-p2-gpu",
+    "name": "Northstar Prism P2",
+    "brand": "Northstar",
+    "categorySlug": "gpu",
+    "shortDescription": "Dedicated graphics for richer worlds and a more responsive creative workflow.",
+    "descriptionLines": [
+      "Dedicated PCI Express graphics configuration for a desktop computer.",
+      "Choose the dual-fan 8 GB or triple-fan 16 GB demo configuration.",
+      "Active cooling directs airflow across the graphics card heatsink.",
+      "Display outputs support a flexible multi-monitor workspace.",
+      "Check case clearance and power-supply compatibility before choosing a configuration.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "graphics",
+      "gaming",
+      "creative"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/gpu-1.webp",
+        "alt": "Illustrative graphics card photograph 1; not the exact Northstar Prism P2 configuration."
+      },
+      {
+        "url": "/media/catalog/gpu-2.webp",
+        "alt": "Illustrative graphics card photograph 2; not the exact Northstar Prism P2 configuration."
+      },
+      {
+        "url": "/media/catalog/gpu-3.webp",
+        "alt": "Illustrative graphics card photograph 3; not the exact Northstar Prism P2 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "GPU-06-01",
+        "attributes": {
+          "cooling": "Dual fan",
+          "memory": "8 GB"
+        },
+        "priceVnd": 14490000,
+        "costPriceVnd": 10432000,
+        "stock": 23
+      },
+      {
+        "sku": "GPU-06-02",
+        "attributes": {
+          "cooling": "Triple fan",
+          "memory": "16 GB"
+        },
+        "priceVnd": 17990000,
+        "costPriceVnd": 12952000,
+        "stock": 0
+      }
+    ]
+  },
+  {
+    "slug": "obsidian-render-v1-gpu",
+    "name": "Obsidian Render V1",
+    "brand": "Obsidian",
+    "categorySlug": "gpu",
+    "shortDescription": "Dedicated graphics for richer worlds and a more responsive creative workflow.",
+    "descriptionLines": [
+      "Dedicated PCI Express graphics configuration for a desktop computer.",
+      "Choose the dual-fan 8 GB or triple-fan 16 GB demo configuration.",
+      "Active cooling directs airflow across the graphics card heatsink.",
+      "Display outputs support a flexible multi-monitor workspace.",
+      "Check case clearance and power-supply compatibility before choosing a configuration.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "graphics",
+      "gaming",
+      "creative"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/gpu-1.webp",
+        "alt": "Illustrative graphics card photograph 1; not the exact Obsidian Render V1 configuration."
+      },
+      {
+        "url": "/media/catalog/gpu-2.webp",
+        "alt": "Illustrative graphics card photograph 2; not the exact Obsidian Render V1 configuration."
+      },
+      {
+        "url": "/media/catalog/gpu-3.webp",
+        "alt": "Illustrative graphics card photograph 3; not the exact Obsidian Render V1 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "GPU-07-01",
+        "attributes": {
+          "cooling": "Dual fan",
+          "memory": "8 GB"
+        },
+        "priceVnd": 16190000,
+        "costPriceVnd": 11656000,
+        "stock": 26
+      },
+      {
+        "sku": "GPU-07-02",
+        "attributes": {
+          "cooling": "Triple fan",
+          "memory": "16 GB"
+        },
+        "priceVnd": 19690000,
+        "costPriceVnd": 14176000,
+        "stock": 30
+      }
+    ]
+  },
+  {
+    "slug": "forma-render-v2-gpu",
+    "name": "Forma Render V2",
+    "brand": "Forma",
+    "categorySlug": "gpu",
+    "shortDescription": "Dedicated graphics for richer worlds and a more responsive creative workflow.",
+    "descriptionLines": [
+      "Dedicated PCI Express graphics configuration for a desktop computer.",
+      "Choose the dual-fan 8 GB or triple-fan 16 GB demo configuration.",
+      "Active cooling directs airflow across the graphics card heatsink.",
+      "Display outputs support a flexible multi-monitor workspace.",
+      "Check case clearance and power-supply compatibility before choosing a configuration.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "graphics",
+      "gaming",
+      "creative"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/gpu-1.webp",
+        "alt": "Illustrative graphics card photograph 1; not the exact Forma Render V2 configuration."
+      },
+      {
+        "url": "/media/catalog/gpu-2.webp",
+        "alt": "Illustrative graphics card photograph 2; not the exact Forma Render V2 configuration."
+      },
+      {
+        "url": "/media/catalog/gpu-3.webp",
+        "alt": "Illustrative graphics card photograph 3; not the exact Forma Render V2 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "GPU-08-01",
+        "attributes": {
+          "cooling": "Dual fan",
+          "memory": "8 GB"
+        },
+        "priceVnd": 17890000,
+        "costPriceVnd": 12880000,
+        "stock": 29
+      },
+      {
+        "sku": "GPU-08-02",
+        "attributes": {
+          "cooling": "Triple fan",
+          "memory": "16 GB"
+        },
+        "priceVnd": 21390000,
+        "costPriceVnd": 15400000,
+        "stock": 9
+      }
+    ]
+  },
+  {
+    "slug": "northstar-arc-studio-gpu",
+    "name": "Northstar Arc Studio",
+    "brand": "Northstar",
+    "categorySlug": "gpu",
+    "shortDescription": "Dedicated graphics for richer worlds and a more responsive creative workflow.",
+    "descriptionLines": [
+      "Dedicated PCI Express graphics configuration for a desktop computer.",
+      "Choose the dual-fan 8 GB or triple-fan 16 GB demo configuration.",
+      "Active cooling directs airflow across the graphics card heatsink.",
+      "Display outputs support a flexible multi-monitor workspace.",
+      "Check case clearance and power-supply compatibility before choosing a configuration.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "graphics",
+      "gaming",
+      "creative"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/gpu-1.webp",
+        "alt": "Illustrative graphics card photograph 1; not the exact Northstar Arc Studio configuration."
+      },
+      {
+        "url": "/media/catalog/gpu-2.webp",
+        "alt": "Illustrative graphics card photograph 2; not the exact Northstar Arc Studio configuration."
+      },
+      {
+        "url": "/media/catalog/gpu-3.webp",
+        "alt": "Illustrative graphics card photograph 3; not the exact Northstar Arc Studio configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "GPU-09-01",
+        "attributes": {
+          "cooling": "Dual fan",
+          "memory": "8 GB"
+        },
+        "priceVnd": 19590000,
+        "costPriceVnd": 14104000,
+        "stock": 8
+      },
+      {
+        "sku": "GPU-09-02",
+        "attributes": {
+          "cooling": "Triple fan",
+          "memory": "16 GB"
+        },
+        "priceVnd": 23090000,
+        "costPriceVnd": 16624000,
+        "stock": 12
+      }
+    ]
+  },
+  {
+    "slug": "obsidian-arc-studio-pro-gpu",
+    "name": "Obsidian Arc Studio Pro",
+    "brand": "Obsidian",
+    "categorySlug": "gpu",
+    "shortDescription": "Dedicated graphics for richer worlds and a more responsive creative workflow.",
+    "descriptionLines": [
+      "Dedicated PCI Express graphics configuration for a desktop computer.",
+      "Choose the dual-fan 8 GB or triple-fan 16 GB demo configuration.",
+      "Active cooling directs airflow across the graphics card heatsink.",
+      "Display outputs support a flexible multi-monitor workspace.",
+      "Check case clearance and power-supply compatibility before choosing a configuration.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "graphics",
+      "gaming",
+      "creative"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/gpu-1.webp",
+        "alt": "Illustrative graphics card photograph 1; not the exact Obsidian Arc Studio Pro configuration."
+      },
+      {
+        "url": "/media/catalog/gpu-2.webp",
+        "alt": "Illustrative graphics card photograph 2; not the exact Obsidian Arc Studio Pro configuration."
+      },
+      {
+        "url": "/media/catalog/gpu-3.webp",
+        "alt": "Illustrative graphics card photograph 3; not the exact Obsidian Arc Studio Pro configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "GPU-10-01",
+        "attributes": {
+          "cooling": "Dual fan",
+          "memory": "8 GB"
+        },
+        "priceVnd": 21290000,
+        "costPriceVnd": 15328000,
+        "stock": 11
+      },
+      {
+        "sku": "GPU-10-02",
+        "attributes": {
+          "cooling": "Triple fan",
+          "memory": "16 GB"
+        },
+        "priceVnd": 24790000,
+        "costPriceVnd": 17848000,
+        "stock": 15
+      }
+    ]
+  },
+  {
+    "slug": "obsidian-essential-3200-ram",
+    "name": "Obsidian Essential 3200",
+    "brand": "Obsidian",
+    "categorySlug": "ram",
+    "shortDescription": "Matched desktop memory for smoother multitasking and a cleaner build.",
+    "descriptionLines": [
+      "DDR4 desktop UDIMM memory kit supplied as a matched pair.",
+      "3200 MT/s demo speed profile; motherboard support determines operating speed.",
+      "Choose 16 GB total capacity or 32 GB total capacity.",
+      "Designed for compatible DDR4 desktop motherboards; not interchangeable with DDR5.",
+      "Confirm memory generation, slot type and capacity support before installation.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "memory",
+      "upgrade",
+      "desktop"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/ram-2.webp",
+        "alt": "Illustrative memory kit photograph 2; not the exact Obsidian Essential 3200 configuration."
+      },
+      {
+        "url": "/media/catalog/ram-1.webp",
+        "alt": "Illustrative memory kit photograph 1; not the exact Obsidian Essential 3200 configuration."
+      },
+      {
+        "url": "/media/catalog/ram-3.webp",
+        "alt": "Illustrative memory kit photograph 3; not the exact Obsidian Essential 3200 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "RAM-01-01",
+        "attributes": {
+          "capacity": "16 GB (2 × 8 GB)",
+          "speed": "3200 MT/s"
+        },
+        "priceVnd": 790000,
+        "costPriceVnd": 568000,
+        "stock": 8
+      },
+      {
+        "sku": "RAM-01-02",
+        "attributes": {
+          "capacity": "32 GB (2 × 16 GB)",
+          "speed": "3200 MT/s"
+        },
+        "priceVnd": 1440000,
+        "costPriceVnd": 1036000,
+        "stock": 0
+      }
+    ]
+  },
+  {
+    "slug": "forma-essential-3600-ram",
+    "name": "Forma Essential 3600",
+    "brand": "Forma",
+    "categorySlug": "ram",
+    "shortDescription": "Matched desktop memory for smoother multitasking and a cleaner build.",
+    "descriptionLines": [
+      "DDR4 desktop UDIMM memory kit supplied as a matched pair.",
+      "3600 MT/s demo speed profile; motherboard support determines operating speed.",
+      "Choose 16 GB total capacity or 32 GB total capacity.",
+      "Designed for compatible DDR4 desktop motherboards; not interchangeable with DDR5.",
+      "Confirm memory generation, slot type and capacity support before installation.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "memory",
+      "upgrade",
+      "desktop"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/ram-2.webp",
+        "alt": "Illustrative memory kit photograph 2; not the exact Forma Essential 3600 configuration."
+      },
+      {
+        "url": "/media/catalog/ram-1.webp",
+        "alt": "Illustrative memory kit photograph 1; not the exact Forma Essential 3600 configuration."
+      },
+      {
+        "url": "/media/catalog/ram-3.webp",
+        "alt": "Illustrative memory kit photograph 3; not the exact Forma Essential 3600 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "RAM-02-01",
+        "attributes": {
+          "capacity": "16 GB (2 × 8 GB)",
+          "speed": "3600 MT/s"
+        },
+        "priceVnd": 920000,
+        "costPriceVnd": 662000,
+        "stock": 11
+      },
+      {
+        "sku": "RAM-02-02",
+        "attributes": {
+          "capacity": "32 GB (2 × 16 GB)",
+          "speed": "3600 MT/s"
+        },
+        "priceVnd": 1570000,
+        "costPriceVnd": 1130000,
+        "stock": 15
+      }
+    ]
+  },
+  {
+    "slug": "northstar-low-profile-3200-ram",
+    "name": "Northstar Low Profile 3200",
+    "brand": "Northstar",
+    "categorySlug": "ram",
+    "shortDescription": "Matched desktop memory for smoother multitasking and a cleaner build.",
+    "descriptionLines": [
+      "DDR4 desktop UDIMM memory kit supplied as a matched pair.",
+      "3200 MT/s demo speed profile; motherboard support determines operating speed.",
+      "Choose 16 GB total capacity or 32 GB total capacity.",
+      "Designed for compatible DDR4 desktop motherboards; not interchangeable with DDR5.",
+      "Confirm memory generation, slot type and capacity support before installation.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "memory",
+      "upgrade",
+      "desktop"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/ram-2.webp",
+        "alt": "Illustrative memory kit photograph 2; not the exact Northstar Low Profile 3200 configuration."
+      },
+      {
+        "url": "/media/catalog/ram-1.webp",
+        "alt": "Illustrative memory kit photograph 1; not the exact Northstar Low Profile 3200 configuration."
+      },
+      {
+        "url": "/media/catalog/ram-3.webp",
+        "alt": "Illustrative memory kit photograph 3; not the exact Northstar Low Profile 3200 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "RAM-03-01",
+        "attributes": {
+          "capacity": "16 GB (2 × 8 GB)",
+          "speed": "3200 MT/s"
+        },
+        "priceVnd": 1050000,
+        "costPriceVnd": 756000,
+        "stock": 14
+      },
+      {
+        "sku": "RAM-03-02",
+        "attributes": {
+          "capacity": "32 GB (2 × 16 GB)",
+          "speed": "3200 MT/s"
+        },
+        "priceVnd": 1700000,
+        "costPriceVnd": 1224000,
+        "stock": 18
+      }
+    ]
+  },
+  {
+    "slug": "obsidian-low-profile-3600-ram",
+    "name": "Obsidian Low Profile 3600",
+    "brand": "Obsidian",
+    "categorySlug": "ram",
+    "shortDescription": "Matched desktop memory for smoother multitasking and a cleaner build.",
+    "descriptionLines": [
+      "DDR4 desktop UDIMM memory kit supplied as a matched pair.",
+      "3600 MT/s demo speed profile; motherboard support determines operating speed.",
+      "Choose 16 GB total capacity or 32 GB total capacity.",
+      "Designed for compatible DDR4 desktop motherboards; not interchangeable with DDR5.",
+      "Confirm memory generation, slot type and capacity support before installation.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "memory",
+      "upgrade",
+      "desktop"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/ram-2.webp",
+        "alt": "Illustrative memory kit photograph 2; not the exact Obsidian Low Profile 3600 configuration."
+      },
+      {
+        "url": "/media/catalog/ram-1.webp",
+        "alt": "Illustrative memory kit photograph 1; not the exact Obsidian Low Profile 3600 configuration."
+      },
+      {
+        "url": "/media/catalog/ram-3.webp",
+        "alt": "Illustrative memory kit photograph 3; not the exact Obsidian Low Profile 3600 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "RAM-04-01",
+        "attributes": {
+          "capacity": "16 GB (2 × 8 GB)",
+          "speed": "3600 MT/s"
+        },
+        "priceVnd": 1180000,
+        "costPriceVnd": 849000,
+        "stock": 17
+      },
+      {
+        "sku": "RAM-04-02",
+        "attributes": {
+          "capacity": "32 GB (2 × 16 GB)",
+          "speed": "3600 MT/s"
+        },
+        "priceVnd": 1830000,
+        "costPriceVnd": 1317000,
+        "stock": 21
+      }
+    ]
+  },
+  {
+    "slug": "forma-studio-3200-ram",
+    "name": "Forma Studio 3200",
+    "brand": "Forma",
+    "categorySlug": "ram",
+    "shortDescription": "Matched desktop memory for smoother multitasking and a cleaner build.",
+    "descriptionLines": [
+      "DDR4 desktop UDIMM memory kit supplied as a matched pair.",
+      "3200 MT/s demo speed profile; motherboard support determines operating speed.",
+      "Choose 16 GB total capacity or 32 GB total capacity.",
+      "Designed for compatible DDR4 desktop motherboards; not interchangeable with DDR5.",
+      "Confirm memory generation, slot type and capacity support before installation.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "memory",
+      "upgrade",
+      "desktop"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/ram-2.webp",
+        "alt": "Illustrative memory kit photograph 2; not the exact Forma Studio 3200 configuration."
+      },
+      {
+        "url": "/media/catalog/ram-1.webp",
+        "alt": "Illustrative memory kit photograph 1; not the exact Forma Studio 3200 configuration."
+      },
+      {
+        "url": "/media/catalog/ram-3.webp",
+        "alt": "Illustrative memory kit photograph 3; not the exact Forma Studio 3200 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "RAM-05-01",
+        "attributes": {
+          "capacity": "16 GB (2 × 8 GB)",
+          "speed": "3200 MT/s"
+        },
+        "priceVnd": 1310000,
+        "costPriceVnd": 943000,
+        "stock": 20
+      },
+      {
+        "sku": "RAM-05-02",
+        "attributes": {
+          "capacity": "32 GB (2 × 16 GB)",
+          "speed": "3200 MT/s"
+        },
+        "priceVnd": 1960000,
+        "costPriceVnd": 1411000,
+        "stock": 24
+      }
+    ]
+  },
+  {
+    "slug": "northstar-studio-3600-ram",
+    "name": "Northstar Studio 3600",
+    "brand": "Northstar",
+    "categorySlug": "ram",
+    "shortDescription": "Matched desktop memory for smoother multitasking and a cleaner build.",
+    "descriptionLines": [
+      "DDR4 desktop UDIMM memory kit supplied as a matched pair.",
+      "3600 MT/s demo speed profile; motherboard support determines operating speed.",
+      "Choose 16 GB total capacity or 32 GB total capacity.",
+      "Designed for compatible DDR4 desktop motherboards; not interchangeable with DDR5.",
+      "Confirm memory generation, slot type and capacity support before installation.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "memory",
+      "upgrade",
+      "desktop"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/ram-2.webp",
+        "alt": "Illustrative memory kit photograph 2; not the exact Northstar Studio 3600 configuration."
+      },
+      {
+        "url": "/media/catalog/ram-1.webp",
+        "alt": "Illustrative memory kit photograph 1; not the exact Northstar Studio 3600 configuration."
+      },
+      {
+        "url": "/media/catalog/ram-3.webp",
+        "alt": "Illustrative memory kit photograph 3; not the exact Northstar Studio 3600 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "RAM-06-01",
+        "attributes": {
+          "capacity": "16 GB (2 × 8 GB)",
+          "speed": "3600 MT/s"
+        },
+        "priceVnd": 1440000,
+        "costPriceVnd": 1036000,
+        "stock": 23
+      },
+      {
+        "sku": "RAM-06-02",
+        "attributes": {
+          "capacity": "32 GB (2 × 16 GB)",
+          "speed": "3600 MT/s"
+        },
+        "priceVnd": 2090000,
+        "costPriceVnd": 1504000,
+        "stock": 0
+      }
+    ]
+  },
+  {
+    "slug": "obsidian-performance-3600-ram",
+    "name": "Obsidian Performance 3600",
+    "brand": "Obsidian",
+    "categorySlug": "ram",
+    "shortDescription": "Matched desktop memory for smoother multitasking and a cleaner build.",
+    "descriptionLines": [
+      "DDR4 desktop UDIMM memory kit supplied as a matched pair.",
+      "3600 MT/s demo speed profile; motherboard support determines operating speed.",
+      "Choose 16 GB total capacity or 32 GB total capacity.",
+      "Designed for compatible DDR4 desktop motherboards; not interchangeable with DDR5.",
+      "Confirm memory generation, slot type and capacity support before installation.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "memory",
+      "upgrade",
+      "desktop"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/ram-2.webp",
+        "alt": "Illustrative memory kit photograph 2; not the exact Obsidian Performance 3600 configuration."
+      },
+      {
+        "url": "/media/catalog/ram-1.webp",
+        "alt": "Illustrative memory kit photograph 1; not the exact Obsidian Performance 3600 configuration."
+      },
+      {
+        "url": "/media/catalog/ram-3.webp",
+        "alt": "Illustrative memory kit photograph 3; not the exact Obsidian Performance 3600 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "RAM-07-01",
+        "attributes": {
+          "capacity": "16 GB (2 × 8 GB)",
+          "speed": "3600 MT/s"
+        },
+        "priceVnd": 1570000,
+        "costPriceVnd": 1130000,
+        "stock": 26
+      },
+      {
+        "sku": "RAM-07-02",
+        "attributes": {
+          "capacity": "32 GB (2 × 16 GB)",
+          "speed": "3600 MT/s"
+        },
+        "priceVnd": 2220000,
+        "costPriceVnd": 1598000,
+        "stock": 30
+      }
+    ]
+  },
+  {
+    "slug": "forma-performance-4000-ram",
+    "name": "Forma Performance 4000",
+    "brand": "Forma",
+    "categorySlug": "ram",
+    "shortDescription": "Matched desktop memory for smoother multitasking and a cleaner build.",
+    "descriptionLines": [
+      "DDR4 desktop UDIMM memory kit supplied as a matched pair.",
+      "4000 MT/s demo speed profile; motherboard support determines operating speed.",
+      "Choose 16 GB total capacity or 32 GB total capacity.",
+      "Designed for compatible DDR4 desktop motherboards; not interchangeable with DDR5.",
+      "Confirm memory generation, slot type and capacity support before installation.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "memory",
+      "upgrade",
+      "desktop"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/ram-2.webp",
+        "alt": "Illustrative memory kit photograph 2; not the exact Forma Performance 4000 configuration."
+      },
+      {
+        "url": "/media/catalog/ram-1.webp",
+        "alt": "Illustrative memory kit photograph 1; not the exact Forma Performance 4000 configuration."
+      },
+      {
+        "url": "/media/catalog/ram-3.webp",
+        "alt": "Illustrative memory kit photograph 3; not the exact Forma Performance 4000 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "RAM-08-01",
+        "attributes": {
+          "capacity": "16 GB (2 × 8 GB)",
+          "speed": "4000 MT/s"
+        },
+        "priceVnd": 1700000,
+        "costPriceVnd": 1224000,
+        "stock": 29
+      },
+      {
+        "sku": "RAM-08-02",
+        "attributes": {
+          "capacity": "32 GB (2 × 16 GB)",
+          "speed": "4000 MT/s"
+        },
+        "priceVnd": 2350000,
+        "costPriceVnd": 1692000,
+        "stock": 9
+      }
+    ]
+  },
+  {
+    "slug": "northstar-creator-3200-ram",
+    "name": "Northstar Creator 3200",
+    "brand": "Northstar",
+    "categorySlug": "ram",
+    "shortDescription": "Matched desktop memory for smoother multitasking and a cleaner build.",
+    "descriptionLines": [
+      "DDR4 desktop UDIMM memory kit supplied as a matched pair.",
+      "3200 MT/s demo speed profile; motherboard support determines operating speed.",
+      "Choose 16 GB total capacity or 32 GB total capacity.",
+      "Designed for compatible DDR4 desktop motherboards; not interchangeable with DDR5.",
+      "Confirm memory generation, slot type and capacity support before installation.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "memory",
+      "upgrade",
+      "desktop"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/ram-2.webp",
+        "alt": "Illustrative memory kit photograph 2; not the exact Northstar Creator 3200 configuration."
+      },
+      {
+        "url": "/media/catalog/ram-1.webp",
+        "alt": "Illustrative memory kit photograph 1; not the exact Northstar Creator 3200 configuration."
+      },
+      {
+        "url": "/media/catalog/ram-3.webp",
+        "alt": "Illustrative memory kit photograph 3; not the exact Northstar Creator 3200 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "RAM-09-01",
+        "attributes": {
+          "capacity": "16 GB (2 × 8 GB)",
+          "speed": "3200 MT/s"
+        },
+        "priceVnd": 1830000,
+        "costPriceVnd": 1317000,
+        "stock": 8
+      },
+      {
+        "sku": "RAM-09-02",
+        "attributes": {
+          "capacity": "32 GB (2 × 16 GB)",
+          "speed": "3200 MT/s"
+        },
+        "priceVnd": 2480000,
+        "costPriceVnd": 1785000,
+        "stock": 12
+      }
+    ]
+  },
+  {
+    "slug": "obsidian-creator-3600-ram",
+    "name": "Obsidian Creator 3600",
+    "brand": "Obsidian",
+    "categorySlug": "ram",
+    "shortDescription": "Matched desktop memory for smoother multitasking and a cleaner build.",
+    "descriptionLines": [
+      "DDR4 desktop UDIMM memory kit supplied as a matched pair.",
+      "3600 MT/s demo speed profile; motherboard support determines operating speed.",
+      "Choose 16 GB total capacity or 32 GB total capacity.",
+      "Designed for compatible DDR4 desktop motherboards; not interchangeable with DDR5.",
+      "Confirm memory generation, slot type and capacity support before installation.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "memory",
+      "upgrade",
+      "desktop"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/ram-2.webp",
+        "alt": "Illustrative memory kit photograph 2; not the exact Obsidian Creator 3600 configuration."
+      },
+      {
+        "url": "/media/catalog/ram-1.webp",
+        "alt": "Illustrative memory kit photograph 1; not the exact Obsidian Creator 3600 configuration."
+      },
+      {
+        "url": "/media/catalog/ram-3.webp",
+        "alt": "Illustrative memory kit photograph 3; not the exact Obsidian Creator 3600 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "RAM-10-01",
+        "attributes": {
+          "capacity": "16 GB (2 × 8 GB)",
+          "speed": "3600 MT/s"
+        },
+        "priceVnd": 1960000,
+        "costPriceVnd": 1411000,
+        "stock": 11
+      },
+      {
+        "sku": "RAM-10-02",
+        "attributes": {
+          "capacity": "32 GB (2 × 16 GB)",
+          "speed": "3600 MT/s"
+        },
+        "priceVnd": 2610000,
+        "costPriceVnd": 1879000,
+        "stock": 15
+      }
+    ]
+  },
+  {
+    "slug": "obsidian-swift-500-ssd",
+    "name": "Obsidian Swift 500",
+    "brand": "Obsidian",
+    "categorySlug": "ssd",
+    "shortDescription": "Fast, quiet solid-state storage that gives your next project room to grow.",
+    "descriptionLines": [
+      "M.2 2280 NVMe solid-state storage for compatible computer systems.",
+      "PCIe 4.0 demo interface configuration; host support determines link speed.",
+      "Choose 500 GB or 1 TB of storage capacity.",
+      "A compact, cable-free form factor for a tidy desktop or laptop installation.",
+      "Check M.2 slot length and NVMe compatibility before installing.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "storage",
+      "upgrade",
+      "nvme"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/ssd-1.webp",
+        "alt": "Illustrative nvme ssd photograph 1; not the exact Obsidian Swift 500 configuration."
+      },
+      {
+        "url": "/media/catalog/ssd-3.webp",
+        "alt": "Illustrative nvme ssd photograph 3; not the exact Obsidian Swift 500 configuration."
+      },
+      {
+        "url": "/media/catalog/ssd-2.webp",
+        "alt": "Illustrative nvme ssd photograph 2; not the exact Obsidian Swift 500 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "SSD-01-01",
+        "attributes": {
+          "capacity": "500 GB",
+          "interface": "PCIe 4.0 NVMe"
+        },
+        "priceVnd": 890000,
+        "costPriceVnd": 640000,
+        "stock": 8
+      },
+      {
+        "sku": "SSD-01-02",
+        "attributes": {
+          "capacity": "1 TB",
+          "interface": "PCIe 4.0 NVMe"
+        },
+        "priceVnd": 1540000,
+        "costPriceVnd": 1108000,
+        "stock": 0
+      }
+    ]
+  },
+  {
+    "slug": "forma-swift-1000-ssd",
+    "name": "Forma Swift 1000",
+    "brand": "Forma",
+    "categorySlug": "ssd",
+    "shortDescription": "Fast, quiet solid-state storage that gives your next project room to grow.",
+    "descriptionLines": [
+      "M.2 2280 NVMe solid-state storage for compatible computer systems.",
+      "PCIe 4.0 demo interface configuration; host support determines link speed.",
+      "Choose 500 GB or 1 TB of storage capacity.",
+      "A compact, cable-free form factor for a tidy desktop or laptop installation.",
+      "Check M.2 slot length and NVMe compatibility before installing.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "storage",
+      "upgrade",
+      "nvme"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/ssd-1.webp",
+        "alt": "Illustrative nvme ssd photograph 1; not the exact Forma Swift 1000 configuration."
+      },
+      {
+        "url": "/media/catalog/ssd-3.webp",
+        "alt": "Illustrative nvme ssd photograph 3; not the exact Forma Swift 1000 configuration."
+      },
+      {
+        "url": "/media/catalog/ssd-2.webp",
+        "alt": "Illustrative nvme ssd photograph 2; not the exact Forma Swift 1000 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "SSD-02-01",
+        "attributes": {
+          "capacity": "500 GB",
+          "interface": "PCIe 4.0 NVMe"
+        },
+        "priceVnd": 1060000,
+        "costPriceVnd": 763000,
+        "stock": 11
+      },
+      {
+        "sku": "SSD-02-02",
+        "attributes": {
+          "capacity": "1 TB",
+          "interface": "PCIe 4.0 NVMe"
+        },
+        "priceVnd": 1710000,
+        "costPriceVnd": 1231000,
+        "stock": 15
+      }
+    ]
+  },
+  {
+    "slug": "northstar-swift-pro-ssd",
+    "name": "Northstar Swift Pro",
+    "brand": "Northstar",
+    "categorySlug": "ssd",
+    "shortDescription": "Fast, quiet solid-state storage that gives your next project room to grow.",
+    "descriptionLines": [
+      "M.2 2280 NVMe solid-state storage for compatible computer systems.",
+      "PCIe 4.0 demo interface configuration; host support determines link speed.",
+      "Choose 500 GB or 1 TB of storage capacity.",
+      "A compact, cable-free form factor for a tidy desktop or laptop installation.",
+      "Check M.2 slot length and NVMe compatibility before installing.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "storage",
+      "upgrade",
+      "nvme"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/ssd-1.webp",
+        "alt": "Illustrative nvme ssd photograph 1; not the exact Northstar Swift Pro configuration."
+      },
+      {
+        "url": "/media/catalog/ssd-3.webp",
+        "alt": "Illustrative nvme ssd photograph 3; not the exact Northstar Swift Pro configuration."
+      },
+      {
+        "url": "/media/catalog/ssd-2.webp",
+        "alt": "Illustrative nvme ssd photograph 2; not the exact Northstar Swift Pro configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "SSD-03-01",
+        "attributes": {
+          "capacity": "500 GB",
+          "interface": "PCIe 4.0 NVMe"
+        },
+        "priceVnd": 1230000,
+        "costPriceVnd": 885000,
+        "stock": 14
+      },
+      {
+        "sku": "SSD-03-02",
+        "attributes": {
+          "capacity": "1 TB",
+          "interface": "PCIe 4.0 NVMe"
+        },
+        "priceVnd": 1880000,
+        "costPriceVnd": 1353000,
+        "stock": 18
+      }
+    ]
+  },
+  {
+    "slug": "obsidian-archive-s1-ssd",
+    "name": "Obsidian Archive S1",
+    "brand": "Obsidian",
+    "categorySlug": "ssd",
+    "shortDescription": "Fast, quiet solid-state storage that gives your next project room to grow.",
+    "descriptionLines": [
+      "M.2 2280 NVMe solid-state storage for compatible computer systems.",
+      "PCIe 4.0 demo interface configuration; host support determines link speed.",
+      "Choose 500 GB or 1 TB of storage capacity.",
+      "A compact, cable-free form factor for a tidy desktop or laptop installation.",
+      "Check M.2 slot length and NVMe compatibility before installing.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "storage",
+      "upgrade",
+      "nvme"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/ssd-1.webp",
+        "alt": "Illustrative nvme ssd photograph 1; not the exact Obsidian Archive S1 configuration."
+      },
+      {
+        "url": "/media/catalog/ssd-3.webp",
+        "alt": "Illustrative nvme ssd photograph 3; not the exact Obsidian Archive S1 configuration."
+      },
+      {
+        "url": "/media/catalog/ssd-2.webp",
+        "alt": "Illustrative nvme ssd photograph 2; not the exact Obsidian Archive S1 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "SSD-04-01",
+        "attributes": {
+          "capacity": "500 GB",
+          "interface": "PCIe 4.0 NVMe"
+        },
+        "priceVnd": 1400000,
+        "costPriceVnd": 1008000,
+        "stock": 17
+      },
+      {
+        "sku": "SSD-04-02",
+        "attributes": {
+          "capacity": "1 TB",
+          "interface": "PCIe 4.0 NVMe"
+        },
+        "priceVnd": 2050000,
+        "costPriceVnd": 1476000,
+        "stock": 21
+      }
+    ]
+  },
+  {
+    "slug": "forma-archive-s2-ssd",
+    "name": "Forma Archive S2",
+    "brand": "Forma",
+    "categorySlug": "ssd",
+    "shortDescription": "Fast, quiet solid-state storage that gives your next project room to grow.",
+    "descriptionLines": [
+      "M.2 2280 NVMe solid-state storage for compatible computer systems.",
+      "PCIe 4.0 demo interface configuration; host support determines link speed.",
+      "Choose 500 GB or 1 TB of storage capacity.",
+      "A compact, cable-free form factor for a tidy desktop or laptop installation.",
+      "Check M.2 slot length and NVMe compatibility before installing.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "storage",
+      "upgrade",
+      "nvme"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/ssd-1.webp",
+        "alt": "Illustrative nvme ssd photograph 1; not the exact Forma Archive S2 configuration."
+      },
+      {
+        "url": "/media/catalog/ssd-3.webp",
+        "alt": "Illustrative nvme ssd photograph 3; not the exact Forma Archive S2 configuration."
+      },
+      {
+        "url": "/media/catalog/ssd-2.webp",
+        "alt": "Illustrative nvme ssd photograph 2; not the exact Forma Archive S2 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "SSD-05-01",
+        "attributes": {
+          "capacity": "500 GB",
+          "interface": "PCIe 4.0 NVMe"
+        },
+        "priceVnd": 1570000,
+        "costPriceVnd": 1130000,
+        "stock": 20
+      },
+      {
+        "sku": "SSD-05-02",
+        "attributes": {
+          "capacity": "1 TB",
+          "interface": "PCIe 4.0 NVMe"
+        },
+        "priceVnd": 2220000,
+        "costPriceVnd": 1598000,
+        "stock": 24
+      }
+    ]
+  },
+  {
+    "slug": "northstar-creator-s1-ssd",
+    "name": "Northstar Creator S1",
+    "brand": "Northstar",
+    "categorySlug": "ssd",
+    "shortDescription": "Fast, quiet solid-state storage that gives your next project room to grow.",
+    "descriptionLines": [
+      "M.2 2280 NVMe solid-state storage for compatible computer systems.",
+      "PCIe 4.0 demo interface configuration; host support determines link speed.",
+      "Choose 500 GB or 1 TB of storage capacity.",
+      "A compact, cable-free form factor for a tidy desktop or laptop installation.",
+      "Check M.2 slot length and NVMe compatibility before installing.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "storage",
+      "upgrade",
+      "nvme"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/ssd-1.webp",
+        "alt": "Illustrative nvme ssd photograph 1; not the exact Northstar Creator S1 configuration."
+      },
+      {
+        "url": "/media/catalog/ssd-3.webp",
+        "alt": "Illustrative nvme ssd photograph 3; not the exact Northstar Creator S1 configuration."
+      },
+      {
+        "url": "/media/catalog/ssd-2.webp",
+        "alt": "Illustrative nvme ssd photograph 2; not the exact Northstar Creator S1 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "SSD-06-01",
+        "attributes": {
+          "capacity": "500 GB",
+          "interface": "PCIe 4.0 NVMe"
+        },
+        "priceVnd": 1740000,
+        "costPriceVnd": 1252000,
+        "stock": 23
+      },
+      {
+        "sku": "SSD-06-02",
+        "attributes": {
+          "capacity": "1 TB",
+          "interface": "PCIe 4.0 NVMe"
+        },
+        "priceVnd": 2390000,
+        "costPriceVnd": 1720000,
+        "stock": 0
+      }
+    ]
+  },
+  {
+    "slug": "obsidian-creator-s2-ssd",
+    "name": "Obsidian Creator S2",
+    "brand": "Obsidian",
+    "categorySlug": "ssd",
+    "shortDescription": "Fast, quiet solid-state storage that gives your next project room to grow.",
+    "descriptionLines": [
+      "M.2 2280 NVMe solid-state storage for compatible computer systems.",
+      "PCIe 4.0 demo interface configuration; host support determines link speed.",
+      "Choose 500 GB or 1 TB of storage capacity.",
+      "A compact, cable-free form factor for a tidy desktop or laptop installation.",
+      "Check M.2 slot length and NVMe compatibility before installing.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "storage",
+      "upgrade",
+      "nvme"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/ssd-1.webp",
+        "alt": "Illustrative nvme ssd photograph 1; not the exact Obsidian Creator S2 configuration."
+      },
+      {
+        "url": "/media/catalog/ssd-3.webp",
+        "alt": "Illustrative nvme ssd photograph 3; not the exact Obsidian Creator S2 configuration."
+      },
+      {
+        "url": "/media/catalog/ssd-2.webp",
+        "alt": "Illustrative nvme ssd photograph 2; not the exact Obsidian Creator S2 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "SSD-07-01",
+        "attributes": {
+          "capacity": "500 GB",
+          "interface": "PCIe 4.0 NVMe"
+        },
+        "priceVnd": 1910000,
+        "costPriceVnd": 1375000,
+        "stock": 26
+      },
+      {
+        "sku": "SSD-07-02",
+        "attributes": {
+          "capacity": "1 TB",
+          "interface": "PCIe 4.0 NVMe"
+        },
+        "priceVnd": 2560000,
+        "costPriceVnd": 1843000,
+        "stock": 30
+      }
+    ]
+  },
+  {
+    "slug": "forma-velocity-v1-ssd",
+    "name": "Forma Velocity V1",
+    "brand": "Forma",
+    "categorySlug": "ssd",
+    "shortDescription": "Fast, quiet solid-state storage that gives your next project room to grow.",
+    "descriptionLines": [
+      "M.2 2280 NVMe solid-state storage for compatible computer systems.",
+      "PCIe 4.0 demo interface configuration; host support determines link speed.",
+      "Choose 500 GB or 1 TB of storage capacity.",
+      "A compact, cable-free form factor for a tidy desktop or laptop installation.",
+      "Check M.2 slot length and NVMe compatibility before installing.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "storage",
+      "upgrade",
+      "nvme"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/ssd-1.webp",
+        "alt": "Illustrative nvme ssd photograph 1; not the exact Forma Velocity V1 configuration."
+      },
+      {
+        "url": "/media/catalog/ssd-3.webp",
+        "alt": "Illustrative nvme ssd photograph 3; not the exact Forma Velocity V1 configuration."
+      },
+      {
+        "url": "/media/catalog/ssd-2.webp",
+        "alt": "Illustrative nvme ssd photograph 2; not the exact Forma Velocity V1 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "SSD-08-01",
+        "attributes": {
+          "capacity": "500 GB",
+          "interface": "PCIe 4.0 NVMe"
+        },
+        "priceVnd": 2080000,
+        "costPriceVnd": 1497000,
+        "stock": 29
+      },
+      {
+        "sku": "SSD-08-02",
+        "attributes": {
+          "capacity": "1 TB",
+          "interface": "PCIe 4.0 NVMe"
+        },
+        "priceVnd": 2730000,
+        "costPriceVnd": 1965000,
+        "stock": 9
+      }
+    ]
+  },
+  {
+    "slug": "northstar-velocity-v2-ssd",
+    "name": "Northstar Velocity V2",
+    "brand": "Northstar",
+    "categorySlug": "ssd",
+    "shortDescription": "Fast, quiet solid-state storage that gives your next project room to grow.",
+    "descriptionLines": [
+      "M.2 2280 NVMe solid-state storage for compatible computer systems.",
+      "PCIe 4.0 demo interface configuration; host support determines link speed.",
+      "Choose 500 GB or 1 TB of storage capacity.",
+      "A compact, cable-free form factor for a tidy desktop or laptop installation.",
+      "Check M.2 slot length and NVMe compatibility before installing.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "storage",
+      "upgrade",
+      "nvme"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/ssd-1.webp",
+        "alt": "Illustrative nvme ssd photograph 1; not the exact Northstar Velocity V2 configuration."
+      },
+      {
+        "url": "/media/catalog/ssd-3.webp",
+        "alt": "Illustrative nvme ssd photograph 3; not the exact Northstar Velocity V2 configuration."
+      },
+      {
+        "url": "/media/catalog/ssd-2.webp",
+        "alt": "Illustrative nvme ssd photograph 2; not the exact Northstar Velocity V2 configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "SSD-09-01",
+        "attributes": {
+          "capacity": "500 GB",
+          "interface": "PCIe 4.0 NVMe"
+        },
+        "priceVnd": 2250000,
+        "costPriceVnd": 1620000,
+        "stock": 8
+      },
+      {
+        "sku": "SSD-09-02",
+        "attributes": {
+          "capacity": "1 TB",
+          "interface": "PCIe 4.0 NVMe"
+        },
+        "priceVnd": 2900000,
+        "costPriceVnd": 2088000,
+        "stock": 12
+      }
+    ]
+  },
+  {
+    "slug": "obsidian-velocity-pro-ssd",
+    "name": "Obsidian Velocity Pro",
+    "brand": "Obsidian",
+    "categorySlug": "ssd",
+    "shortDescription": "Fast, quiet solid-state storage that gives your next project room to grow.",
+    "descriptionLines": [
+      "M.2 2280 NVMe solid-state storage for compatible computer systems.",
+      "PCIe 4.0 demo interface configuration; host support determines link speed.",
+      "Choose 500 GB or 1 TB of storage capacity.",
+      "A compact, cable-free form factor for a tidy desktop or laptop installation.",
+      "Check M.2 slot length and NVMe compatibility before installing.",
+      "Demo catalog configuration. Photos illustrate this hardware category and do not depict the exact configuration; prices and specifications are sample data."
+    ],
+    "tags": [
+      "computer",
+      "storage",
+      "upgrade",
+      "nvme"
+    ],
+    "images": [
+      {
+        "url": "/media/catalog/ssd-1.webp",
+        "alt": "Illustrative nvme ssd photograph 1; not the exact Obsidian Velocity Pro configuration."
+      },
+      {
+        "url": "/media/catalog/ssd-3.webp",
+        "alt": "Illustrative nvme ssd photograph 3; not the exact Obsidian Velocity Pro configuration."
+      },
+      {
+        "url": "/media/catalog/ssd-2.webp",
+        "alt": "Illustrative nvme ssd photograph 2; not the exact Obsidian Velocity Pro configuration."
+      }
+    ],
+    "variants": [
+      {
+        "sku": "SSD-10-01",
+        "attributes": {
+          "capacity": "500 GB",
+          "interface": "PCIe 4.0 NVMe"
+        },
+        "priceVnd": 2420000,
+        "costPriceVnd": 1742000,
+        "stock": 11
+      },
+      {
+        "sku": "SSD-10-02",
+        "attributes": {
+          "capacity": "1 TB",
+          "interface": "PCIe 4.0 NVMe"
+        },
+        "priceVnd": 3070000,
+        "costPriceVnd": 2210000,
+        "stock": 15
+      }
+    ]
+  }
+]

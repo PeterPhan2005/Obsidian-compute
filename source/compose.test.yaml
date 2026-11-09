@@ -1,0 +1,32 @@
+# Isolated validation stack. Always use -p obsidian-test with this override.
+x-test-env: &test-env
+  DATABASE_URL: postgres://obsidian:local-db-password@postgres:5432/obsidian_test
+  APP_BASE_URL: http://localhost:8081
+  GOOGLE_CLIENT_ID: ""
+  GOOGLE_CLIENT_SECRET: ""
+  ADMIN_EMAIL: admin@obsidian.local
+  ADMIN_PASSWORD: ObsidianAdmin!2026
+services:
+  postgres:
+    environment:
+      POSTGRES_DB: obsidian_test
+    ports: !override
+      - "127.0.0.1:15433:5432"
+  init:
+    environment: *test-env
+  api-a:
+    environment: *test-env
+    ports:
+      - "127.0.0.1:3101:3000"
+  api-b:
+    environment: *test-env
+    ports:
+      - "127.0.0.1:3102:3000"
+  worker:
+    environment: *test-env
+  nginx:
+    ports: !override
+      - "127.0.0.1:8081:80"
+  mailpit:
+    ports: !override
+      - "127.0.0.1:8026:8025"
