@@ -18,5 +18,8 @@ Nodemailer/Mailpit và Nginx. Docker tự migration/seed, có hai API replicas.
 Thanh toán sandbox nội bộ không thu tiền thật. Email được giữ tại Mailpit.
 
 Không đưa source/.env chứa credentials vào gói nộp hoặc Git.
+
 Nhóm cần hoàn thành video demo có lời thuyết minh, Git Insights thật và
 Rubrik.docx do giảng viên cung cấp. Chưa tuyên bố bonus nào hoàn thành. 
+
+
