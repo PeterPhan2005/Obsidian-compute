@@ -87,3 +87,63 @@
 **Vấn đề:** Recharts ẩn tooltip bằng `visibility: hidden` nhưng giữ `transform` theo tọa độ desktop. Khi thu cửa sổ, hộp tooltip đã ẩn vẫn nằm ngoài viewport và làm trang tràn ngang.
 
 **Khắc phục:** Áp dụng `display: none` riêng cho tooltip đang ẩn trong chart để hộp này không còn ảnh hưởng chiều rộng trang. Tooltip đang mở giữ cách định vị, hiển thị giá trị và tương tác chuột, bàn phím.
+
+### 16. ISSUE 01 – Product Save / Checkout Lock Ordering
+
+**Vấn đề:** Lưu sản phẩm từng khóa product rồi chờ variant, còn checkout khóa variant trước và cần khóa khóa ngoại trên product khi ghi order item. Thứ tự này có thể gây deadlock. Chưa có bằng chứng tái hiện deadlock trên baseline.
+
+**Khắc phục:** Lưu sản phẩm dùng `FOR NO KEY UPDATE` trên product và khóa variant theo ID tăng dần, cùng thứ tự với checkout. Kiểm thử đồng thời xác nhận hai luồng giữ đúng tồn kho.
+
+### 17. ISSUE 04 – Google OAuth State & Account Linking
+
+**Vấn đề:** Callback cũ tiêu thụ state trước khi kiểm tra browser binding. Luồng liên kết email bên thứ ba có thể thiếu xác minh phiên chủ tài khoản. Query callback được ghi vào access log.
+
+**Khắc phục:** Kiểm tra binding trước khi tiêu thụ state một lần, giữ PKCE và nonce, tuần tự hóa linking và yêu cầu phiên Customer đã xác minh phù hợp với email bên thứ ba. Tắt access log của callback và đặt `no-referrer`. Hạng mục vẫn PARTIAL cho tới khi xác minh consent và callback thật với Google.
+
+### 18. ISSUE 08 – Rejected Checkout Creating Empty Carts
+
+**Vấn đề:** Checkout thiếu giỏ có thể tạo giỏ rỗng và cấp guest cookie trước khi trả lỗi, phát sinh dữ liệu dù không tạo đơn.
+
+**Khắc phục:** Checkout chỉ tra cứu giỏ sẵn có. Integration test xác nhận request bị từ chối không tăng số bản ghi giỏ và không cấp guest cookie.
+
+### 19. ISSUE 21 – Checkout Quote Consistency
+
+**Vấn đề:** Checkout tính lại từ giỏ hiện hành khi đặt đơn mà không đối chiếu với báo giá đã Review. Đổi giỏ hoặc giá sau Review có thể tạo đơn khác nội dung khách đã xem, kể cả thay variant mà subtotal giữ nguyên.
+
+**Khắc phục:** Frontend giữ snapshot đã Review và khóa idempotency. API đối chiếu fingerprint của giỏ, cấu hình variant, số lượng, giá, coupon, điểm và tổng tiền trong transaction trước khi ghi. Báo giá lệch yêu cầu Review lại. Test xác nhận từ chối không thay đổi dữ liệu nghiệp vụ, retry sau mất phản hồi trả cùng đơn và replay lịch sử còn hoạt động.
+
+### 20. ISSUE 22 – Receipt Token Exposure
+
+**Vấn đề:** Request target và trường Referer có thể đưa receipt token còn hạn vào access log. Token cấp quyền xem thông tin đơn và giao hàng.
+
+**Khắc phục:** Hai lớp Nginx bỏ log request ở route receipt nhạy cảm và chỉ ghi origin của Referer. Link mới dùng fragment, link query cũ vẫn hoạt động, và HTTP/SPA áp dụng `no-referrer`. Test tổng hợp kiểm tra log mới và request đi ra. Log lịch sử được giữ lại và có thể còn chứa token từng được ghi. Không thu hồi token hiện có.
+
+### 21. ISSUE 02 – Inactive Variant Editor
+
+**Vấn đề:** Form sửa sản phẩm hiển thị variant inactive như variant active và tính giới hạn xóa theo toàn bộ dòng, tạo cảm giác có thể xóa vượt ngưỡng hai variant active.
+
+**Khắc phục:** Form chỉ tải các variant active nên điều kiện xóa dựa trên đúng số variant active. Browser test xác nhận ngưỡng hai variant và giữ ID, stock version cùng bản ghi inactive.
+
+### 22. ISSUE 09 – Order Email Subject
+
+**Vấn đề:** Subject email dùng `is confirmed` trong khi trạng thái đơn trong nội dung là `pending`, dễ bị hiểu là Admin đã xác nhận đơn.
+
+**Khắc phục:** Dùng `has been received` để xác nhận đã nhận đơn. Mailpit xác nhận subject mới và nội dung giữ nguyên trạng thái `pending`.
+
+### 23. ISSUE 11 – Docker Compose Filename
+
+**Vấn đề:** File chính có tên `compose.yaml`, khác tên `docker-compose.yml` mà đề bài nêu.
+
+**Khắc phục:** Đổi tên file chính và cập nhật các tham chiếu. Khởi chạy từ `source/` bằng `docker compose up -d` trên project và volume mới đã pass, gồm migration, seed và đăng nhập demo.
+
+### 24. ISSUE 11 – Verification Safety & Test Coverage
+
+**Vấn đề:** Verifier cũ dùng tên project cố định, xóa volume khi chạy lại và bỏ OAuth fixture. README còn số test và lệnh dọn stack cũ.
+
+**Khắc phục:** Verifier tạo project mới, xác minh cổng, project và PostgreSQL trước khi chạy test, tự phát hiện backend suite, chạy OAuth fixture và Playwright, rồi dừng đúng project và giữ volume. README hướng dẫn `npm run verify` từ `source/` với Docker Engine local và cổng trống, thêm `-- --api-only` khi chỉ chạy backend. Lượt xác minh cuối pass 54/54.
+
+### 25. ISSUE 11 – Test Artifact Overwriting
+
+**Vấn đề:** Một số Playwright spec ghi ảnh thẳng vào `docs/evidence/`, nên một lượt test có thể ghi đè ảnh demo trong Git.
+
+**Khắc phục:** Dùng `testInfo.outputPath` cho ảnh tạo trong test, ghi artifact và báo cáo HTML vào thư mục riêng theo project. Lượt verify cuối giữ nguyên ảnh demo tracked.
