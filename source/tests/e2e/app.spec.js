@@ -129,6 +129,17 @@ test("Guest checkout preserves stock when Admin saves an already open product fo
   await page.getByLabel("District", { exact: true }).fill("District 1");
   await page.getByLabel("City", { exact: true }).fill("Ho Chi Minh City");
   await page.getByRole("button", { name: "Continue to payment" }).click();
+  const payment = page.getByLabel("Test payment code");
+  const review = page.getByRole("button", { name: "Review order" });
+  await expect(review).toBeDisabled();
+  await payment.fill("WRONG-CODE");
+  await expect(review).toBeDisabled();
+  await payment.fill("DEMO-DECLINE");
+  await review.click();
+  await page.getByRole("button", { name: "Place order & pay" }).click();
+  await expect(page.getByText(/Sandbox payment declined/)).toBeVisible();
+  await page.getByRole("button", { name: "Back", exact: true }).click();
+  await payment.fill("DEMO-APPROVE");
   await page.getByLabel("Discount code", { exact: true }).fill("ZZ999");
   await page.getByRole("button", { name: "Apply", exact: true }).click();
   await expect(page.getByText("Code not found.")).toBeVisible();

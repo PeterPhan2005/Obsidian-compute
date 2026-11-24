@@ -46,7 +46,8 @@ Each code has one store-wide usage limit. A maximum of one code per order.
 PAYMENT AND LOYALTY
 -------------------
 Checkout uses an internal sandbox, not a third-party bank or payment gateway.
-Choose Successful payment or Declined payment (test). No real card data is used.
+Enter DEMO-APPROVE or DEMO-DECLINE in the test payment field, then review and
+place the order. Use only synthetic codes. Never enter real card details.
 An order is created only after sandbox success in the same database transaction
 as stock, coupon usage, points and email-outbox writes. Failed payment leaves
 those records unchanged. Idempotency keys protect repeated order submissions.
@@ -61,20 +62,43 @@ Fresh demo seed gives Sam one historical 1,000,000 VND order and 100 points.
 
 GOOGLE SIGN-IN
 --------------
-Google OIDC is implemented with state, browser binding, nonce, PKCE, verified ID
-tokens and verified-email linking. Configure the following in source/.env:
+Google OIDC uses state, browser binding, nonce, PKCE and signed ID tokens.
+Configure the following in source/.env:
 
     GOOGLE_CLIENT_ID=...
     GOOGLE_CLIENT_SECRET=...
     GOOGLE_CALLBACK_URL=http://localhost:8080/api/v1/auth/google/callback
 
-Use a Web application OAuth client and register that exact callback URI.
+Use a Web application OAuth client and register the exact callback URI.
+For a different public origin set APP_BASE_URL and register that origin's
+/api/v1/auth/google/callback. GOOGLE_CALLBACK_URL can be omitted to derive it
+from APP_BASE_URL.
 The detailed guide is ../docs/GOOGLE_OAUTH_SETUP.md.
 After setting credentials, run docker compose up -d.
 The frontend never receives the client secret. .env is excluded from Git and
 Docker build contexts. The core website boots without Google credentials;
 Google sign-in explains that it is unavailable in that case.
 The final real Google account consent/callback must be verified in a browser.
+
+EMAIL DELIVERY
+--------------
+By default the worker delivers to Mailpit at http://localhost:8025. To use an
+approved external SMTP provider, set the following in source/.env:
+
+    SMTP_HOST=your-provider-hostname
+    SMTP_PORT=587
+    SMTP_SECURE=false
+    SMTP_USER=your-smtp-user
+    SMTP_PASSWORD=your-smtp-password
+    MAIL_FROM=your-provider-approved-sender
+
+Use SMTP_PORT=465 and SMTP_SECURE=true if the provider requires implicit TLS.
+The worker requires STARTTLS for external SMTP when SMTP_SECURE=false.
+Set both authentication variables when the provider requires credentials.
+Set APP_BASE_URL to the URL recipients can reach for password reset links.
+Run docker compose up -d after editing the file. The worker sends to recipients
+in the outbox, including messages pending before a configuration change. Use an
+isolated, clean queue and an approved test inbox to check external delivery.
 
 FEATURES
 --------

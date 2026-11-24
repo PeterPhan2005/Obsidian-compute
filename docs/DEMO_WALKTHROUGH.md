@@ -5,7 +5,7 @@ Chuẩn bị: chạy Compose, mở website và Mailpit, dùng hai cửa sổ bro
 1. **Home (1 phút):** giới thiệu OBSIDIAN COMPUTE; chỉ máy tính/linh kiện. New Products, Best Sellers và ba danh mục. Chuyển trang ngay trong một section.
 2. **Catalog/detail (1–2 phút):** keyword search, brand + khoảng giá + category/rating, bốn sort tên/giá, pagination. Mở một sản phẩm, ba ảnh, mô tả, hai variants và stock/giá khác nhau.
 3. **Comments/realtime (1 phút):** guest comment ở cửa sổ A, cửa sổ B cập nhật không reload. Đăng nhập customer đánh giá sao; guest không rate được.
-4. **Guest checkout (2 phút):** tăng/giảm/xóa giỏ không reload. Nhập người nhận, code `ZZ999` không hợp lệ, `HELLO` hợp lệ và hiện số giảm. Thử declined payment trước, sau đó success. Mở receipt và Mailpit confirmation.
+4. **Guest checkout (2 phút):** tăng/giảm/xóa giỏ không reload. Nhập người nhận, code `ZZ999` không hợp lệ, `HELLO` hợp lệ và hiện số giảm. Nhập `DEMO-DECLINE` để thử thanh toán bị từ chối, sau đó `DEMO-APPROVE` để hoàn tất. Mở receipt và Mailpit confirmation.
 5. **Identity/account (1–2 phút):** đăng nhập chính email guest bằng OTP từ Mailpit, xem đơn trước đó. Profile, hai địa chỉ/default, đặt/đổi mật khẩu và reset. Minh họa Continue with Google bằng tài khoản thật.
 6. **Loyalty (1 phút):** xem points ledger, đặt đơn tiếp dùng điểm; nêu 1 điểm =1.000đ, tích floor(total paid/10.000), không dùng điểm mới trong chính đơn đó.
 7. **Admin (2 phút):** `admin@obsidian.local`, product/edit/upload/stock, category scope, customer ban/unban, orders newest-first/20 per page/date filters, detail và next status, coupon create với max 10/no expiry.

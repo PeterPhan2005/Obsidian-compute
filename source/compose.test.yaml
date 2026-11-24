@@ -4,6 +4,7 @@ x-test-env: &test-env
   APP_BASE_URL: http://localhost:8081
   GOOGLE_CLIENT_ID: ""
   GOOGLE_CLIENT_SECRET: ""
+  GOOGLE_CALLBACK_URL: ""
   ADMIN_EMAIL: admin@obsidian.local
   ADMIN_PASSWORD: ObsidianAdmin!2026
 services:
@@ -23,7 +24,14 @@ services:
     ports:
       - "127.0.0.1:3102:3000"
   worker:
-    environment: *test-env
+    environment:
+      <<: *test-env
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
+      SMTP_SECURE: "false"
+      SMTP_USER: ""
+      SMTP_PASSWORD: ""
+      MAIL_FROM: ""
   nginx:
     ports: !override
       - "127.0.0.1:8081:80"

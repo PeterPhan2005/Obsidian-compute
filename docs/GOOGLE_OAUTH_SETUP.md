@@ -1,6 +1,6 @@
 # Google OAuth setup — OBSIDIAN COMPUTE
 
-Hướng dẫn chuẩn bị credentials cho Google OIDC, đối chiếu tài liệu Google ngày 2026-11-08. Backend chưa được xây dựng: tạo credentials được ngay, thử login sau khi ứng dụng chạy.
+Hướng dẫn cấu hình Google OIDC cho backend trong Docker Compose và kiểm chứng luồng đăng nhập với Google.
 
 ## 1. Tạo project và cấu hình ứng dụng
 
@@ -33,9 +33,9 @@ Tạo client, lưu **Client ID** và **Client secret** ở nơi riêng của nh�
 
 Nguồn: [Google web-server OAuth guide](https://developers.google.com/identity/protocols/oauth2/web-server).
 
-## 3. Cấu hình dự án khi có ứng dụng
+## 3. Cấu hình dự án
 
-File dự kiến: `source/.env`, nằm cạnh `source/compose.yaml`. File này chưa tồn tại và không được commit. `.env.example` chỉ chứa placeholder.
+Tạo `source/.env` cạnh `source/compose.yaml` từ `.env.example`. Giữ file này cục bộ.
 
 ```dotenv
 APP_BASE_URL=http://localhost:8080
@@ -44,7 +44,9 @@ GOOGLE_CLIENT_SECRET=your-client-secret
 GOOGLE_CALLBACK_URL=http://localhost:8080/api/v1/auth/google/callback
 ```
 
-Compose phải truyền ba biến GOOGLE vào **cả api-a và api-b**. Sau khi đổi file `.env`, áp dụng bằng `docker compose up -d` từ thư mục `source/`; `restart` đơn thuần không nạp lại environment container. Bản nộp vẫn khởi động được với Google credentials trống; nút login Google phải giải thích chưa cấu hình, không giả báo đăng nhập thành công.
+Compose áp dụng cấu hình cho cả **api-a** và **api-b**. Chạy `docker compose up -d` từ thư mục `source/` để nạp environment mới. Khi thiếu credentials hoặc callback không hợp lệ, trang đăng nhập báo Google sign-in chưa khả dụng.
+
+Có thể bỏ `GOOGLE_CALLBACK_URL` để dùng origin của `APP_BASE_URL` với đường dẫn `/api/v1/auth/google/callback`. Nếu đặt trực tiếp, dùng cùng scheme, host và port với `APP_BASE_URL` và đúng đường dẫn trên. Với deployment công khai, dùng HTTPS trên cả hai URL.
 
 Mailpit không tham gia xác thực Google. Mailpit sẽ nhận OTP, password reset và email đơn hàng của ứng dụng ở `http://localhost:8025`.
 
@@ -54,7 +56,7 @@ Mailpit không tham gia xác thực Google. Mailpit sẽ nhận OTP, password re
 2. Chọn tài khoản thử nghiệm, hoàn tất màn hình Google nếu có, quay về đúng origin của ứng dụng.
 3. Kiểm tra đã tạo CUSTOMER, email đã được xác minh và tài khoản thiếu địa chỉ được hướng dẫn bổ sung địa chỉ.
 4. Logout, đăng nhập lại, kiểm tra không tạo trùng user.
-5. Thử với email đã có tài khoản trong ứng dụng; chỉ liên kết khi backend xác thực ID token, `email_verified`, subject, issuer, audience và nonce hợp lệ. Không dựa vào email do browser tự gửi.
+5. Thử với email đã có tài khoản trong ứng dụng. Backend dùng Google subject để nhận diện tài khoản. Với Gmail và Google Workspace, backend có thể liên kết khi Google xác minh email. Với email bên thứ ba, đăng ký hoặc đăng nhập bằng mã email để xác minh tài khoản Customer tương ứng, sau đó mở lại `/login` trong cùng trình duyệt và chọn **Continue with Google**.
 6. Kiểm tra callback vẫn hoạt động khi request bắt đầu ở replica A và kết thúc ở B: state/nonce/PKCE phải có cách xác minh dùng chung giữa các replica.
 
 Không yêu cầu Google offline access/refresh token cho mục đích chỉ đăng nhập; phiên ứng dụng do hệ thống quản lý riêng.

@@ -1,13 +1,24 @@
 import nodemailer from "nodemailer";
 import { db } from "../backend/src/db.js";
 import { escapeHtml } from "../backend/src/lib.js";
+const smtpHost = process.env.SMTP_HOST || "localhost";
+const smtpSecure = process.env.SMTP_SECURE === "true";
+const smtpUser = process.env.SMTP_USER;
+const smtpPassword = process.env.SMTP_PASSWORD;
+const localSmtp = smtpHost === "mailpit" || smtpHost === "localhost";
+const mailFrom = process.env.MAIL_FROM;
+if (Boolean(smtpUser) !== Boolean(smtpPassword)) {
+  throw new Error("Set both SMTP_USER and SMTP_PASSWORD for SMTP authentication.");
+}
+if (!localSmtp && !mailFrom) {
+  throw new Error("Set MAIL_FROM to an approved sender for external SMTP.");
+}
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || "localhost",
+  host: smtpHost,
   port: Number(process.env.SMTP_PORT || 1025),
-  secure: false,
-  ...(process.env.SMTP_USER
-    ? { auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASSWORD } }
-    : {}),
+  secure: smtpSecure,
+  requireTLS: !smtpSecure && (!localSmtp || Boolean(smtpUser)),
+  ...(smtpUser ? { auth: { user: smtpUser, pass: smtpPassword } } : {}),
 });
 const money = (n) => `${Number(n).toLocaleString("en-US")} VND`;
 function orderMail(o) {
@@ -42,8 +53,7 @@ while (running) {
         const p = job.payload,
           text = p.order ? orderMail(p.order) : p.text;
         await transporter.sendMail({
-          from:
-            process.env.MAIL_FROM || "Obsidian Compute <orders@obsidian.local>",
+          from: mailFrom || "Obsidian Compute <orders@obsidian.local>",
           to: p.to,
           subject: p.order
             ? `Your order ${p.order.orderNumber} is confirmed`

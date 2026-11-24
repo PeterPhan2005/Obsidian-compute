@@ -1,6 +1,6 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { setTimeout as delay } from "node:timers/promises";
 import { db } from "../src/db.js";
 const BASE = process.env.TEST_BASE_URL || "http://localhost:8081";
@@ -62,7 +62,7 @@ function purchase(email, extra = {}) {
     buyer: { email, fullName: "Integration Customer" },
     shippingAddress: shipping,
     paymentMethod: "DEMO",
-    demoPaymentOutcome: "success",
+    demoPaymentToken: "DEMO-APPROVE",
     ...extra,
   };
 }
@@ -208,7 +208,7 @@ test("Guest comments and authenticated ratings persist without purchase requirem
     .first();
   assert.equal(Number(count), 1);
 });
-test("Cart mutation and payment failure preserve stock/coupon/points; invalid coupon preview is explicit", async () => {
+test("Missing, legacy-only, mixed, invalid and declined payments leave checkout data intact", async () => {
   const c = new Client();
   await add(c);
   const bad = await c.request("/checkout/quote", "POST", {
@@ -216,20 +216,62 @@ test("Cart mutation and payment failure preserve stock/coupon/points; invalid co
   });
   assert.equal(bad.status, 200);
   assert.equal(bad.body.data.coupon.valid, false);
-  const before = await db("product_variants").where({ id: variant.id }).first();
+  const email = `failure-${randomUUID()}@example.com`;
+  const body = purchase(email, {
+    couponCode: "HELLO",
+    demoPaymentToken: undefined,
+  });
+  const snapshot = () =>
+    Promise.all([
+      db("product_variants")
+        .where({ id: variant.id })
+        .first("stock", "stock_version"),
+      db("coupons").where({ code: "HELLO" }).first("used_count"),
+      ...["carts", "loyalty_ledger", "email_outbox"].map((table) =>
+        db(table).count().first(),
+      ),
+    ]);
+  const before = await snapshot();
+  const cartBefore = (await c.request("/cart")).body.data;
+  const key = randomUUID();
+  const cases = [
+    [{}, "PAYMENT_TOKEN_REQUIRED"],
+    [{ demoPaymentOutcome: "success" }, "PAYMENT_TOKEN_REQUIRED"],
+    [{ demoPaymentToken: "invalid" }, "VALIDATION_ERROR"],
+    [
+      { demoPaymentToken: "DEMO-DECLINE", demoPaymentOutcome: "success" },
+      "VALIDATION_ERROR",
+    ],
+  ];
+  for (const [payment, code] of cases) {
+    const result = await submit(c, { ...body, ...payment }, key);
+    assert.equal(result.status, 400, JSON.stringify(result.body));
+    assert.equal(result.body.error.code, code);
+  }
+  const withoutCart = new Client();
+  const missing = await submit(withoutCart, body);
+  assert.equal(missing.status, 400);
+  assert.equal(missing.body.error.code, "PAYMENT_TOKEN_REQUIRED");
+  assert.equal(withoutCart.cookies.has("guest_cart"), false);
   const result = await submit(
     c,
-    purchase(`failure-${randomUUID()}@example.com`, {
-      couponCode: "HELLO",
-      demoPaymentOutcome: "failure",
-    }),
+    { ...body, demoPaymentToken: "DEMO-DECLINE" },
+    key,
   );
   assert.equal(result.status, 402);
+  assert.equal(result.body.error.code, "PAYMENT_FAILED");
+  assert.deepEqual(await snapshot(), before);
+  assert.equal(await db("users").where({ email }).first(), undefined);
   assert.equal(
-    (await db("product_variants").where({ id: variant.id }).first()).stock,
-    before.stock,
+    await db("orders").where({ buyer_email: email }).first(),
+    undefined,
   );
-  assert.equal((await c.request("/cart")).body.data.items.length, 1);
+  assert.equal(
+    await db("payment_attempts").where({ checkout_key: key }).first(),
+    undefined,
+  );
+  assert.equal(await db("checkout_idempotency").where({ key }).first(), undefined);
+  assert.deepEqual((await c.request("/cart")).body.data, cartBefore);
   assert.equal(
     (await c.request("/checkout/quote", "POST", { pointsToRedeem: 1 })).status,
     422,
@@ -249,8 +291,17 @@ test("Concurrent identical guest checkout creates one order, one coupon use, one
   const c = new Client();
   await add(c);
   const email = `guest-${randomUUID()}@example.com`,
-    key = randomUUID(),
-    body = purchase(email, { couponCode: "HELLO" });
+    key = randomUUID();
+  const body = purchase(email, { couponCode: "HELLO" });
+  // Use the baseline schema's parsed field order and defaults for the stored hash.
+  const legacy = {
+    buyer: { fullName: body.buyer.fullName, email },
+    shippingAddress: shipping,
+    couponCode: "HELLO",
+    pointsToRedeem: 0,
+    paymentMethod: "DEMO",
+    demoPaymentOutcome: "success",
+  };
   const before = await db("coupons").where({ code: "HELLO" }).first();
   const results = await Promise.all([
     submit(c, body, key),
@@ -259,6 +310,35 @@ test("Concurrent identical guest checkout creates one order, one coupon use, one
   for (const r of results) assert.equal(r.status, 201, JSON.stringify(r.body));
   assert.equal(results[0].body.data.order.id, results[1].body.data.order.id);
   const { order, receiptToken } = results[0].body.data;
+  const historicalHash = createHash("sha256")
+    .update(JSON.stringify(legacy))
+    .digest("hex");
+  const stored = await db("checkout_idempotency").where({ key }).first();
+  assert.equal(stored.request_hash, historicalHash);
+  for (const outcome of ["success", undefined]) {
+    const legacyRetry = await submit(
+      c,
+      { ...legacy, demoPaymentOutcome: outcome },
+      key,
+    );
+    assert.equal(legacyRetry.status, 201);
+    assert.equal(legacyRetry.body.data.order.id, order.id);
+    assert.equal(legacyRetry.body.data.receiptToken, receiptToken);
+  }
+  const wrongCart = new Client();
+  await wrongCart.request("/cart");
+  const conflict = await submit(wrongCart, legacy, key);
+  assert.equal(conflict.status, 409);
+  assert.equal(conflict.body.error.code, "IDEMPOTENCY_CONFLICT");
+  assert.equal(
+    (await submit(c, { ...legacy, pointsToRedeem: 1 }, key)).status,
+    409,
+  );
+  assert.equal(
+    (await submit(c, { ...body, demoPaymentToken: "DEMO-DECLINE" }, key))
+      .status,
+    409,
+  );
   assert.equal(
     (await db("email_outbox").where({ order_id: order.id }).count().first())
       .count,
@@ -926,12 +1006,22 @@ test("Loyalty redemption and zero-amount payments reconcile exactly with the led
   for (const i of cart.items) await c.request(`/cart/items/${i.id}`, "DELETE");
   await add(c);
   const before = (await c.request("/me")).body.data;
-  const r = await submit(c, {
+  const order = {
     shippingAddress: shipping,
     paymentMethod: "DEMO",
-    demoPaymentOutcome: "success",
     couponCode: "ALLIN",
     pointsToRedeem: 30,
+  };
+  const missing = await submit(c, order);
+  assert.equal(missing.status, 400);
+  assert.equal(missing.body.error.code, "PAYMENT_TOKEN_REQUIRED");
+  assert.equal(
+    (await c.request("/me")).body.data.pointsBalance,
+    before.pointsBalance,
+  );
+  const r = await submit(c, {
+    ...order,
+    demoPaymentToken: "DEMO-APPROVE",
   });
   assert.equal(r.status, 201, JSON.stringify(r.body));
   assert.equal(r.body.data.order.totalPaidVnd, 0);
@@ -947,7 +1037,7 @@ test("Loyalty redemption and zero-amount payments reconcile exactly with the led
   const body = {
     shippingAddress: shipping,
     paymentMethod: "DEMO",
-    demoPaymentOutcome: "success",
+    demoPaymentToken: "DEMO-APPROVE",
     pointsToRedeem: 1,
   };
   const results = await Promise.all([submit(c, body), submit(c, body)]);

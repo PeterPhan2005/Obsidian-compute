@@ -26,6 +26,74 @@ import {
 import { mergeGuestCart } from "./cart-service.js";
 const jwtKey = new TextEncoder().encode(secret);
 const password = z.string().min(10).max(128);
+const googleCallbackPath = "/api/v1/auth/google/callback";
+const googleTimeoutMs = 10_000;
+const oauthTokenPattern = /^[A-Za-z0-9_-]{43}$/;
+const googleClaims = z.object({
+  sub: z.string().regex(/^[\x21-\x7e]{1,255}$/),
+  email,
+  email_verified: z.literal(true),
+  nonce: z.string().regex(oauthTokenPattern),
+  name: z.string().optional(),
+  hd: z.string().optional(),
+});
+
+function googleConfig() {
+  const clientId = process.env.GOOGLE_CLIENT_ID?.trim();
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim();
+  if (!clientId || !clientSecret) return null;
+  const expectedCallback = new URL(googleCallbackPath, baseUrl).href;
+  const redirectUri = process.env.GOOGLE_CALLBACK_URL?.trim() || expectedCallback;
+  if (redirectUri !== expectedCallback) return null;
+  return {
+    clientId,
+    clientSecret,
+    redirectUri,
+    client: new OAuth2Client({
+      clientId,
+      transporterOptions: { timeout: googleTimeoutMs },
+    }),
+  };
+}
+
+async function googleIdentity(google, code, verifier, nonce) {
+  let payload;
+  try {
+    const response = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      signal: AbortSignal.timeout(googleTimeoutMs),
+      body: new URLSearchParams({
+        code,
+        client_id: google.clientId,
+        client_secret: google.clientSecret,
+        redirect_uri: google.redirectUri,
+        grant_type: "authorization_code",
+        code_verifier: verifier,
+      }),
+    });
+    if (response.ok) {
+      const { id_token: idToken } = await response.json();
+      if (typeof idToken === "string" && idToken) {
+        const ticket = await google.client.verifyIdToken({
+          idToken,
+          audience: google.clientId,
+        });
+        payload = ticket.getPayload();
+      }
+    }
+  } catch {
+    // Provider errors can include token data. Return a generic response.
+  }
+  check(payload, 401, "OAUTH_FAILED", "Google could not verify this sign-in.");
+  const claims = googleClaims.safeParse(payload);
+  check(
+    claims.success && equal(claims.data.nonce, nonce),
+    401,
+    "OAUTH_IDENTITY",
+    "Google identity or sign-in session is invalid.",
+  );
+  return claims.data;
+}
 export async function self(user) {
   const address = await db("addresses")
     .where({ user_id: user.id, is_default: true })
@@ -129,16 +197,20 @@ async function setCookies(res, user, session, refresh) {
     maxAge: 14 * 86400000,
   });
 }
-async function signIn(req, res, user) {
+async function createSession(user, client = db) {
   check(!user.is_banned, 403, "BANNED", "This account is suspended.");
   const refresh = token();
-  const [session] = await db("refresh_sessions")
+  const [session] = await client("refresh_sessions")
     .insert({
       user_id: user.id,
       token_hash: hash(refresh),
       expires_at: new Date(Date.now() + 14 * 86400000),
     })
     .returning("*");
+  return { session, refresh };
+}
+async function signIn(req, res, user, credentials) {
+  const { session, refresh } = credentials ?? (await createSession(user));
   await setCookies(res, user, session, refresh);
   await mergeGuestCart(req, res, user);
   return self(user);
@@ -190,6 +262,7 @@ async function sendOtp(user, tx = db) {
 }
 export function authRoutes(redis, limiter) {
   const router = Router();
+  const google = googleConfig();
   router.get("/auth/csrf", (req, res) => {
     const raw = token();
     const csrfToken = `${raw}.${keyedHash(raw)}`;
@@ -200,9 +273,7 @@ export function authRoutes(redis, limiter) {
     ok(res, {
       user: req.user && !req.user.is_banned ? await self(req.user) : null,
       refreshAvailable: !req.user && !!req.cookies.refresh_token,
-      googleEnabled: !!(
-        process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
-      ),
+      googleEnabled: !!google,
     }),
   );
   router.post("/auth/register", limiter("auth", 20, 60), async (req, res) => {
@@ -212,6 +283,7 @@ export function authRoutes(redis, limiter) {
       .strict()
       .parse(req.body);
     const user = await db.transaction(async (tx) => {
+      await tx.raw("SELECT pg_advisory_xact_lock(hashtext(?))", [body.email]);
       const exists = await tx("users").where({ email: body.email }).first();
       check(
         !exists,
@@ -455,9 +527,9 @@ export function authRoutes(redis, limiter) {
       res.status(204).end();
     },
   );
-  router.get("/auth/google/start", async (req, res) => {
+  router.get("/auth/google/start", limiter("google-start", 20, 60), async (req, res) => {
     check(
-      process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET,
+      google,
       503,
       "GOOGLE_NOT_CONFIGURED",
       "Google sign-in is not configured yet.",
@@ -479,10 +551,8 @@ export function authRoutes(redis, limiter) {
     );
     res.cookie("oauth_binding", binding, { ...cookieOptions, maxAge: 600000 });
     const params = new URLSearchParams({
-      client_id: process.env.GOOGLE_CLIENT_ID,
-      redirect_uri:
-        process.env.GOOGLE_CALLBACK_URL ||
-        `${baseUrl}/api/v1/auth/google/callback`,
+      client_id: google.clientId,
+      redirect_uri: google.redirectUri,
       response_type: "code",
       scope: "openid email profile",
       state,
@@ -492,69 +562,65 @@ export function authRoutes(redis, limiter) {
     });
     res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`);
   });
-  router.get("/auth/google/callback", async (req, res) => {
+  router.get("/auth/google/callback", limiter("google-callback", 30, 60), async (req, res) => {
     check(
-      typeof req.query.state === "string" && typeof req.query.code === "string",
+      typeof req.query.state === "string" &&
+        typeof req.query.code === "string" &&
+        req.query.code.length > 0,
       400,
       "OAUTH_FAILED",
       "Google sign-in was cancelled or invalid.",
     );
-    const raw = await redis.getdel(`oauth:${req.query.state}`);
+    const binding = req.cookies.oauth_binding;
     check(
-      raw && req.cookies.oauth_binding,
+      oauthTokenPattern.test(req.query.state) && typeof binding === "string",
+      401,
+      "OAUTH_STATE",
+      "Google sign-in expired. Please try again.",
+    );
+    const key = `oauth:${req.query.state}`;
+    const raw = await redis.get(key);
+    check(
+      raw,
       401,
       "OAUTH_STATE",
       "Google sign-in expired. Please try again.",
     );
     const state = JSON.parse(raw);
     check(
-      equal(state.binding, hash(req.cookies.oauth_binding)),
+      equal(state.binding, hash(binding)) && (await redis.getdel(key)),
       401,
       "OAUTH_STATE",
       "Google sign-in session does not match.",
     );
-    const response = await fetch("https://oauth2.googleapis.com/token", {
-      method: "POST",
-      body: new URLSearchParams({
-        code: req.query.code,
-        client_id: process.env.GOOGLE_CLIENT_ID,
-        client_secret: process.env.GOOGLE_CLIENT_SECRET,
-        redirect_uri:
-          process.env.GOOGLE_CALLBACK_URL ||
-          `${baseUrl}/api/v1/auth/google/callback`,
-        grant_type: "authorization_code",
-        code_verifier: state.verifier,
-      }),
-    });
+    res.clearCookie("oauth_binding", cookieOptions);
     check(
-      response.ok,
-      401,
-      "OAUTH_FAILED",
-      "Google could not verify this sign-in.",
+      google,
+      503,
+      "GOOGLE_NOT_CONFIGURED",
+      "Google sign-in is not configured yet.",
     );
-    const tokens = await response.json();
-    const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-    const ticket = await client.verifyIdToken({
-      idToken: tokens.id_token,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
-    const p = ticket.getPayload();
-    check(
-      p.email_verified && p.nonce === state.nonce,
-      401,
-      "OAUTH_IDENTITY",
-      "Google email is not verified.",
+    const profile = await googleIdentity(
+      google,
+      req.query.code,
+      state.verifier,
+      state.nonce,
     );
-    const u = await db.transaction(async (tx) => {
+    const { user, credentials } = await db.transaction(async (tx) => {
+      await tx.raw(
+        "SELECT pg_advisory_xact_lock(hashtext('google-auth-subject'), hashtext(?))",
+        [profile.sub],
+      );
       const identity = await tx("auth_identities")
-        .where({ provider: "google", provider_subject: p.sub })
+        .where({ provider: "google", provider_subject: profile.sub })
         .first();
-      if (identity) return tx("users").where({ id: identity.user_id }).first();
-      await tx.raw("SELECT pg_advisory_xact_lock(hashtext(?))", [
-        p.email.toLowerCase(),
-      ]);
+      if (!identity)
+        await tx.raw("SELECT pg_advisory_xact_lock(hashtext(?))", [
+          profile.email,
+        ]);
       let user = await tx("users")
-        .where({ email: p.email.toLowerCase() })
+        .where(identity ? { id: identity.user_id } : { email: profile.email })
+        .forUpdate()
         .first();
       check(
         !user || user.role === "CUSTOMER",
@@ -562,29 +628,61 @@ export function authRoutes(redis, limiter) {
         "CUSTOMER_REQUIRED",
         "Use the administrator password to sign in.",
       );
-      if (!user)
-        [user] = await tx("users")
-          .insert({
-            email: p.email.toLowerCase(),
-            full_name: p.name || p.email,
-            email_verified: true,
-          })
-          .returning("*");
-      else
-        [user] = await tx("users")
-          .where({ id: user.id })
-          .update({ email_verified: true })
-          .returning("*");
-      await tx("auth_identities").insert({
-        user_id: user.id,
-        provider: "google",
-        provider_subject: p.sub,
-      });
-      return user;
+      check(!user?.is_banned, 403, "BANNED", "This account is suspended.");
+      if (!identity) {
+        const otherIdentity =
+          user &&
+          (await tx("auth_identities")
+            .where({ user_id: user.id, provider: "google" })
+            .first());
+        check(
+          !otherIdentity,
+          409,
+          "GOOGLE_ALREADY_LINKED",
+          "Sign in with the Google account already linked or use an email code.",
+        );
+        const authoritativeEmail =
+          profile.email.endsWith("@gmail.com") || !!profile.hd;
+        if (!authoritativeEmail) {
+          const session =
+            user?.email_verified && user.id === req.user?.id && req.session
+              ? await tx("refresh_sessions")
+                  .where({ id: req.session.id, user_id: user.id })
+                  .whereNull("revoked_at")
+                  .where("expires_at", ">", new Date())
+                  .forUpdate()
+                  .first("id")
+              : null;
+          check(
+            session,
+            403,
+            "GOOGLE_EMAIL_PROOF_REQUIRED",
+            "Sign in with an email code for this address before linking Google. Register first if you do not have an account.",
+          );
+        }
+        if (!user)
+          [user] = await tx("users")
+            .insert({
+              email: profile.email,
+              full_name: profile.name?.trim().slice(0, 120) || profile.email,
+              email_verified: true,
+            })
+            .returning("*");
+        else if (!user.email_verified)
+          [user] = await tx("users")
+            .where({ id: user.id })
+            .update({ email_verified: true })
+            .returning("*");
+        await tx("auth_identities").insert({
+          user_id: user.id,
+          provider: "google",
+          provider_subject: profile.sub,
+        });
+      }
+      return { user, credentials: await createSession(user, tx) };
     });
-    await signIn(req, res, u);
-    res.clearCookie("oauth_binding", cookieOptions);
-    const hasAddress = await db("addresses").where({ user_id: u.id }).first();
+    await signIn(req, res, user, credentials);
+    const hasAddress = await db("addresses").where({ user_id: user.id }).first();
     res.redirect(hasAddress ? state.returnTo : "/account/addresses?welcome=1");
   });
   router.get("/me", requireCustomer, async (req, res) =>

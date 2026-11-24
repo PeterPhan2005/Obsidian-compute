@@ -97,11 +97,16 @@ const orderSchema = z
     couponCode: couponInput,
     pointsToRedeem: z.number().int().min(0).default(0),
     paymentMethod: z.literal("DEMO"),
-    demoPaymentOutcome: z.enum(["success", "failure"]).default("success"),
+    demoPaymentOutcome: z.enum(["success", "failure"]).optional(),
+    demoPaymentToken: z.enum(["DEMO-APPROVE", "DEMO-DECLINE"]).optional(),
   })
   .strict()
   .refine((b) => !!b.shippingAddress !== !!b.addressId, {
     message: "Choose exactly one shipping address.",
+  })
+  .refine((b) => !(b.demoPaymentToken && b.demoPaymentOutcome), {
+    path: ["demoPaymentToken"],
+    message: "Choose one sandbox payment input.",
   });
 async function couponQuote(code, conn = db) {
   if (!code) return null;
@@ -241,21 +246,32 @@ export function shopRoutes(limiter) {
         "PAYMENT_UNAVAILABLE",
         "Sandbox payments are disabled.",
       );
-      const b = orderSchema.parse(req.body),
-        key = id.parse(req.get("Idempotency-Key"));
-      const cart = await resolveCart(req, res);
-      const requestHash = hash(JSON.stringify(b));
+      const { demoPaymentToken, demoPaymentOutcome, ...b } =
+        orderSchema.parse(req.body);
+      const key = id.parse(req.get("Idempotency-Key"));
+      const cart = await resolveCart(req, res, { create: false });
+      const paymentApproved = demoPaymentToken === "DEMO-APPROVE";
+      const tokenOutcome = paymentApproved ? "success" : "failure";
+      // Keep the historical hash shape and default for completed checkout replays.
+      const requestHash = hash(
+        JSON.stringify({
+          ...b,
+          demoPaymentOutcome: demoPaymentToken
+            ? tokenOutcome
+            : (demoPaymentOutcome ?? "success"),
+        }),
+      );
       const result = await db.transaction(async (tx) => {
         await tx.raw("SELECT pg_advisory_xact_lock(hashtext(?))", [
           `checkout:${key}`,
         ]);
-        await tx("carts").where({ id: cart.id }).forUpdate().first();
+        if (cart) await tx("carts").where({ id: cart.id }).forUpdate().first();
         const previous = await tx("checkout_idempotency")
           .where({ key })
           .first();
         if (previous) {
           check(
-            previous.cart_id === cart.id &&
+            previous.cart_id === cart?.id &&
               previous.request_hash === requestHash,
             409,
             "IDEMPOTENCY_CONFLICT",
@@ -269,6 +285,13 @@ export function shopRoutes(limiter) {
             receiptToken: keyedHash(`receipt:${key}:${row.id}`),
           };
         }
+        check(
+          demoPaymentToken,
+          400,
+          "PAYMENT_TOKEN_REQUIRED",
+          "Enter a sandbox payment code.",
+        );
+        check(cart, 400, "EMPTY_CART", "Your bag is empty.");
         let shippingAddress = b.shippingAddress;
         if (b.addressId) {
           check(
@@ -379,7 +402,7 @@ export function shopRoutes(limiter) {
           pointsToRedeem: b.pointsToRedeem,
         });
         check(
-          b.demoPaymentOutcome === "success",
+          paymentApproved,
           402,
           "PAYMENT_FAILED",
           "Sandbox payment declined. No money or points were taken.",

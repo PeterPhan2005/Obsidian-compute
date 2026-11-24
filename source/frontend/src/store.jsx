@@ -835,8 +835,10 @@ export function Checkout() {
     [coupon, setCoupon] = useState(""),
     [appliedCoupon, setAppliedCoupon] = useState(""),
     [points, setPoints] = useState(0),
-    [outcome, setOutcome] = useState("success"),
-    [key, setKey] = useState(() => crypto.randomUUID());
+    [paymentToken, setPaymentToken] = useState(""),
+    [key] = useState(() => crypto.randomUUID());
+  const validPaymentToken =
+    paymentToken === "DEMO-APPROVE" || paymentToken === "DEMO-DECLINE";
   const action = useAction(),
     navigate = useNavigate(),
     cart = cartQ.data?.data;
@@ -884,7 +886,7 @@ export function Checkout() {
           couponCode: appliedCoupon || undefined,
           pointsToRedeem: points,
           paymentMethod: "DEMO",
-          demoPaymentOutcome: outcome,
+          demoPaymentToken: paymentToken,
         },
       }),
     );
@@ -1032,18 +1034,20 @@ export function Checkout() {
                 <ShieldCheck />
                 <div>
                   <strong>Sandbox payment</strong>
-                  <p>This is a demonstration. No real money will be charged.</p>
+                  <p>Use only the test codes below. Do not enter card details.</p>
                 </div>
               </div>
-              <Field label="Payment simulation">
-                <select
-                  value={outcome}
-                  onChange={(e) => setOutcome(e.target.value)}
-                >
-                  <option value="success">Successful payment</option>
-                  <option value="failure">Declined payment (test)</option>
-                </select>
-              </Field>
+              <Field
+                label="Test payment code"
+                hint="Enter DEMO-APPROVE to simulate approval or DEMO-DECLINE to simulate a decline."
+                value={paymentToken}
+                maxLength={12}
+                autoComplete="off"
+                spellCheck={false}
+                onChange={(e) =>
+                  setPaymentToken(e.target.value.trim().toUpperCase())
+                }
+              />
               <form
                 className="coupon-form"
                 onSubmit={(e) => {
@@ -1104,6 +1108,7 @@ export function Checkout() {
                 <button
                   className="button"
                   disabled={
+                    !validPaymentToken ||
                     !quote.data ||
                     quote.isFetching ||
                     !!quote.error ||
@@ -1132,10 +1137,7 @@ export function Checkout() {
                 <p>{buyer.email}</p>
               </div>
               <p className="muted">
-                Payment: Sandbox ·{" "}
-                {outcome === "success"
-                  ? "Successful payment"
-                  : "Declined payment simulation"}
+                Payment: Sandbox · {paymentToken}
               </p>
               <p className="fine-print">
                 The final price and stock are checked when you place your order.

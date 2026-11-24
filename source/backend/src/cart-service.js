@@ -1,6 +1,6 @@
 import { db, camel } from "./db.js";
 import { hash, token, cookieOptions, check } from "./lib.js";
-export async function resolveCart(req, res) {
+export async function resolveCart(req, res, { create = true } = {}) {
   if (req.user) {
     check(!req.user.is_banned, 403, "BANNED", "This account is suspended.");
     check(
@@ -9,6 +9,7 @@ export async function resolveCart(req, res) {
       "CUSTOMER_REQUIRED",
       "Use a customer account to shop.",
     );
+    if (!create) return db("carts").where({ user_id: req.user.id }).first();
     const [c] = await db("carts")
       .insert({ user_id: req.user.id })
       .onConflict("user_id")
@@ -21,7 +22,7 @@ export async function resolveCart(req, res) {
     (await db("carts")
       .where({ guest_token_hash: hash(req.cookies.guest_cart) })
       .first());
-  if (!c) {
+  if (!c && create) {
     const t = token();
     [c] = await db("carts")
       .insert({ guest_token_hash: hash(t) })
