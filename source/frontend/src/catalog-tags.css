@@ -1,0 +1,29 @@
+.catalog-tag-filter,
+.product-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.catalog-tag-filter {
+  margin-bottom: 12px;
+}
+
+.product-tags {
+  margin-top: 12px;
+}
+
+.product-tags a {
+  padding: 5px 10px;
+  border: 1px solid #52525b;
+  border-radius: 4px;
+}
+
+.product-tags a:hover,
+.product-tags a:focus-visible {
+  border-color: currentColor;
+  text-decoration: underline;
+}

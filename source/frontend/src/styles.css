@@ -1945,10 +1945,48 @@ td strong {
 .recharts-tooltip-wrapper {
   font-size: 11px;
 }
+/* Recharts retains the previous transform when it hides a tooltip. */
+.chart .recharts-tooltip-wrapper[style*="visibility: hidden"] {
+  display: none;
+}
+.chart .recharts-legend-item {
+  max-width: calc(100% - 10px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
+  white-space: nowrap;
+}
+.category-chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 11px;
+}
+.category-chart-legend li {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.category-chart-swatch {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  margin-top: 4px;
+}
 .dashboard-columns {
   display: grid;
   grid-template-columns: 1.5fr 1fr;
   gap: 20px;
+}
+.bestseller-chart {
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 .bestseller-row {
   display: flex;
@@ -1967,6 +2005,8 @@ td strong {
 }
 .bestseller-row > div {
   flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .bestseller-row strong {
   font-size: 11px;
@@ -1980,6 +2020,18 @@ td strong {
 .bestseller-row b {
   font-size: 10px;
   font-weight: 400;
+}
+.bestseller-track {
+  height: 6px;
+  margin-top: 7px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: #27272a;
+}
+.bestseller-track > div {
+  height: 100%;
+  border-radius: inherit;
+  background: #818cf8;
 }
 .status-row {
   display: flex;

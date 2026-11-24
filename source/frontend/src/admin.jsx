@@ -91,7 +91,17 @@ function Metric({ label, value, detail }) {
     </div>
   );
 }
-function Chart({ data, keys, moneyValues = false }) {
+const chartColors = [
+  "#e4e4e7",
+  "#818cf8",
+  "#71717a",
+  "#2dd4bf",
+  "#fbbf24",
+  "#fb7185",
+  "#38bdf8",
+  "#c084fc",
+];
+function Chart({ data, keys, moneyValues = false, stacked = false }) {
   return (
     <div className="chart">
       <ResponsiveContainer width="100%" height={290}>
@@ -111,6 +121,7 @@ function Chart({ data, keys, moneyValues = false }) {
             stroke="#71717a"
             fontSize={11}
             tickLine={false}
+            allowDecimals={moneyValues}
             tickFormatter={(v) =>
               moneyValues
                 ? v >= 1000000
@@ -124,17 +135,21 @@ function Chart({ data, keys, moneyValues = false }) {
               background: "#18181b",
               border: "1px solid #3f3f46",
               borderRadius: 8,
+              maxWidth: "min(240px, 70vw)",
+              whiteSpace: "normal",
+              overflowWrap: "anywhere",
             }}
             formatter={(v, n) => [moneyValues ? money(v) : v, n]}
           />
-          <Legend />
+          {!stacked && <Legend />}
           {keys.map(([key, label], n) => (
             <Bar
               key={key}
               dataKey={key}
               name={label}
-              fill={["#e4e4e7", "#818cf8", "#71717a"][n % 3]}
-              radius={[3, 3, 0, 0]}
+              fill={chartColors[n % chartColors.length]}
+              radius={stacked ? 0 : [3, 3, 0, 0]}
+              stackId={stacked ? "category" : undefined}
             />
           ))}
         </BarChart>
@@ -142,18 +157,94 @@ function Chart({ data, keys, moneyValues = false }) {
     </div>
   );
 }
+function CategorySalesChart({ series, byCategory }) {
+  const keys = byCategory.map(({ categoryName }, i) => [
+    `category${i}`,
+    categoryName,
+  ]);
+  const keyByName = new Map(keys.map(([key, name]) => [name, key]));
+  const data = series.map(({ bucket, categoryUnits }) => ({
+    bucket,
+    ...Object.fromEntries(
+      categoryUnits.map(({ categoryName, unitsSold }) => [
+        keyByName.get(categoryName),
+        unitsSold,
+      ]),
+    ),
+  }));
+  return (
+    <>
+      <Chart data={data} keys={keys} stacked />
+      <ul
+        className="category-chart-legend"
+        role="list"
+        aria-label="Product type legend"
+      >
+        {keys.map(([key, name], index) => (
+          <li key={key}>
+            <span
+              className="category-chart-swatch"
+              style={{ backgroundColor: chartColors[index % chartColors.length] }}
+              aria-hidden="true"
+            />
+            <span>{name}</span>
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}
+function BestSellersChart({ products }) {
+  if (!products.length) {
+    return <p className="muted">No products sold yet.</p>;
+  }
+  const maxUnits = products[0].quantitySold;
+  return (
+    <ol
+      className="bestseller-chart"
+      role="list"
+      aria-label="Units sold by product"
+    >
+      {products.map((p, i) => (
+        <li className="bestseller-row" key={p.productId}>
+          <span aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
+          <div>
+            <strong>{p.name}</strong>
+            <small>{p.quantitySold} units sold</small>
+            <div className="bestseller-track" aria-hidden="true">
+              <div style={{ width: `${(p.quantitySold / maxUnits) * 100}%` }} />
+            </div>
+          </div>
+          <b>{money(p.revenueVnd)}</b>
+        </li>
+      ))}
+    </ol>
+  );
+}
 export function Dashboard({ advanced = false }) {
-  const now = new Date(),
-    [filters, setFilters] = useState({
+  const [filters, setFilters] = useState(() => {
+    const { year, month, day } = Object.fromEntries(
+      new Intl.DateTimeFormat("en", {
+        timeZone: "Asia/Ho_Chi_Minh",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      })
+        .formatToParts()
+        .map(({ type, value }) => [type, value]),
+    );
+    const today = `${year}-${month}-${day}`;
+    return {
       period: "year",
-      year: now.getFullYear(),
-      month: now.getMonth() + 1,
-      quarter: Math.ceil((now.getMonth() + 1) / 3),
-      weekStart: now.toISOString().slice(0, 10),
-      from: `${now.getFullYear()}-01-01`,
-      to: now.toISOString().slice(0, 10),
+      year: Number(year),
+      month: Number(month),
+      quarter: Math.ceil(Number(month) / 3),
+      weekStart: today,
+      from: `${year}-01-01`,
+      to: today,
       groupBy: "",
-    });
+    };
+  });
   const q = useData(
     advanced
       ? `/admin/dashboard/analytics?${queryString(filters)}`
@@ -347,56 +438,64 @@ export function Dashboard({ advanced = false }) {
                       ["ordersSold", "Orders"],
                       ["unitsSold", "Units"],
                       ["distinctProductCount", "Distinct products"],
+                      ["distinctCategoryCount", "Distinct categories"],
                     ]}
                   />
                 </div>
-                <div className="panel">
-                  <h3>Performance by product type</h3>
-                  <Chart
-                    data={d.byCategory.map((c) => ({
-                      ...c,
-                      bucket: c.categoryName,
-                    }))}
-                    keys={[["unitsSold", "Units sold"]]}
-                  />
-                  <div className="table-wrap">
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>Category</th>
-                          <th>Units</th>
-                          <th>Revenue</th>
-                          <th>Gross profit</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {d.byCategory.map((c) => (
-                          <tr key={c.categoryName}>
-                            <td>{c.categoryName}</td>
-                            <td>{c.unitsSold}</td>
-                            <td>{money(c.revenueVnd)}</td>
-                            <td>{money(c.grossProfitVnd)}</td>
+                <section
+                  className="panel"
+                  aria-labelledby="category-sales-title"
+                >
+                  <h3 id="category-sales-title">Product types sold over time</h3>
+                  {d.byCategory.length ? (
+                    <CategorySalesChart
+                      series={d.series}
+                      byCategory={d.byCategory}
+                    />
+                  ) : (
+                    <p className="muted">No product types sold in this period.</p>
+                  )}
+                </section>
+                {d.byCategory.length > 0 && (
+                  <div className="panel">
+                    <h3>Performance by product type</h3>
+                    <Chart
+                      data={d.byCategory.map((c) => ({
+                        ...c,
+                        bucket: c.categoryName,
+                      }))}
+                      keys={[["unitsSold", "Units sold"]]}
+                    />
+                    <div className="table-wrap">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Category</th>
+                            <th>Units</th>
+                            <th>Revenue</th>
+                            <th>Gross profit</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {d.byCategory.map((c) => (
+                            <tr key={c.categoryName}>
+                              <td>{c.categoryName}</td>
+                              <td>{c.unitsSold}</td>
+                              <td>{money(c.revenueVnd)}</td>
+                              <td>{money(c.grossProfitVnd)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-                </div>
+                )}
               </>
             ) : (
               <div className="dashboard-columns">
                 <div className="panel">
                   <h3>Best-selling products</h3>
-                  {d.bestSellers.map((p, n) => (
-                    <div className="bestseller-row" key={p.productId}>
-                      <span>{String(n + 1).padStart(2, "0")}</span>
-                      <div>
-                        <strong>{p.name}</strong>
-                        <small>{p.quantitySold} units sold</small>
-                      </div>
-                      <b>{money(p.revenueVnd)}</b>
-                    </div>
-                  ))}
+                  <BestSellersChart products={d.bestSellers} />
                 </div>
                 <div className="panel">
                   <h3>Order progress</h3>

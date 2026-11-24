@@ -209,6 +209,23 @@ catalog.get("/brands", async (req, res) =>
     ),
   ),
 );
+catalog.get("/tags", async (req, res) => {
+  const tags = await db("products as p")
+    .join("categories as c", "c.id", "p.category_id")
+    .crossJoin(db.raw("LATERAL jsonb_array_elements_text(p.tags) AS t(tag)"))
+    .where("p.is_active", true)
+    .where("c.is_active", true)
+    .whereExists(
+      db("product_variants as v")
+        .select("v.id")
+        .whereColumn("v.product_id", "p.id")
+        .where("v.is_active", true),
+    )
+    .distinct("t.tag")
+    .orderBy("t.tag")
+    .pluck("t.tag");
+  ok(res, tags);
+});
 catalog.get("/products", async (req, res) =>
   res.json(await listProducts(req.query)),
 );

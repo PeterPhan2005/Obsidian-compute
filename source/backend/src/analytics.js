@@ -146,10 +146,9 @@ export function allocatedItems(order, items) {
     };
   });
 }
-function metrics(orders, items) {
+function metrics(orders, items, byCategory = new Map()) {
   const total = empty(),
-    products = new Set(),
-    cats = new Set();
+    products = new Set();
   for (const o of orders) {
     total.ordersSold++;
     for (const i of allocatedItems(
@@ -160,11 +159,24 @@ function metrics(orders, items) {
       total.grossProfitVnd += i.grossProfitVnd;
       total.unitsSold += i.quantity;
       products.add(i.product_id);
-      cats.add(i.category_name_snapshot);
+      const categoryName = i.category_name_snapshot;
+      let category = byCategory.get(categoryName);
+      if (!category) {
+        category = {
+          categoryName,
+          unitsSold: 0,
+          revenueVnd: 0,
+          grossProfitVnd: 0,
+        };
+        byCategory.set(categoryName, category);
+      }
+      category.unitsSold += i.quantity;
+      category.revenueVnd += i.revenueVnd;
+      category.grossProfitVnd += i.grossProfitVnd;
     }
   }
   total.distinctProductCount = products.size;
-  total.distinctCategoryCount = cats.size;
+  total.distinctCategoryCount = byCategory.size;
   return total;
 }
 export async function analytics(q) {
@@ -204,25 +216,20 @@ export async function analytics(q) {
           : r.groupBy === "month"
             ? cursor.toFormat("yyyy-MM")
             : cursor.toISODate();
-    series.push({ bucket, ...metrics(orders, items) });
+    const categories = new Map();
+    const bucketMetrics = metrics(orders, items, categories);
+    series.push({
+      bucket,
+      ...bucketMetrics,
+      categoryUnits: Array.from(
+        categories.values(),
+        ({ categoryName, unitsSold }) => ({ categoryName, unitsSold }),
+      ),
+    });
     cursor = next;
   }
-  const byCategory = {};
-  for (const o of current)
-    for (const i of allocatedItems(
-      o,
-      items.filter((i) => i.order_id === o.id),
-    )) {
-      const c = (byCategory[i.category_name_snapshot] ||= {
-        categoryName: i.category_name_snapshot,
-        unitsSold: 0,
-        revenueVnd: 0,
-        grossProfitVnd: 0,
-      });
-      c.unitsSold += i.quantity;
-      c.revenueVnd += i.revenueVnd;
-      c.grossProfitVnd += i.grossProfitVnd;
-    }
+  const byCategory = new Map();
+  const totals = metrics(current, items, byCategory);
   return {
     period: r.period,
     groupBy: r.groupBy,
@@ -234,10 +241,10 @@ export async function analytics(q) {
       from: r.previousStart.toISODate(),
       to: r.previousEnd.minus({ days: 1 }).toISODate(),
     },
-    totals: metrics(current, items),
+    totals,
     previousTotals: metrics(previous, items),
     series,
-    byCategory: Object.values(byCategory),
+    byCategory: [...byCategory.values()],
   };
 }
 export async function summary(days = 30) {
@@ -284,6 +291,6 @@ export async function summary(days = 30) {
         count: orders.filter((o) => o.status === status).length,
       }),
     ),
-    revenueSeries: annual.series,
+    revenueSeries: annual.series.map(({ categoryUnits, ...bucket }) => bucket),
   };
 }

@@ -42,6 +42,22 @@ import {
   Notice,
   useSession,
 } from "./ui";
+import "./catalog-tags.css";
+
+function useStoreMetadata(title, description) {
+  useEffect(() => {
+    const meta = document.querySelector('meta[name="description"]');
+    const previousTitle = document.title;
+    const previousDescription = meta?.content;
+    document.title = `${title} | Obsidian Compute`;
+    if (meta) meta.content = description;
+    return () => {
+      document.title = previousTitle;
+      if (meta) meta.content = previousDescription;
+    };
+  }, [title, description]);
+}
+
 function HomeSection({ section }) {
   const [page, setPage] = useState(1);
   const q = useData(
@@ -201,7 +217,27 @@ export function Catalog() {
     [filtersOpen, setFiltersOpen] = useState(false);
   const q = useData(`/products?${params}`),
     cats = useData("/categories"),
-    brands = useData("/brands");
+    brands = useData("/brands"),
+    tags = useData("/tags");
+  const tag = params.get("tag") || "";
+  const keyword = params.get("q") || "";
+  const sort =
+    params.get("sort") ||
+    (params.get("collection") === "best_sellers"
+      ? "best_selling"
+      : keyword
+        ? "relevance"
+        : "newest");
+  const category = cats.data?.data.find(
+    (item) => item.slug === params.get("category"),
+  )?.name;
+  const collection = category || "Computers & Components";
+  useStoreMetadata(
+    tag ? `${collection} tagged “${tag}”` : collection,
+    tag
+      ? `Browse ${collection} tagged “${tag}” at Obsidian Compute. Compare prices and customer ratings.`
+      : `Browse ${collection} at Obsidian Compute. Filter by category, tag, brand, price and customer rating.`,
+  );
   useEffect(() => {
     const onEscape = (e) => {
       if (e.key === "Escape") setFiltersOpen(false);
@@ -234,7 +270,7 @@ export function Catalog() {
           <input
             aria-label="Search collection"
             placeholder="Search the collection…"
-            value={params.get("q") || ""}
+            value={keyword}
             onChange={(e) => change("q", e.target.value)}
           />
         </div>
@@ -243,6 +279,8 @@ export function Catalog() {
         </span>
         <button
           className="button secondary filter-toggle"
+          aria-expanded={filtersOpen}
+          aria-controls="catalog-filters"
           onClick={() => setFiltersOpen(!filtersOpen)}
         >
           <SlidersHorizontal size={16} />
@@ -250,10 +288,11 @@ export function Catalog() {
         </button>
         <select
           aria-label="Sort products"
-          value={params.get("sort") || "newest"}
+          value={sort === "relevance" && !keyword ? "newest" : sort}
           onChange={(e) => change("sort", e.target.value)}
         >
           <option value="newest">Newest arrivals</option>
+          {keyword && <option value="relevance">Relevance</option>}
           <option value="best_selling">Best selling</option>
           <option value="name_asc">Name: A–Z</option>
           <option value="name_desc">Name: Z–A</option>
@@ -262,7 +301,10 @@ export function Catalog() {
         </select>
       </div>
       <div className="catalog-layout">
-        <aside className={`filters ${filtersOpen ? "filters-open" : ""}`}>
+        <aside
+          id="catalog-filters"
+          className={`filters ${filtersOpen ? "filters-open" : ""}`}
+        >
           <div className="section-heading">
             <h3>Refine your selection</h3>
             <button
@@ -286,6 +328,20 @@ export function Catalog() {
               ))}
             </select>
           </Field>
+          <Field label="Tag">
+            <select value={tag} onChange={(e) => change("tag", e.target.value)}>
+              <option value="">All tags</option>
+              {tag && !tags.data?.data.includes(tag) && (
+                <option value={tag}>{tag}</option>
+              )}
+              {tags.data?.data.map((value) => (
+                <option key={value} value={value}>
+                  {value}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <ErrorBox error={tags.error} />
           <Field label="Brand">
             <select
               value={params.get("brand") || ""}
@@ -343,6 +399,14 @@ export function Catalog() {
           </div>
         </aside>
         <section className="catalog-results">
+          {tag && (
+            <div className="catalog-tag-filter">
+              <span>Tag: {tag}</span>
+              <button className="text-link" onClick={() => change("tag", "")}>
+                Clear tag <X size={14} aria-hidden="true" />
+              </button>
+            </div>
+          )}
           <ErrorBox error={q.error} />
           {q.isPending ? (
             <Loading />
@@ -386,6 +450,10 @@ export function ProductDetail() {
     client = useQueryClient(),
     { user } = useSession();
   const p = q.data?.data;
+  useStoreMetadata(
+    p?.name || (q.isError ? "Product unavailable" : "Product details"),
+    p?.shortDescription || "Explore products from Obsidian Compute.",
+  );
   useEffect(() => {
     setSelected(null);
     setImage(0);
@@ -477,6 +545,15 @@ export function ProductDetail() {
           </a>
           <div className="detail-price">{money(v.priceVnd)}</div>
           <p className="product-intro">{p.shortDescription}</p>
+          {p.tags.length > 0 && (
+            <nav className="product-tags" aria-label="Product tags">
+              {[...new Set(p.tags)].map((tag) => (
+                <Link key={tag} to={`/products?${queryString({ tag })}`}>
+                  {tag}
+                </Link>
+              ))}
+            </nav>
+          )}
           <div className="variant-picker">
             <span className="field-label">Choose your configuration</span>
             {p.variants.map((item) => (
