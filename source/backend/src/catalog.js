@@ -43,7 +43,10 @@ export async function productDto(row, conn = db, admin = false) {
     minPriceVnd: Math.min(...variants.map((v) => v.price_vnd)),
     variants: variants.map((v) => {
       const c = camel(v);
-      if (!admin) delete c.costPriceVnd;
+      if (!admin) {
+        delete c.costPriceVnd;
+        delete c.stockVersion;
+      }
       return { ...c, isAvailable: row.is_active && v.is_active && v.stock > 0 };
     }),
     reviewSummary: { ...camel(summary), commentCount: Number(count) },

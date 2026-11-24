@@ -565,6 +565,8 @@ export function ProductForm() {
           priceVnd: v.priceVnd,
           costPriceVnd: v.costPriceVnd,
           stock: v.stock,
+          initialStock: v.stock,
+          stockVersion: v.stockVersion,
           isActive: v.isActive,
         })),
         isActive: p.isActive,
@@ -596,7 +598,17 @@ export function ProductForm() {
           const r = await action.run(() =>
             api(id ? `/admin/products/${id}` : "/admin/products", {
               method: id ? "PATCH" : "POST",
-              body: form,
+              body: {
+                ...form,
+                variants: form.variants.map(
+                  ({ initialStock, stockVersion, ...variant }) => ({
+                    ...variant,
+                    ...(variant.id && variant.stock !== initialStock
+                      ? { expectedStockVersion: stockVersion }
+                      : {}),
+                  }),
+                ),
+              },
             }),
           );
           if (r) navigate("/admin/products");

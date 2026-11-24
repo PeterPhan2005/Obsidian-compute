@@ -416,7 +416,10 @@ export function shopRoutes(limiter) {
         for (const line of lines)
           await tx("product_variants")
             .where({ id: line.variant_id })
-            .decrement("stock", line.quantity);
+            .update({
+              stock: tx.raw("stock - ?", [line.quantity]),
+              stock_version: tx.raw("stock_version + 1"),
+            });
         if (coupon) {
           await tx("coupons")
             .where({ code: coupon.code })

@@ -22,6 +22,21 @@ const categoryNames = {
   cpu: "Processors",
   motherboard: "Motherboards",
 };
+const stockQuantity = z.number().int().min(0).max(1000000);
+const stockVersion = z.number().int().nonnegative();
+
+function stockChanges(current, stock, expectedStockVersion) {
+  check(
+    current.stock_version === expectedStockVersion,
+    409,
+    "STOCK_CONFLICT",
+    `Stock changed for ${current.sku}. Reload the product before updating stock.`,
+  );
+  return stock === current.stock
+    ? {}
+    : { stock, stock_version: current.stock_version + 1 };
+}
+
 const variantSchema = z
   .object({
     id: id.optional(),
@@ -31,7 +46,8 @@ const variantSchema = z
       .refine((v) => Object.keys(v).length > 0 && Object.keys(v).length <= 10),
     priceVnd: money,
     costPriceVnd: money,
-    stock: z.number().int().min(0).max(1000000),
+    stock: stockQuantity,
+    expectedStockVersion: stockVersion.optional(),
     isActive: z.boolean().optional(),
   })
   .strip();
@@ -164,8 +180,15 @@ async function saveProduct(req, res, update = false) {
       is_active: b.isActive ?? true,
       updated_at: new Date(),
     };
+    let currentVariants = [];
     if (update) {
-      await tx("products").where({ id: productId }).forUpdate().first();
+      // Serialize product editors while allowing checkout's foreign-key locks.
+      await tx("products").where({ id: productId }).forNoKeyUpdate().first();
+      // Match checkout's variant lock order before changing any product data.
+      currentVariants = await tx("product_variants")
+        .where({ product_id: productId })
+        .orderBy("id")
+        .forUpdate();
       await tx("products").where({ id: productId }).update(p);
       await tx("product_images").where({ product_id: productId }).delete();
     } else await tx("products").insert({ id: productId, ...p });
@@ -184,24 +207,27 @@ async function saveProduct(req, res, update = false) {
         attributes: json(v.attributes),
         price_vnd: v.priceVnd,
         cost_price_vnd: v.costPriceVnd,
-        stock: v.stock,
         is_active: v.isActive ?? true,
       };
       if (v.id) {
+        const current = currentVariants.find((row) => row.id === v.id);
         check(
-          update &&
-            (await tx("product_variants")
-              .where({ id: v.id, product_id: productId })
-              .first()),
+          current,
           400,
           "INVALID_VARIANT",
           "Variant does not belong to this product.",
         );
+        if (v.expectedStockVersion !== undefined) {
+          Object.assign(
+            values,
+            stockChanges(current, v.stock, v.expectedStockVersion),
+          );
+        }
         await tx("product_variants").where({ id: v.id }).update(values);
         retained.push(v.id);
       } else {
         const [row] = await tx("product_variants")
-          .insert({ product_id: productId, ...values })
+          .insert({ product_id: productId, ...values, stock: v.stock })
           .returning("id");
         retained.push(row.id);
       }
@@ -262,21 +288,23 @@ admin.post("/product-images", upload.single("image"), async (req, res) => {
 admin.patch("/variants/:variantId/inventory", async (req, res) => {
   const b = z
     .object({
-      stock: z.number().int().min(0).max(1000000),
+      stock: stockQuantity,
+      expectedStockVersion: stockVersion,
       costPriceVnd: money.optional(),
     })
     .strict()
     .parse(req.body);
-  const [v] = await db("product_variants")
-    .where({ id: id.parse(req.params.variantId) })
-    .update({
-      stock: b.stock,
-      ...(b.costPriceVnd !== undefined
-        ? { cost_price_vnd: b.costPriceVnd }
-        : {}),
-    })
-    .returning("*");
-  check(v, 404, "NOT_FOUND", "Variant not found.");
+  const variantId = id.parse(req.params.variantId);
+  const v = await db.transaction(async (tx) => {
+    const query = () => tx("product_variants").where({ id: variantId });
+    const current = await query().forUpdate().first();
+    check(current, 404, "NOT_FOUND", "Variant not found.");
+    const changes = stockChanges(current, b.stock, b.expectedStockVersion);
+    if (b.costPriceVnd !== undefined) changes.cost_price_vnd = b.costPriceVnd;
+    if (Object.keys(changes).length === 0) return current;
+    const [updated] = await query().update(changes).returning("*");
+    return updated;
+  });
   ok(res, camel(v));
 });
 admin.get("/categories", async (req, res) => {

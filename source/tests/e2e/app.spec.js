@@ -87,10 +87,26 @@ test("Catalog combines category, brand and price with sorts, pagination and empt
   await page.getByRole("button", { name: "Page 2", exact: true }).click();
   await expect(page).toHaveURL(/page=2/);
 });
-test("Guest can update cart and complete a coupon checkout without signing in", async ({
+test("Guest checkout preserves stock when Admin saves an already open product form", async ({
   page,
+  browser,
 }) => {
   await addProduct(page);
+  const productUrl = new URL(page.url()).pathname;
+  const readProduct = async () =>
+    (await (await page.request.get(`/api/v1${productUrl}`)).json()).data;
+  const product = await readProduct();
+  const variant = product.variants[0];
+  const adminContext = await browser.newContext({
+    baseURL: new URL(page.url()).origin,
+  });
+  const adminPage = await adminContext.newPage();
+  await login(adminPage, true);
+  await adminPage.goto(`/admin/products/${product.id}/edit`);
+  const editor = adminPage.locator(".variant-editor").first();
+  await expect(editor.getByLabel("Stock", { exact: true })).toHaveValue(
+    String(variant.stock),
+  );
   await page.getByRole("link", { name: "View your bag" }).click();
   await expect(page.getByRole("heading", { name: "Your bag." })).toBeVisible();
   await page.getByRole("button", { name: /Increase / }).click();
@@ -129,6 +145,19 @@ test("Guest can update cart and complete a coupon checkout without signing in", 
   ).toBeVisible();
   await expect(page.locator(".order-layout")).toContainText("Browser Customer");
   await expect(page.locator(".order-layout")).toContainText("pending");
+  const readStock = async () =>
+    (await readProduct()).variants.find((v) => v.id === variant.id).stock;
+  expect(await readStock()).toBe(variant.stock - 1);
+  await adminPage
+    .getByLabel("Short description", { exact: true })
+    .fill("Browser regression metadata edit.");
+  await adminPage
+    .getByRole("button", { name: "Save product", exact: true })
+    .click();
+  await expect(adminPage).toHaveURL(/\/admin\/products$/);
+  expect(await readStock()).toBe(variant.stock - 1);
+
+  await adminContext.close();
   await page.reload();
   await expect(
     page.getByRole("heading", { name: "It's yours." }),

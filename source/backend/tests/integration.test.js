@@ -324,9 +324,13 @@ test("Two checkouts contend for one remaining stock unit without overselling", a
   const c1 = new Client(),
     c2 = new Client();
   const other = product.variants.find((v) => v.id !== variant.id);
-  await admin.request(`/admin/variants/${other.id}/inventory`, "PATCH", {
-    stock: 1,
-  });
+  const current = await db("product_variants").where({ id: other.id }).first();
+  const inventory = await admin.request(
+    `/admin/variants/${other.id}/inventory`,
+    "PATCH",
+    { stock: 1, expectedStockVersion: current.stock_version },
+  );
+  assert.equal(inventory.status, 200);
   await add(c1, other);
   await add(c2, other);
   const r = await Promise.all([
@@ -339,6 +343,134 @@ test("Two checkouts contend for one remaining stock unit without overselling", a
     0,
   );
 });
+test("Inventory revisions protect product edits, checkout and concurrent stock updates", async () => {
+  const suffix = randomUUID();
+  const template = (await admin.request(`/admin/products/${product.id}`)).body.data;
+  const created = await admin.request("/admin/products", "POST", {
+    name: "Inventory regression product",
+    slug: `inventory-${suffix}`,
+    brand: template.brand,
+    categoryId: template.category.id,
+    shortDescription: template.shortDescription,
+    descriptionLines: template.descriptionLines,
+    tags: template.tags,
+    images: template.imageDetails,
+    variants: template.variants.map(({ id, ...v }, index) => ({
+      ...v,
+      sku: `INV-${suffix}-${index}`,
+      stock: 20,
+    })),
+  });
+  assert.equal(created.status, 201, JSON.stringify(created.body));
+  const initial = created.body.data;
+  const [first, second] = initial.variants;
+  const productPath = `/admin/products/${initial.id}`;
+  const inventoryPath = `/admin/variants/${first.id}/inventory`;
+  const readVariant = (id) => db("product_variants").where({ id }).first();
+  const setStock = (v, stock) => ({
+    ...v,
+    stock,
+    expectedStockVersion: v.stockVersion,
+  });
+
+  assert.equal(first.stock, 20);
+  const guest = new Client();
+  await add(guest, first);
+  const checkout = await submit(guest, purchase(`inventory-${suffix}@example.com`));
+  assert.equal(checkout.status, 201);
+  assert.equal((await readVariant(first.id)).stock, 19);
+  const metadata = {
+    shortDescription: "Description edited after checkout.",
+    variants: initial.variants,
+  };
+  assert.equal((await admin.request(productPath, "PATCH", metadata)).status, 200);
+  assert.equal((await readVariant(first.id)).stock, 19);
+
+  const stale = await admin.request(productPath, "PATCH", {
+    variants: [setStock(first, 30), second],
+  });
+  assert.equal(stale.status, 409);
+  assert.equal(stale.body.error.code, "STOCK_CONFLICT");
+  const current = (await admin.request(productPath)).body.data;
+  const currentFirst = current.variants.find((v) => v.id === first.id);
+  const intentional = await admin.request(productPath, "PATCH", {
+    variants: [setStock(currentFirst, 25), second],
+  });
+  assert.equal(intentional.status, 200);
+  const afterEdit = intentional.body.data.variants.find((v) => v.id === first.id);
+  assert.equal(afterEdit.stock, 25);
+  assert.equal(afterEdit.stockVersion, currentFirst.stockVersion + 1);
+
+  const results = await Promise.all([
+    admin.request(productPath, "PATCH", {
+      variants: [setStock(afterEdit, 31), second],
+    }),
+    admin.request(inventoryPath, "PATCH", {
+      stock: 32,
+      expectedStockVersion: afterEdit.stockVersion,
+    }),
+  ]);
+  assert.deepEqual(results.map((r) => r.status).sort(), [200, 409]);
+  assert.equal(results.find((r) => r.status === 409).body.error.code, "STOCK_CONFLICT");
+  const winner = await readVariant(first.id);
+  assert.equal(winner.stock, results[0].status === 200 ? 31 : 32);
+  assert.equal(winner.stock_version, afterEdit.stockVersion + 1);
+
+  // Return the stock quantity to its earlier value without reviving that revision.
+  const restored = await admin.request(inventoryPath, "PATCH", {
+    stock: afterEdit.stock,
+    expectedStockVersion: winner.stock_version,
+  });
+  assert.equal(restored.status, 200);
+  assert.equal(restored.body.data.stock, 25);
+  const beforeRollback = (await admin.request(productPath)).body.data;
+  const rollback = await admin.request(productPath, "PATCH", {
+    shortDescription: "This conflicting edit should roll back.",
+    images: initial.imageDetails.map((image) => ({ ...image, alt: "Rollback image" })),
+    variants: [setStock(second, 17), setStock(afterEdit, 35)],
+  });
+  assert.equal(rollback.status, 409);
+  assert.equal(rollback.body.error.code, "STOCK_CONFLICT");
+  assert.deepEqual((await admin.request(productPath)).body.data, beforeRollback);
+
+  const customer = new Client();
+  await customer.login("alex@example.com", "ObsidianCustomer!2026");
+  const inventoryEdit = { stock: 26, expectedStockVersion: restored.body.data.stockVersion };
+  assert.equal((await customer.request(inventoryPath, "PATCH", inventoryEdit)).status, 403);
+  assert.equal((await admin.request(inventoryPath, "PATCH", { ...inventoryEdit, stock: -1 })).status, 400);
+  assert.equal((await admin.request(inventoryPath, "PATCH", { stock: 26 })).status, 400);
+  assert.equal((await readVariant(first.id)).stock, 25);
+
+  const { id: existingId, ...newVariant } = second;
+  const added = await admin.request(productPath, "PATCH", {
+    variants: [
+      ...beforeRollback.variants,
+      { ...newVariant, sku: `INV-${suffix}-NEW`, stock: 7 },
+    ],
+  });
+  assert.equal(added.status, 200);
+  const fresh = added.body.data.variants.find((v) => v.sku.endsWith("-NEW"));
+  assert.equal(fresh.stock, 7);
+  assert.equal(fresh.stockVersion, 0);
+
+  const nextGuest = new Client();
+  await add(nextGuest, first);
+  const [sale, adjustment] = await Promise.all([
+    submit(nextGuest, purchase(`inventory-race-${suffix}@example.com`)),
+    admin.request(productPath, "PATCH", {
+      variants: added.body.data.variants.map((v) =>
+        v.id === first.id ? setStock(v, 40) : v,
+      ),
+    }),
+  ]);
+  assert.equal(sale.status, 201);
+  assert.ok([200, 409].includes(adjustment.status));
+  if (adjustment.status === 409) {
+    assert.equal(adjustment.body.error.code, "STOCK_CONFLICT");
+  }
+  assert.equal((await readVariant(first.id)).stock, adjustment.status === 200 ? 39 : 24);
+});
+
 test("Two checkouts contend for one coupon use without over-redemption", async () => {
   const code = randomUUID().replaceAll("-", "").slice(0, 5).toUpperCase();
   assert.equal(
