@@ -141,7 +141,7 @@ test("Guest checkout preserves stock when Admin saves an already open product fo
   await page.getByRole("button", { name: "Review order" }).click();
   await page.getByRole("button", { name: "Place order & pay" }).click();
   await expect(
-    page.getByRole("heading", { name: "It's yours." }),
+    page.getByRole("heading", { name: "Order placed" }),
   ).toBeVisible();
   await expect(page.locator(".order-layout")).toContainText("Browser Customer");
   await expect(page.locator(".order-layout")).toContainText("pending");
@@ -160,8 +160,51 @@ test("Guest checkout preserves stock when Admin saves an already open product fo
   await adminContext.close();
   await page.reload();
   await expect(
-    page.getByRole("heading", { name: "It's yours." }),
+    page.getByRole("heading", { name: "Order placed" }),
   ).toBeVisible();
+});
+test("Checkout success requires a receipt and handles an unavailable receipt", async ({
+  page,
+}) => {
+  const success = page.getByRole("heading", { name: "Order placed" });
+  const unavailable = page.getByRole("heading", {
+    name: "Order receipt unavailable",
+  });
+
+  await page.goto("/checkout/success");
+  await expect(unavailable).toBeVisible();
+  await expect(success).toHaveCount(0);
+  await expect(page.getByRole("alert")).toHaveCount(0);
+
+  for (const receipt of ["invalid-receipt", "0".repeat(64)]) {
+    const response = page.waitForResponse((r) =>
+      r.url().endsWith(`/api/v1/checkout/receipts/${receipt}`),
+    );
+    await page.goto(`/checkout/success?receipt=${receipt}`);
+    expect((await response).status()).toBe(404);
+    await expect(unavailable).toBeVisible();
+    await expect(page.getByRole("alert")).toBeVisible();
+    await expect(success).toHaveCount(0);
+  }
+
+  let releaseRequest;
+  const pending = new Promise((resolve) => {
+    releaseRequest = resolve;
+  });
+  await page.route("**/api/v1/checkout/receipts/**", async (route) => {
+    await pending;
+    await route.abort("failed");
+  });
+  try {
+    await page.goto(`/checkout/success?receipt=${"1".repeat(64)}`);
+    await expect(page.getByRole("status")).toBeVisible();
+    await expect(success).toHaveCount(0);
+  } finally {
+    releaseRequest();
+  }
+  await expect(unavailable).toBeVisible();
+  await expect(page.getByRole("alert")).toBeVisible();
+  await expect(success).toHaveCount(0);
 });
 test("Customer account shows persisted purchases, address editing and rewards", async ({
   page,

@@ -37,6 +37,15 @@ function stockChanges(current, stock, expectedStockVersion) {
     : { stock, stock_version: current.stock_version + 1 };
 }
 
+function requireActiveVariants(count) {
+  check(
+    count >= 2,
+    400,
+    "VARIANTS_REQUIRED",
+    "At least two active variants are required.",
+  );
+}
+
 const variantSchema = z
   .object({
     id: id.optional(),
@@ -129,12 +138,16 @@ async function saveProduct(req, res, update = false) {
     };
   }
   const b = productSchema.parse(input);
+  const existingIds = b.variants
+    .filter((v) => v.id)
+    .map((v) => v.id.toLowerCase());
   check(
-    b.variants.filter((v) => v.isActive !== false).length >= 2,
+    new Set(existingIds).size === existingIds.length,
     400,
-    "VARIANTS_REQUIRED",
-    "At least two active variants are required.",
+    "DUPLICATE_VARIANT_ID",
+    "Each existing variant may only be included once.",
   );
+  requireActiveVariants(b.variants.filter((v) => v.isActive !== false).length);
   check(
     new Set(b.images.map((i) => i.url)).size >= 3,
     400,
@@ -236,6 +249,11 @@ async function saveProduct(req, res, update = false) {
       .where({ product_id: productId })
       .whereNotIn("id", retained)
       .update({ is_active: false });
+    const { count } = await tx("product_variants")
+      .where({ product_id: productId, is_active: true })
+      .count()
+      .first();
+    requireActiveVariants(count);
   });
   ok(res, await getProduct(productId, db, true), update ? 200 : 201);
 }
@@ -329,7 +347,13 @@ admin.post("/categories", async (req, res) => {
     .object({ name: text(1, 80), slug: z.enum(Object.keys(categoryNames)) })
     .strict()
     .parse(req.body);
-  const [c] = await db("categories").insert(b).returning("*");
+  const [c] = await db("categories")
+    .insert(b)
+    .onConflict("slug")
+    .merge({ name: b.name, is_active: true })
+    .where("categories.is_active", false)
+    .returning("*");
+  check(c, 409, "ALREADY_EXISTS", "A category with this slug already exists.");
   ok(res, camel(c), 201);
 });
 admin.patch("/categories/:categoryId", async (req, res) => {

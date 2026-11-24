@@ -471,6 +471,139 @@ test("Inventory revisions protect product edits, checkout and concurrent stock u
   assert.equal((await readVariant(first.id)).stock, adjustment.status === 200 ? 39 : 24);
 });
 
+async function createTestProduct(categoryId) {
+  const { body } = await admin.request(`/admin/products/${product.id}`);
+  const template = body.data;
+  const slug = `catalog-${randomUUID()}`;
+  const response = await admin.request("/admin/products", "POST", {
+    name: "Catalog regression product",
+    slug,
+    brand: template.brand,
+    categoryId: categoryId ?? template.category.id,
+    shortDescription: template.shortDescription,
+    descriptionLines: template.descriptionLines,
+    tags: template.tags,
+    images: template.imageDetails,
+    variants: template.variants.map(({ id, ...v }, index) => ({
+      ...v,
+      sku: `${slug}-${index}`,
+    })),
+  });
+  assert.equal(response.status, 201);
+  return response.body.data;
+}
+
+test("Product saves require distinct active variants and roll back invalid edits", async () => {
+  const original = await createTestProduct();
+  const path = `/admin/products/${original.id}`;
+  const [first, second] = original.variants;
+  const assertActiveVariants = async () => {
+    const { count } = await db("product_variants")
+      .where({ product_id: original.id, is_active: true })
+      .count()
+      .first();
+    assert.equal(count, 2);
+  };
+  await assertActiveVariants();
+
+  const duplicate = await admin.request(path, "PATCH", {
+    variants: [first, first],
+  });
+  assert.equal(duplicate.status, 400);
+  assert.equal(duplicate.body.error.code, "DUPLICATE_VARIANT_ID");
+
+  const duplicateSku = await admin.request(path, "PATCH", {
+    variants: [first, { ...second, sku: first.sku }],
+  });
+  assert.equal(duplicateSku.status, 400);
+  assert.equal(duplicateSku.body.error.code, "DUPLICATE_SKU");
+
+  const insufficient = await admin.request(path, "PATCH", {
+    variants: [first, { ...second, isActive: false }],
+  });
+  assert.equal(insufficient.status, 400);
+  assert.equal(insufficient.body.error.code, "VARIANTS_REQUIRED");
+
+  const invalid = await admin.request(path, "PATCH", {
+    shortDescription: "This edit must roll back.",
+    variants: [
+      {
+        ...first,
+        stock: first.stock + 1,
+        expectedStockVersion: first.stockVersion,
+      },
+      { ...second, id: randomUUID() },
+    ],
+  });
+  assert.equal(invalid.status, 400);
+  assert.equal(invalid.body.error.code, "INVALID_VARIANT");
+  assert.deepEqual((await admin.request(path)).body.data, original);
+  await assertActiveVariants();
+
+  const { id, ...replacement } = second;
+  const changed = await admin.request(path, "PATCH", {
+    variants: [first, { ...replacement, sku: `${original.slug}-replacement` }],
+  });
+  assert.equal(changed.status, 200);
+  await assertActiveVariants();
+  assert.equal(
+    (await db("product_variants").where({ id }).first()).is_active,
+    false,
+  );
+  const retained = changed.body.data.variants.find((v) => v.id === first.id);
+  assert.equal(retained.stockVersion, first.stockVersion);
+});
+
+test("Category creation reuses archived slugs and rejects concurrent duplicates", async () => {
+  const create = (name, slug = "cpu") =>
+    admin.request("/admin/categories", "POST", { name, slug });
+  const invalid = await create("Invalid taxonomy", "invalid-taxonomy");
+  assert.equal(invalid.status, 400);
+
+  const initials = await Promise.all([create("Processors"), create("CPUs")]);
+  assert.deepEqual(initials.map((r) => r.status).sort(), [201, 409]);
+  assert.equal(
+    initials.find((r) => r.status === 409).body.error.code,
+    "ALREADY_EXISTS",
+  );
+  const original = initials.find((r) => r.status === 201).body.data;
+  const linked = await createTestProduct(original.id);
+  const path = `/admin/categories/${original.id}`;
+  const inUse = await admin.request(path, "DELETE");
+  assert.equal(inUse.status, 409);
+  assert.equal(inUse.body.error.code, "CATEGORY_IN_USE");
+  const archived = await admin.request(`/admin/products/${linked.id}`, "DELETE");
+  assert.equal(archived.status, 204);
+  assert.equal((await admin.request(path, "DELETE")).status, 204);
+  assert.equal(
+    (await db("categories").where({ id: original.id }).first()).is_active,
+    false,
+  );
+
+  const reactivations = await Promise.all([
+    create("Processor catalog"),
+    create("CPU catalog"),
+  ]);
+  assert.deepEqual(reactivations.map((r) => r.status).sort(), [201, 409]);
+  const reopened = reactivations.find((r) => r.status === 201).body.data;
+  assert.equal(reopened.id, original.id);
+  assert.equal(reopened.createdAt, original.createdAt);
+  assert.equal(reopened.isActive, true);
+  assert.ok(["Processor catalog", "CPU catalog"].includes(reopened.name));
+
+  const categories = await db("categories").where({ slug: "cpu" });
+  assert.equal(categories.length, 1);
+  assert.equal(categories[0].name, reopened.name);
+  const archivedProduct = await db("products").where({ id: linked.id }).first();
+  assert.equal(archivedProduct.category_id, original.id);
+  assert.equal(archivedProduct.is_active, false);
+  const duplicate = await create("This name must not replace an active category");
+  assert.equal(duplicate.status, 409);
+  assert.equal(duplicate.body.error.code, "ALREADY_EXISTS");
+  const active = await db("categories").where({ id: original.id }).first();
+  assert.equal(active.name, reopened.name);
+});
+
 test("Two checkouts contend for one coupon use without over-redemption", async () => {
   const code = randomUUID().replaceAll("-", "").slice(0, 5).toUpperCase();
   assert.equal(

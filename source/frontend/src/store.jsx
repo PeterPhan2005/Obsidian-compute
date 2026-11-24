@@ -1183,8 +1183,26 @@ export function Checkout() {
 export function Success() {
   const [params] = useSearchParams(),
     receipt = params.get("receipt");
-  const q = useData(`/checkout/receipts/${receipt}`, { enabled: !!receipt });
-  if (q.isPending && receipt) return <Loading />;
+  const q = useData(`/checkout/receipts/${encodeURIComponent(receipt ?? "")}`, {
+    enabled: !!receipt,
+  });
+  const order = q.data?.data;
+  if (receipt && q.isPending) return <Loading />;
+  if (!receipt || q.isError || !order?.orderNumber) {
+    return (
+      <main className="container page">
+        <PageTitle title="Order receipt unavailable">
+          {!receipt && "Open the receipt link for your order or check your order history."}
+        </PageTitle>
+        {receipt && (
+          <ErrorBox error={q.error ?? { message: "Unable to load this receipt." }} />
+        )}
+        <Link className="button secondary" to="/account/orders">
+          View order history
+        </Link>
+      </main>
+    );
+  }
   return (
     <main className="container page">
       <div className="success-heading">
@@ -1192,15 +1210,11 @@ export function Success() {
           <Check size={32} />
         </div>
         <span className="eyebrow">A GREAT CHOICE.</span>
-        <h1>It's yours.</h1>
-        <p>
-          Your order is confirmed. We've queued a confirmation email with all
-          the details.
-        </p>
-        {q.data && <strong>{q.data.data.orderNumber}</strong>}
+        <h1>Order placed</h1>
+        <p>We've queued an email with your order details.</p>
+        <strong>{order.orderNumber}</strong>
       </div>
-      <ErrorBox error={q.error} />
-      {q.data && <OrderContent order={q.data.data} />}
+      <OrderContent order={order} />
       <div className="center-actions">
         <Link className="button" to="/products">
           Keep exploring <ArrowUpRight size={16} />
