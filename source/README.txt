@@ -9,6 +9,7 @@ From this source/ directory, run:
     docker compose up -d
 
 No npm install, manual database creation, migrations or seed command is needed.
+Compose automatically uses docker-compose.yml in this directory.
 The first run downloads images and builds the app; allow several minutes.
 Open http://localhost:8080
 Email inbox: http://localhost:8025
@@ -144,9 +145,15 @@ From source/:
     npm run verify
 
 npm test runs focused calculation/calendar tests.
-npm run verify recreates ONLY the separate obsidian-test stack, including its
-own database/media volumes, then runs backend integration and Playwright tests.
-It does not reset the main obsidian-compute database.
+npm run verify requires a local Docker Engine. It creates a fresh project named
+obsidian-test-<random-id>, confirms its dedicated PostgreSQL database and port
+bindings, then discovers backend tests and runs all Playwright specifications.
+The Google OAuth fixture runs with isolated Redis/PostgreSQL and synthetic
+configuration. Test email stays inside the project's Mailpit instance.
+The verifier exits if the ports are already in use or the new project would
+reuse existing resources. On completion or test failure it stops the test
+project, preserving its volumes. To run backend tests only, use
+npm run verify -- --api-only.
 
 Test website: http://localhost:8081
 Test inbox: http://localhost:8026
@@ -154,12 +161,11 @@ Test database port: 15433 (loopback only)
 Test APIs: 3101 / 3102 (loopback only)
 All test-stack ports must be free. Use modern Compose with !override support.
 
-The full verifier runs 20 backend tests and 7 browser tests, including concurrent
-stock/coupon contention, idempotency, zero-payment and point reconciliation,
-OTP/recovery, RBAC/CSRF, two-replica sessions and WebSockets, Admin CRUD/upload,
-checkout, and responsive screenshots at 375/768/1280/1440px.
-Reports/screenshots: ../docs/evidence/
-To stop the test stack: docker compose -p obsidian-test -f compose.yaml -f compose.test.yaml down
+Test artifacts and HTML reports are written to test-results/<project>/ and
+playwright-report/<project>/ respectively. A direct Playwright run uses the
+manual subdirectories. Existing demonstration screenshots stay in docs/evidence/.
+The default browser is Playwright Chromium. To use an already installed
+Chromium browser instead, set PLAYWRIGHT_CHROMIUM_EXECUTABLE to its absolute path.
 
 KNOWN BOUNDARIES
 ----------------

@@ -12,6 +12,7 @@ import {
   ok,
   hash,
   keyedHash,
+  equal,
 } from "./lib.js";
 import { resolveCart, cartDto } from "./cart-service.js";
 import { quoteTotals } from "./pricing.js";
@@ -99,6 +100,7 @@ const orderSchema = z
     paymentMethod: z.literal("DEMO"),
     demoPaymentOutcome: z.enum(["success", "failure"]).optional(),
     demoPaymentToken: z.enum(["DEMO-APPROVE", "DEMO-DECLINE"]).optional(),
+    reviewedQuote: z.string().regex(/^[a-f0-9]{64}$/).optional(),
   })
   .strict()
   .refine((b) => !!b.shippingAddress !== !!b.addressId, {
@@ -114,6 +116,34 @@ async function couponQuote(code, conn = db) {
     ? await conn("coupons").where({ code }).first()
     : null;
   return coupon;
+}
+function quoteFingerprint(cartId, items, couponCode, couponValid, totals) {
+  const lines = items
+    .map(({ variantId, name, sku, attributes, quantity, unitPriceVnd }) => [
+      variantId,
+      name,
+      sku,
+      Object.keys(attributes)
+        .sort()
+        .map((key) => [key, attributes[key]]),
+      quantity,
+      unitPriceVnd,
+    ])
+    .sort(([a], [b]) => a.localeCompare(b));
+  return keyedHash(`checkout-quote:${JSON.stringify({
+    cartId,
+    lines,
+    couponCode: couponCode || null,
+    couponValid,
+    subtotalVnd: totals.subtotalVnd,
+    shippingFeeVnd: totals.shippingFeeVnd,
+    taxVnd: totals.taxVnd,
+    couponDiscountVnd: totals.couponDiscountVnd,
+    pointsToRedeem: totals.pointsToRedeem,
+    pointsDiscountVnd: totals.pointsDiscountVnd,
+    totalPayableVnd: totals.totalPayableVnd,
+    estimatedEarnedPoints: totals.estimatedEarnedPoints,
+  })}`);
 }
 export function shopRoutes(limiter) {
   const router = Router();
@@ -211,6 +241,7 @@ export function shopRoutes(limiter) {
       );
     const cart = await cartDto(await resolveCart(req, res));
     const coupon = await couponQuote(b.couponCode);
+    const couponValid = !!coupon && coupon.used_count < coupon.usage_limit;
     const totals = quoteTotals({
       subtotalVnd: cart.subtotalVnd,
       coupon,
@@ -221,10 +252,17 @@ export function shopRoutes(limiter) {
     ok(res, {
       cart,
       ...totals,
+      quoteFingerprint: quoteFingerprint(
+        cart.id,
+        cart.items,
+        b.couponCode,
+        couponValid,
+        totals,
+      ),
       coupon: b.couponCode
         ? {
             code: b.couponCode,
-            valid: !!coupon && coupon.used_count < coupon.usage_limit,
+            valid: couponValid,
             message: !coupon
               ? "Code not found."
               : coupon.used_count >= coupon.usage_limit
@@ -246,19 +284,20 @@ export function shopRoutes(limiter) {
         "PAYMENT_UNAVAILABLE",
         "Sandbox payments are disabled.",
       );
-      const { demoPaymentToken, demoPaymentOutcome, ...b } =
+      const { demoPaymentToken, demoPaymentOutcome, reviewedQuote, ...b } =
         orderSchema.parse(req.body);
       const key = id.parse(req.get("Idempotency-Key"));
       const cart = await resolveCart(req, res, { create: false });
       const paymentApproved = demoPaymentToken === "DEMO-APPROVE";
       const tokenOutcome = paymentApproved ? "success" : "failure";
-      // Keep the historical hash shape and default for completed checkout replays.
+      // Keep the historical hash shape for completed requests made before quote binding.
       const requestHash = hash(
         JSON.stringify({
           ...b,
           demoPaymentOutcome: demoPaymentToken
             ? tokenOutcome
             : (demoPaymentOutcome ?? "success"),
+          ...(reviewedQuote ? { reviewedQuote } : {}),
         }),
       );
       const result = await db.transaction(async (tx) => {
@@ -292,6 +331,12 @@ export function shopRoutes(limiter) {
           "Enter a sandbox payment code.",
         );
         check(cart, 400, "EMPTY_CART", "Your bag is empty.");
+        check(
+          reviewedQuote,
+          400,
+          "QUOTE_REQUIRED",
+          "Review your order before placing it.",
+        );
         let shippingAddress = b.shippingAddress;
         if (b.addressId) {
           check(
@@ -366,12 +411,8 @@ export function shopRoutes(limiter) {
           .where({ email: buyer.email })
           .forUpdate()
           .first();
-        if (!user)
-          [user] = await tx("users")
-            .insert({ email: buyer.email, full_name: buyer.fullName })
-            .returning("*");
         check(
-          !user.is_banned && user.role === "CUSTOMER",
+          user ? !user.is_banned && user.role === "CUSTOMER" : !req.user,
           403,
           "ACCOUNT_UNAVAILABLE",
           "This email cannot be used for checkout.",
@@ -398,15 +439,41 @@ export function shopRoutes(limiter) {
         const totals = quoteTotals({
           subtotalVnd: snapshots.reduce((s, i) => s + i.line_total_vnd, 0),
           coupon,
-          balancePoints: req.user ? user.points_balance : 0,
+          balancePoints: req.user ? user?.points_balance ?? 0 : 0,
           pointsToRedeem: b.pointsToRedeem,
         });
+        check(
+          equal(
+            reviewedQuote,
+            quoteFingerprint(
+              cart.id,
+              snapshots.map((item) => ({
+                variantId: item.variant_id,
+                name: item.name_snapshot,
+                sku: item.sku_snapshot,
+                attributes: JSON.parse(item.attributes_snapshot),
+                quantity: item.quantity,
+                unitPriceVnd: item.unit_price_vnd,
+              })),
+              b.couponCode,
+              !!coupon,
+              totals,
+            ),
+          ),
+          409,
+          "QUOTE_CHANGED",
+          "Your bag or totals changed. Review the updated order before placing it.",
+        );
         check(
           paymentApproved,
           402,
           "PAYMENT_FAILED",
           "Sandbox payment declined. No money or points were taken.",
         );
+        if (!user)
+          [user] = await tx("users")
+            .insert({ email: buyer.email, full_name: buyer.fullName })
+            .returning("*");
         const reference = `sandbox_${key}`;
         await tx("payment_attempts").insert({
           checkout_key: key,

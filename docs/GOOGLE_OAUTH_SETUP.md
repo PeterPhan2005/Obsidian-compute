@@ -35,7 +35,7 @@ Nguồn: [Google web-server OAuth guide](https://developers.google.com/identity/
 
 ## 3. Cấu hình dự án
 
-Tạo `source/.env` cạnh `source/compose.yaml` từ `.env.example`. Giữ file này cục bộ.
+Tạo `source/.env` cạnh `source/docker-compose.yml` từ `.env.example`. Giữ file này cục bộ.
 
 ```dotenv
 APP_BASE_URL=http://localhost:8080

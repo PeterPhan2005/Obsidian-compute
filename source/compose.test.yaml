@@ -1,4 +1,4 @@
-# Isolated validation stack. Always use -p obsidian-test with this override.
+# Isolated validation stack. npm run verify selects a fresh project name.
 x-test-env: &test-env
   DATABASE_URL: postgres://obsidian:local-db-password@postgres:5432/obsidian_test
   APP_BASE_URL: http://localhost:8081
@@ -7,6 +7,8 @@ x-test-env: &test-env
   GOOGLE_CALLBACK_URL: ""
   ADMIN_EMAIL: admin@obsidian.local
   ADMIN_PASSWORD: ObsidianAdmin!2026
+  DEMO_PAYMENT_ENABLED: "true"
+  SEED_DEMO_DATA: "true"
 services:
   postgres:
     environment:

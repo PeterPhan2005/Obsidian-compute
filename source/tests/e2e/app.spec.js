@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("../../", import.meta.url));
+test.use({ trace: "off", screenshot: "off", video: "off" });
 async function login(page, admin = false) {
   await page.goto("/login");
   await page
@@ -35,7 +36,7 @@ async function addProduct(page) {
 }
 test("Homepage has working numbered sections, local imagery and responsive layout", async ({
   page,
-}) => {
+}, testInfo) => {
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/");
@@ -58,7 +59,7 @@ test("Homepage has working numbered sections, local imagery and responsive layou
     await noOverflow(page);
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.screenshot({
-      path: path.join(root, `../docs/evidence/home-${width}.png`),
+      path: testInfo.outputPath(`home-${width}.png`),
       fullPage: width === 1440,
     });
   }
@@ -169,7 +170,9 @@ test("Guest checkout preserves stock when Admin saves an already open product fo
   expect(await readStock()).toBe(variant.stock - 1);
 
   await adminContext.close();
-  await page.reload();
+  await page.reload().catch(() => {
+    throw new Error("Receipt page reload failed.");
+  });
   await expect(
     page.getByRole("heading", { name: "Order placed" }),
   ).toBeVisible();
@@ -187,11 +190,14 @@ test("Checkout success requires a receipt and handles an unavailable receipt", a
   await expect(success).toHaveCount(0);
   await expect(page.getByRole("alert")).toHaveCount(0);
 
-  for (const receipt of ["invalid-receipt", "0".repeat(64)]) {
+  for (const [receipt, separator] of [
+    ["invalid-receipt", "?"],
+    ["0".repeat(64), "#"],
+  ]) {
     const response = page.waitForResponse((r) =>
       r.url().endsWith(`/api/v1/checkout/receipts/${receipt}`),
     );
-    await page.goto(`/checkout/success?receipt=${receipt}`);
+    await page.goto(`/checkout/success${separator}receipt=${receipt}`);
     expect((await response).status()).toBe(404);
     await expect(unavailable).toBeVisible();
     await expect(page.getByRole("alert")).toBeVisible();
@@ -207,7 +213,7 @@ test("Checkout success requires a receipt and handles an unavailable receipt", a
     await route.abort("failed");
   });
   try {
-    await page.goto(`/checkout/success?receipt=${"1".repeat(64)}`);
+    await page.goto(`/checkout/success#receipt=${"1".repeat(64)}`);
     await expect(page.getByRole("status")).toBeVisible();
     await expect(success).toHaveCount(0);
   } finally {
@@ -261,7 +267,7 @@ test("Customer account shows persisted purchases, address editing and rewards", 
 });
 test("Admin dashboards and time filters render actual data; coupon form saves", async ({
   page,
-}) => {
+}, testInfo) => {
   await login(page, true);
   await expect(
     page.getByRole("heading", { name: "Your store, at a glance." }),
@@ -296,7 +302,7 @@ test("Admin dashboards and time filters render actual data; coupon form saves", 
   await page.setViewportSize({ width: 375, height: 900 });
   await noOverflow(page);
   await page.screenshot({
-    path: path.join(root, "../docs/evidence/admin-mobile.png"),
+    path: testInfo.outputPath("admin-mobile.png"),
     fullPage: true,
   });
 });
@@ -362,7 +368,7 @@ test("Admin can create, edit and archive a product with uploaded photos and vari
 });
 test("Mobile catalog, product, cart and navigation fit the viewport", async ({
   page,
-}) => {
+}, testInfo) => {
   await page.setViewportSize({ width: 375, height: 900 });
   await page.goto("/products");
   await page.getByRole("button", { name: "Filters", exact: true }).click();
@@ -374,7 +380,7 @@ test("Mobile catalog, product, cart and navigation fit the viewport", async ({
   await expect(page.locator(".product-description h1")).toBeVisible();
   await noOverflow(page);
   await page.screenshot({
-    path: path.join(root, "../docs/evidence/product-mobile.png"),
+    path: testInfo.outputPath("product-mobile.png"),
     fullPage: true,
   });
   await page.getByRole("button", { name: "Open menu" }).click();

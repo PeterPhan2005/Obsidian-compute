@@ -3,69 +3,8 @@ import assert from "node:assert/strict";
 import { createHash, randomUUID } from "node:crypto";
 import { setTimeout as delay } from "node:timers/promises";
 import { db } from "../src/db.js";
-const BASE = process.env.TEST_BASE_URL || "http://localhost:8081";
-const ORIGIN = "http://localhost:8081";
+import { BASE, Client, ORIGIN, shipping, purchase, submit, review } from "./checkout-fixtures.js";
 let admin, product, variant;
-class Client {
-  constructor(base = BASE) {
-    this.base = base;
-    this.cookies = new Map();
-    this.csrf = null;
-  }
-  async request(path, method = "GET", body, headers = {}) {
-    if (method !== "GET" && !this.csrf) {
-      const r = await this.request("/auth/csrf");
-      this.csrf = r.body.data.csrfToken;
-    }
-    const r = await fetch(this.base + "/api/v1" + path, {
-      method,
-      headers: {
-        Cookie: [...this.cookies].map(([k, v]) => `${k}=${v}`).join("; "),
-        Origin: ORIGIN,
-        ...(method !== "GET" ? { "X-CSRF-Token": this.csrf } : {}),
-        ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
-        ...headers,
-      },
-      body: body !== undefined ? JSON.stringify(body) : undefined,
-    });
-    for (const cookie of r.headers.getSetCookie()) {
-      const pair = cookie.split(";")[0],
-        i = pair.indexOf("=");
-      this.cookies.set(pair.slice(0, i), pair.slice(i + 1));
-    }
-    return {
-      status: r.status,
-      body: r.status === 204 ? null : await r.json(),
-      headers: r.headers,
-    };
-  }
-  async login(email = "admin@obsidian.local", password = "ObsidianAdmin!2026") {
-    const r = await this.request("/auth/login/password", "POST", {
-      email,
-      password,
-    });
-    assert.equal(r.status, 200, JSON.stringify(r.body));
-    return r;
-  }
-}
-const shipping = {
-  recipientName: "Integration Customer",
-  phone: "0901234567",
-  line1: "12 Nguyen Hue",
-  ward: "Ben Nghe",
-  district: "District 1",
-  city: "Ho Chi Minh City",
-  country: "VN",
-};
-function purchase(email, extra = {}) {
-  return {
-    buyer: { email, fullName: "Integration Customer" },
-    shippingAddress: shipping,
-    paymentMethod: "DEMO",
-    demoPaymentToken: "DEMO-APPROVE",
-    ...extra,
-  };
-}
 async function add(c, v = variant, quantity = 1) {
   const r = await c.request("/cart/items", "POST", {
     variantId: v.id,
@@ -73,11 +12,6 @@ async function add(c, v = variant, quantity = 1) {
   });
   assert.equal(r.status, 200, JSON.stringify(r.body));
   return r;
-}
-async function submit(c, body, key = randomUUID()) {
-  return c.request("/checkout/orders", "POST", body, {
-    "Idempotency-Key": key,
-  });
 }
 async function lastMail(email, subject, notBefore = 0) {
   for (let n = 0; n < 30; n++) {
@@ -255,7 +189,7 @@ test("Missing, legacy-only, mixed, invalid and declined payments leave checkout 
   assert.equal(withoutCart.cookies.has("guest_cart"), false);
   const result = await submit(
     c,
-    { ...body, demoPaymentToken: "DEMO-DECLINE" },
+    await review(c, { ...body, demoPaymentToken: "DEMO-DECLINE" }),
     key,
   );
   assert.equal(result.status, 402);
@@ -292,7 +226,7 @@ test("Concurrent identical guest checkout creates one order, one coupon use, one
   await add(c);
   const email = `guest-${randomUUID()}@example.com`,
     key = randomUUID();
-  const body = purchase(email, { couponCode: "HELLO" });
+  const body = await review(c, purchase(email, { couponCode: "HELLO" }));
   // Use the baseline schema's parsed field order and defaults for the stored hash.
   const legacy = {
     buyer: { fullName: body.buyer.fullName, email },
@@ -307,14 +241,27 @@ test("Concurrent identical guest checkout creates one order, one coupon use, one
     submit(c, body, key),
     submit(c, body, key),
   ]);
-  for (const r of results) assert.equal(r.status, 201, JSON.stringify(r.body));
+  for (const r of results) assert.equal(r.status, 201, r.body.error?.code);
   assert.equal(results[0].body.data.order.id, results[1].body.data.order.id);
   const { order, receiptToken } = results[0].body.data;
   const historicalHash = createHash("sha256")
     .update(JSON.stringify(legacy))
     .digest("hex");
   const stored = await db("checkout_idempotency").where({ key }).first();
-  assert.equal(stored.request_hash, historicalHash);
+  assert.notEqual(stored.request_hash, historicalHash);
+  assert.equal(
+    (await submit(c, { ...body, reviewedQuote: "0".repeat(64) }, key)).body.error.code,
+    "IDEMPOTENCY_CONFLICT",
+  );
+  assert.equal(
+    (await submit(c, { ...body, demoPaymentToken: "DEMO-DECLINE" }, key)).body.error.code,
+    "IDEMPOTENCY_CONFLICT",
+  );
+  // Represent a completed record from before quote binding on the isolated database.
+  await db("checkout_idempotency").where({ key }).update({ request_hash: historicalHash });
+  const preQuoteRetry = await submit(c, purchase(email, { couponCode: "HELLO" }), key);
+  assert.equal(preQuoteRetry.status, 201);
+  assert.equal(preQuoteRetry.body.data.order.id, order.id);
   for (const outcome of ["success", undefined]) {
     const legacyRetry = await submit(
       c,
@@ -323,7 +270,7 @@ test("Concurrent identical guest checkout creates one order, one coupon use, one
     );
     assert.equal(legacyRetry.status, 201);
     assert.equal(legacyRetry.body.data.order.id, order.id);
-    assert.equal(legacyRetry.body.data.receiptToken, receiptToken);
+    assert.ok(legacyRetry.body.data.receiptToken === receiptToken);
   }
   const wrongCart = new Client();
   await wrongCart.request("/cart");
@@ -335,7 +282,7 @@ test("Concurrent identical guest checkout creates one order, one coupon use, one
     409,
   );
   assert.equal(
-    (await submit(c, { ...body, demoPaymentToken: "DEMO-DECLINE" }, key))
+    (await submit(c, { ...legacy, demoPaymentOutcome: "failure" }, key))
       .status,
     409,
   );
@@ -362,12 +309,14 @@ test("Concurrent identical guest checkout creates one order, one coupon use, one
     409,
   );
   const mail = await lastMail(email, order.orderNumber);
+  assert.equal(mail.Subject, `Your order ${order.orderNumber} has been received`);
   assert.ok(mail.Text.includes(order.orderNumber));
+  assert.match(mail.Text, /Status: pending/);
 });
 test("Guest using existing email does not gain session; OTP grants access to saved order", async () => {
   const c = new Client();
   await add(c);
-  const r = await submit(c, purchase("sam@example.com"));
+  const r = await submit(c, await review(c, purchase("sam@example.com")));
   assert.equal(r.status, 201);
   assert.equal((await c.request("/auth/session")).body.data.user, null);
   const requestedAt = Date.now();
@@ -413,9 +362,11 @@ test("Two checkouts contend for one remaining stock unit without overselling", a
   assert.equal(inventory.status, 200);
   await add(c1, other);
   await add(c2, other);
+  const bodyA = await review(c1, purchase(`stock-a-${randomUUID()}@example.com`));
+  const bodyB = await review(c2, purchase(`stock-b-${randomUUID()}@example.com`));
   const r = await Promise.all([
-    submit(c1, purchase(`stock-a-${randomUUID()}@example.com`)),
-    submit(c2, purchase(`stock-b-${randomUUID()}@example.com`)),
+    submit(c1, bodyA),
+    submit(c2, bodyB),
   ]);
   assert.deepEqual(r.map((x) => x.status).sort(), [201, 409]);
   assert.equal(
@@ -456,7 +407,7 @@ test("Inventory revisions protect product edits, checkout and concurrent stock u
   assert.equal(first.stock, 20);
   const guest = new Client();
   await add(guest, first);
-  const checkout = await submit(guest, purchase(`inventory-${suffix}@example.com`));
+  const checkout = await submit(guest, await review(guest, purchase(`inventory-${suffix}@example.com`)));
   assert.equal(checkout.status, 201);
   assert.equal((await readVariant(first.id)).stock, 19);
   const metadata = {
@@ -535,8 +486,9 @@ test("Inventory revisions protect product edits, checkout and concurrent stock u
 
   const nextGuest = new Client();
   await add(nextGuest, first);
+  const reviewed = await review(nextGuest, purchase(`inventory-race-${suffix}@example.com`));
   const [sale, adjustment] = await Promise.all([
-    submit(nextGuest, purchase(`inventory-race-${suffix}@example.com`)),
+    submit(nextGuest, reviewed),
     admin.request(productPath, "PATCH", {
       variants: added.body.data.variants.map((v) =>
         v.id === first.id ? setStock(v, 40) : v,
@@ -815,17 +767,14 @@ test("Two checkouts contend for one coupon use without over-redemption", async (
     b = new Client();
   await add(a);
   await add(b);
+  const orderA = await review(a, purchase(`coupon-a-${randomUUID()}@example.com`, { couponCode: code }));
+  const orderB = await review(b, purchase(`coupon-b-${randomUUID()}@example.com`, { couponCode: code }));
   const r = await Promise.all([
-    submit(
-      a,
-      purchase(`coupon-a-${randomUUID()}@example.com`, { couponCode: code }),
-    ),
-    submit(
-      b,
-      purchase(`coupon-b-${randomUUID()}@example.com`, { couponCode: code }),
-    ),
+    submit(a, orderA),
+    submit(b, orderB),
   ]);
   assert.deepEqual(r.map((x) => x.status).sort(), [201, 422]);
+  assert.equal(r.find((x) => x.status === 422).body.error.code, "INVALID_COUPON");
   assert.equal((await db("coupons").where({ code }).first()).used_count, 1);
 });
 test("Registration only allows email/name/address; recovery tokens single-use; addresses support defaults", async () => {
@@ -981,7 +930,7 @@ test("Admin sequential status transitions, coupon limits, user bans and actual a
   const bannedGuest = new Client();
   await add(bannedGuest);
   assert.equal(
-    (await submit(bannedGuest, purchase("jordan@example.com"))).status,
+    (await submit(bannedGuest, await review(bannedGuest, purchase("jordan@example.com")))).status,
     403,
   );
   await admin.request(`/admin/users/${u.id}`, "PATCH", { isBanned: false });
@@ -1019,10 +968,10 @@ test("Loyalty redemption and zero-amount payments reconcile exactly with the led
     (await c.request("/me")).body.data.pointsBalance,
     before.pointsBalance,
   );
-  const r = await submit(c, {
+  const r = await submit(c, await review(c, {
     ...order,
     demoPaymentToken: "DEMO-APPROVE",
-  });
+  }));
   assert.equal(r.status, 201, JSON.stringify(r.body));
   assert.equal(r.body.data.order.totalPaidVnd, 0);
   assert.equal(r.body.data.order.pointsEarned, 0);
@@ -1034,12 +983,12 @@ test("Loyalty redemption and zero-amount payments reconcile exactly with the led
     .first();
   assert.equal(Number(sum), after.pointsBalance);
   await add(c);
-  const body = {
+  const body = await review(c, {
     shippingAddress: shipping,
     paymentMethod: "DEMO",
     demoPaymentToken: "DEMO-APPROVE",
     pointsToRedeem: 1,
-  };
+  });
   const results = await Promise.all([submit(c, body), submit(c, body)]);
   assert.deepEqual(results.map((r) => r.status).sort(), [201, 400]);
   const final = (await c.request("/me")).body.data;

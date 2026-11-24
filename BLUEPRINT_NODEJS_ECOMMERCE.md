@@ -184,7 +184,7 @@ source/
     Dockerfile
   nginx/
     nginx.conf
-  compose.yaml
+  docker-compose.yml
   .env.example
   README.txt
   package.json
@@ -927,7 +927,7 @@ docker compose up -d
 
 Không đòi họ chạy trước `npm install`, `knex migrate:latest`, `seed`, `docker build`, tạo database thủ công, chạy thêm script hoặc set secret bắt buộc cho basic demo. Dockerfiles/entrypoints xử lý build/migration/seed tự động và **healthchecks + depends_on** đảm bảo thứ tự.
 
-### 9.2 Services trong `compose.yaml`
+### 9.2 Services trong `docker-compose.yml`
 
 | Container | Vai trò | Bắt buộc |
 |---|---|---|
@@ -1109,7 +1109,7 @@ Theo trang 12–13 của PDF:
 id1_fullname1_id2_fullname2/
   source/
     frontend/ backend/ worker/ nginx/
-    compose.yaml
+    docker-compose.yml
     .env.example
     README.txt (hướng dẫn chạy nếu đặt trong source)
   demo.mp4

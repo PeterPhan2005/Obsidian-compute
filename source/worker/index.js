@@ -56,7 +56,7 @@ while (running) {
           from: mailFrom || "Obsidian Compute <orders@obsidian.local>",
           to: p.to,
           subject: p.order
-            ? `Your order ${p.order.orderNumber} is confirmed`
+            ? `Your order ${p.order.orderNumber} has been received`
             : p.subject,
           text,
           html: `<div style="font-family:Arial,sans-serif;max-width:600px"><h2>OBSIDIAN COMPUTE</h2><pre style="font-family:inherit;white-space:pre-wrap">${escapeHtml(text)}</pre></div>`,

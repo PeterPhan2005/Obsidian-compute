@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import {
   Link,
+  useLocation,
   useNavigate,
   useParams,
   useSearchParams,
@@ -28,6 +29,7 @@ import {
   X,
 } from "lucide-react";
 import { api, useData, useAction, money, queryString } from "./api";
+import { readReceiptToken, receiptHref } from "./receipt-location";
 import {
   Loading,
   ErrorBox,
@@ -891,6 +893,21 @@ export function Cart() {
     </main>
   );
 }
+function CheckoutItems({ items }) {
+  return items.map((i) => (
+    <div className="checkout-item" key={i.id}>
+      <img src={i.imageUrl} alt={i.name} />
+      <div>
+        <strong>{i.name}</strong>
+        <small>
+          {i.sku} · Qty {i.quantity}
+        </small>
+        <small>{Object.values(i.attributes).join(" / ")}</small>
+      </div>
+      <span>{money(i.lineTotalVnd)}</span>
+    </div>
+  ));
+}
 export function Checkout() {
   const { user } = useSession(),
     cartQ = useData("/cart"),
@@ -913,7 +930,7 @@ export function Checkout() {
     [appliedCoupon, setAppliedCoupon] = useState(""),
     [points, setPoints] = useState(0),
     [paymentToken, setPaymentToken] = useState(""),
-    [key] = useState(() => crypto.randomUUID());
+    [review, setReview] = useState(null);
   const validPaymentToken =
     paymentToken === "DEMO-APPROVE" || paymentToken === "DEMO-DECLINE";
   const action = useAction(),
@@ -940,7 +957,21 @@ export function Checkout() {
     }
   }, [addresses.data, addressLoaded]);
   const quote = useQuery({
-    queryKey: ["quote", appliedCoupon, points, cart?.subtotalVnd],
+    queryKey: [
+      "checkout-quote",
+      cart?.id,
+      cart?.items.map((item) => [
+        item.variantId,
+        item.name,
+        item.sku,
+        item.attributes,
+        item.quantity,
+        item.unitPriceVnd,
+      ]),
+      user?.id,
+      appliedCoupon,
+      points,
+    ],
     queryFn: () =>
       api("/checkout/quote", {
         method: "POST",
@@ -951,35 +982,73 @@ export function Checkout() {
       }),
     enabled: !!cart?.items.length,
     retry: false,
+    staleTime: 0,
   });
+  const startReview = () => {
+    const snapshot = quote.data.data;
+    action.clearError();
+    setReview({
+      quote: snapshot,
+      key: crypto.randomUUID(),
+      body: {
+        ...(!user ? { buyer } : {}),
+        shippingAddress: address,
+        couponCode: appliedCoupon || undefined,
+        pointsToRedeem: points,
+        paymentMethod: "DEMO",
+        demoPaymentToken: paymentToken,
+        reviewedQuote: snapshot.quoteFingerprint,
+      },
+      buyerEmail: user?.email ?? buyer.email,
+      uncertain: false,
+    });
+    setStep(3);
+  };
   const submit = async () => {
-    const result = await action.run(() =>
-      api("/checkout/orders", {
-        method: "POST",
-        headers: { "Idempotency-Key": key },
-        body: {
-          ...(!user ? { buyer } : {}),
-          shippingAddress: address,
-          couponCode: appliedCoupon || undefined,
-          pointsToRedeem: points,
-          paymentMethod: "DEMO",
-          demoPaymentToken: paymentToken,
-        },
-      }),
-    );
+    const result = await action.run(async () => {
+      try {
+        return await api("/checkout/orders", {
+          method: "POST",
+          headers: { "Idempotency-Key": review.key },
+          body: review.body,
+        });
+      } catch (error) {
+        if ([
+          "QUOTE_CHANGED",
+          "INVALID_COUPON",
+          "INVALID_POINTS",
+          "EMPTY_CART",
+          "INSUFFICIENT_STOCK",
+        ].includes(error.code)) {
+          await Promise.all([cartQ.refetch(), quote.refetch()]);
+          setReview(null);
+          setStep(2);
+        } else if (error.code === "PAYMENT_FAILED") {
+          setReview({ ...review, uncertain: false });
+        } else if (!error.status || error.status >= 500 || review.uncertain) {
+          setReview({ ...review, uncertain: true });
+        }
+        throw error;
+      }
+    });
     if (result)
-      navigate(`/checkout/success?receipt=${result.data.receiptToken}`, {
+      navigate(receiptHref(result.data.receiptToken), {
         replace: true,
       });
   };
-  if (cartQ.isPending) return <Loading />;
-  if (!cart?.items.length)
+  if (cartQ.isPending && !review) return <Loading />;
+  if (!cart?.items.length && !review)
     return (
       <main className="container page">
-        <ErrorBox error={cartQ.error} />
+        <ErrorBox error={action.error || cartQ.error} />
         <Empty title="Your bag is empty" />
       </main>
     );
+  const displayedQuote = review?.quote || quote.data?.data;
+  const reviewedAddress = review?.body.shippingAddress;
+  const stockChanged = quote.data?.data.cart.items.some(
+    (item) => item.availableStock < item.quantity,
+  );
   return (
     <main className="container page checkout-page">
       <PageTitle eyebrow="ONE STEP CLOSER" title="Make it yours." />
@@ -1000,18 +1069,7 @@ export function Checkout() {
           {step === 0 && (
             <>
               <h2>A final look at your bag</h2>
-              {cart.items.map((i) => (
-                <div className="checkout-item" key={i.id}>
-                  <img src={i.imageUrl} alt={i.name} />
-                  <div>
-                    <strong>{i.name}</strong>
-                    <small>
-                      {i.sku} · Qty {i.quantity}
-                    </small>
-                  </div>
-                  <span>{money(i.lineTotalVnd)}</span>
-                </div>
-              ))}
+              <CheckoutItems items={cart.items} />
               <Link className="text-link" to="/cart">
                 Edit bag
               </Link>
@@ -1178,6 +1236,12 @@ export function Checkout() {
                 </p>
               )}
               <ErrorBox error={quote.error} />
+              {stockChanged && (
+                <p className="danger">
+                  Some items are no longer available at the selected quantities.{" "}
+                  <Link to="/cart">Edit bag</Link>.
+                </p>
+              )}
               <div className="form-actions">
                 <button className="button secondary" onClick={() => setStep(1)}>
                   Back
@@ -1189,50 +1253,63 @@ export function Checkout() {
                     !quote.data ||
                     quote.isFetching ||
                     !!quote.error ||
+                    stockChanged ||
                     quote.data?.data.coupon?.valid === false
                   }
-                  onClick={() => setStep(3)}
+                  onClick={startReview}
                 >
                   Review order <ArrowRight size={16} />
                 </button>
               </div>
             </>
           )}
-          {step === 3 && (
+          {review && (
             <>
               <h2>Everything in its place.</h2>
+              <CheckoutItems items={review.quote.cart.items} />
               <div className="review-delivery">
                 <h3>Deliver to</h3>
-                <strong>{address.recipientName}</strong>
+                <strong>{reviewedAddress.recipientName}</strong>
                 <p>
-                  {address.line1}, {address.ward}, {address.district}
+                  {reviewedAddress.line1}, {reviewedAddress.ward}, {reviewedAddress.district}
                   <br />
-                  {address.city}, Vietnam
+                  {reviewedAddress.city}, Vietnam
                   <br />
-                  {address.phone}
+                  {reviewedAddress.phone}
                 </p>
-                <p>{buyer.email}</p>
+                <p>{review.buyerEmail}</p>
               </div>
               <p className="muted">
-                Payment: Sandbox · {paymentToken}
+                Payment: Sandbox · {review.body.demoPaymentToken}
               </p>
               <p className="fine-print">
-                The final price and stock are checked when you place your order.
+                {review.uncertain
+                  ? "We could not confirm the result. Retry to check this same order."
+                  : "If your bag or totals change, you will need to review the order again."}
               </p>
               <div className="form-actions">
                 <button
                   className="button secondary"
-                  disabled={action.pending}
-                  onClick={() => setStep(2)}
+                  disabled={action.pending || review.uncertain}
+                  onClick={() => {
+                    action.clearError();
+                    setReview(null);
+                    setStep(2);
+                    void quote.refetch();
+                  }}
                 >
                   Back
                 </button>
                 <button
                   className="button"
-                  disabled={action.pending || quote.isFetching || !!quote.error}
+                  disabled={action.pending}
                   onClick={submit}
                 >
-                  {action.pending ? "Placing your order…" : "Place order & pay"}
+                  {action.pending
+                    ? "Placing your order…"
+                    : review.uncertain
+                      ? "Retry this order"
+                      : "Place order & pay"}
                   <ArrowUpRight size={17} />
                 </button>
               </div>
@@ -1242,11 +1319,13 @@ export function Checkout() {
         <aside className="panel cart-summary">
           <span className="eyebrow">YOUR NEXT SETUP</span>
           <h2>Order summary</h2>
-          <span className="muted">{cart.itemCount} items</span>
-          <Totals quote={quote.data?.data || cart} />
-          {quote.data && (
+          <span className="muted">
+            {(displayedQuote?.cart || cart).itemCount} items
+          </span>
+          <Totals quote={displayedQuote || cart} />
+          {displayedQuote && (
             <p className="points-note">
-              Earn {quote.data.data.estimatedEarnedPoints} points with this
+              Earn {displayedQuote.estimatedEarnedPoints} points with this
               order.
             </p>
           )}
@@ -1260,8 +1339,7 @@ export function Checkout() {
   );
 }
 export function Success() {
-  const [params] = useSearchParams(),
-    receipt = params.get("receipt");
+  const receipt = readReceiptToken(useLocation());
   const q = useData(`/checkout/receipts/${encodeURIComponent(receipt ?? "")}`, {
     enabled: !!receipt,
   });

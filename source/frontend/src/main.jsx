@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useLayoutEffect } from "react";
 import { createRoot } from "react-dom/client";
 import {
   BrowserRouter,
@@ -9,6 +9,7 @@ import {
   Outlet,
   useNavigate,
   useLocation,
+  useMatch,
 } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
@@ -24,6 +25,10 @@ import {
 } from "lucide-react";
 import { api, useData } from "./api";
 import { SessionContext, Guard, ScrollTop, ErrorBoundary } from "./ui";
+import {
+  receiptSuccessPath,
+  setReceiptReferrerPolicy,
+} from "./receipt-location";
 import { Home, Catalog, ProductDetail, Cart, Checkout, Success } from "./store";
 import {
   Login,
@@ -59,13 +64,17 @@ const client = new QueryClient({
   },
 });
 function Layout() {
+  const location = useLocation();
+  const isReceipt = Boolean(useMatch(receiptSuccessPath));
+  useLayoutEffect(() => {
+    setReceiptReferrerPolicy(isReceipt);
+  }, [isReceipt]);
   const session = useData("/auth/session"),
     user = session.data?.data.user;
   const cart = useData("/cart", {
     enabled: !session.isPending && (!user || user.role === "CUSTOMER"),
   });
-  const navigate = useNavigate(),
-    location = useLocation();
+  const navigate = useNavigate();
   const [mobile, setMobile] = useState(false),
     [search, setSearch] = useState("");
   useEffect(() => {
@@ -243,7 +252,7 @@ function App() {
               <Route path="products/:slug" element={<ProductDetail />} />
               <Route path="cart" element={<Cart />} />
               <Route path="checkout" element={<Checkout />} />
-              <Route path="checkout/success" element={<Success />} />
+              <Route path={receiptSuccessPath} element={<Success />} />
               <Route path="login" element={<Login />} />
               <Route path="register" element={<Register />} />
               <Route path="forgot-password" element={<ForgotPassword />} />

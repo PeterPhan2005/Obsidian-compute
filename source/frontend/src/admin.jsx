@@ -657,17 +657,19 @@ export function ProductForm() {
         descriptionLines: p.descriptionLines,
         tags: p.tags,
         images: p.imageDetails.map((i) => ({ url: i.url, alt: i.alt })),
-        variants: p.variants.map((v) => ({
-          id: v.id,
-          sku: v.sku,
-          attributes: v.attributes,
-          priceVnd: v.priceVnd,
-          costPriceVnd: v.costPriceVnd,
-          stock: v.stock,
-          initialStock: v.stock,
-          stockVersion: v.stockVersion,
-          isActive: v.isActive,
-        })),
+        variants: p.variants
+          .filter((v) => v.isActive)
+          .map((v) => ({
+            id: v.id,
+            sku: v.sku,
+            attributes: v.attributes,
+            priceVnd: v.priceVnd,
+            costPriceVnd: v.costPriceVnd,
+            stock: v.stock,
+            initialStock: v.stock,
+            stockVersion: v.stockVersion,
+            isActive: v.isActive,
+          })),
         isActive: p.isActive,
       });
       setLoaded(id);

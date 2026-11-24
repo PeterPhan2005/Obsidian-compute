@@ -46,7 +46,7 @@ services:
     volumes:
       - db:/var/lib/postgresql/data
     healthcheck:
-      test: [CMD-SHELL, pg_isready -U obsidian -d obsidian]
+      test: [CMD-SHELL, 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
       interval: 3s
       retries: 20
   redis:

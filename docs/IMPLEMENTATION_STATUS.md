@@ -16,9 +16,7 @@ Cập nhật: 2026-11-08. Mã nguồn ứng dụng đã được xây và kiểm
 
 ## Kiểm chứng tự động
 
-Lệnh từ `source/`: `npm run verify`. Script dùng **project obsidian-test riêng**, xóa và tạo lại chỉ dữ liệu test để kết quả có thể tái lập.
-
-Kết quả lượt chạy hoàn chỉnh: **20/20 backend tests và 7/7 Playwright tests đạt**.
+Chạy `npm run verify` từ `source/`. Mỗi lượt tạo một Compose project mới `obsidian-test-<random-id>`, xác minh PostgreSQL và cổng cách ly, rồi chạy các suite backend, OAuth fixture và Playwright. Script dừng project sau khi kiểm tra và giữ các volume để đối chiếu.
 
 | Nhóm yêu cầu | Bằng chứng |
 |---|---|
@@ -41,7 +39,7 @@ Kết quả lượt chạy hoàn chỉnh: **20/20 backend tests và 7/7 Playwrig
 Một test có thể bao phủ nhiều mục; bảng này không khẳng định mỗi mục rubric có một test độc lập hoặc đã được giảng viên đánh giá. Các form đã được sửa nhãn truy cập sau lượt E2E đầu và chạy lại thành công.
 
 - Test code: `source/backend/tests/`, `source/tests/e2e/`.
-- Screenshots và báo cáo Playwright: `docs/evidence/`.
+- Ảnh demo đã lưu: `docs/evidence/`. Artifacts của lượt kiểm thử mới: `source/test-results/` và `source/playwright-report/`.
 - Dependency audit ở thời điểm triển khai: 0 vulnerabilities sau cập nhật Nodemailer và Sharp.
 
 ## Cần nhóm thực hiện trước bảo vệ/nộp
