@@ -173,8 +173,11 @@ async function saveProduct(req, res, update = false) {
     }
   }
   await db.transaction(async (tx) => {
+    // Hold the target category until the product write commits. Archive takes
+    // an exclusive row lock before checking for active products.
     const category = await tx("categories")
       .where({ id: b.categoryId, is_active: true })
+      .forShare()
       .first();
     check(
       category,

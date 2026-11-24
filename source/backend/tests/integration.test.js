@@ -471,11 +471,11 @@ test("Inventory revisions protect product edits, checkout and concurrent stock u
   assert.equal((await readVariant(first.id)).stock, adjustment.status === 200 ? 39 : 24);
 });
 
-async function createTestProduct(categoryId) {
+async function testProductPayload(categoryId) {
   const { body } = await admin.request(`/admin/products/${product.id}`);
   const template = body.data;
   const slug = `catalog-${randomUUID()}`;
-  const response = await admin.request("/admin/products", "POST", {
+  return {
     name: "Catalog regression product",
     slug,
     brand: template.brand,
@@ -488,7 +488,15 @@ async function createTestProduct(categoryId) {
       ...v,
       sku: `${slug}-${index}`,
     })),
-  });
+  };
+}
+
+async function createTestProduct(categoryId) {
+  const response = await admin.request(
+    "/admin/products",
+    "POST",
+    await testProductPayload(categoryId),
+  );
   assert.equal(response.status, 201);
   return response.body.data;
 }
@@ -602,6 +610,113 @@ test("Category creation reuses archived slugs and rejects concurrent duplicates"
   assert.equal(duplicate.body.error.code, "ALREADY_EXISTS");
   const active = await db("categories").where({ id: original.id }).first();
   assert.equal(active.name, reopened.name);
+});
+
+async function waitForBlockedQuery(blockerPid, queryPattern) {
+  const deadline = Date.now() + 5000;
+  while (Date.now() < deadline) {
+    const { rows } = await db.raw(
+      `SELECT pid FROM pg_stat_activity
+       WHERE datname = current_database() AND query LIKE ?
+         AND ? = ANY(pg_blocking_pids(pid))`,
+      [queryPattern, blockerPid],
+    );
+    if (rows.length) return rows[0].pid;
+    await delay(20);
+  }
+  assert.fail(`No query matching ${queryPattern} blocked by PID ${blockerPid}`);
+}
+
+test("Product create and reassignment serialize with category archive", async (t) => {
+  async function openCategory() {
+    const response = await admin.request("/admin/categories", "POST", {
+      slug: "motherboard",
+      name: "Motherboards",
+    });
+    assert.equal(response.status, 201);
+    return response.body.data;
+  }
+  const archive = (category) =>
+    admin.request(`/admin/categories/${category.id}`, "DELETE");
+
+  for (const mode of ["create", "reassign"]) {
+    await t.test(`${mode} commits first and archive sees the active product`, async () => {
+      const category = await openCategory();
+      const source = mode === "reassign" ? await createTestProduct() : null;
+      const body = source
+        ? { categoryId: category.id }
+        : await testProductPayload(category.id);
+      const save = () =>
+        source
+          ? admin.request(`/admin/products/${source.id}`, "PATCH", body)
+          : admin.request("/admin/products", "POST", body);
+      const writePattern = source
+        ? 'update "products"%'
+        : 'insert into "products"%';
+      let saving, archiving;
+      try {
+        // Pause the product write after category validation. SHARE permits
+        // archive's product lookup, so it is the category lock that blocks it.
+        await db.transaction(async (gate) => {
+          await gate.raw("LOCK TABLE products IN SHARE MODE");
+          const { rows: [{ pid }] } = await gate.raw(
+            "SELECT pg_backend_pid() AS pid",
+          );
+          saving = save();
+          const savePid = await waitForBlockedQuery(pid, writePattern);
+          archiving = archive(category);
+          await waitForBlockedQuery(savePid, 'select%from "categories"%for update');
+        });
+        const [saved, archived] = await Promise.all([saving, archiving]);
+        assert.equal(saved.status, source ? 200 : 201);
+        assert.equal(archived.status, 409);
+        assert.equal(archived.body.error.code, "CATEGORY_IN_USE");
+        const record = await db("products")
+          .where({ id: saved.body.data.id })
+          .first();
+        assert.equal(record.category_id, category.id);
+        assert.equal(record.is_active, true);
+        const current = await db("categories").where({ id: category.id }).first();
+        assert.equal(current.is_active, true);
+        const removed = await admin.request(`/admin/products/${record.id}`, "DELETE");
+        assert.equal(removed.status, 204);
+        assert.equal((await archive(category)).status, 204);
+      } finally {
+        await Promise.allSettled([saving, archiving]);
+      }
+    });
+  }
+
+  await t.test("archive commits first and product create fails validation", async () => {
+    const category = await openCategory();
+    const body = await testProductPayload(category.id);
+    let saving, archiving;
+    try {
+      // Hold the archive at its product lookup after it locks the category.
+      await db.transaction(async (gate) => {
+        await gate.raw("LOCK TABLE products IN ACCESS EXCLUSIVE MODE");
+        const { rows: [{ pid }] } = await gate.raw(
+          "SELECT pg_backend_pid() AS pid",
+        );
+        archiving = archive(category);
+        const archivePid = await waitForBlockedQuery(pid, 'select%from "products"%');
+        saving = admin.request("/admin/products", "POST", body);
+        await waitForBlockedQuery(archivePid, 'select%from "categories"%for share');
+      });
+      const [saved, archived] = await Promise.all([saving, archiving]);
+      assert.equal(archived.status, 204);
+      assert.equal(saved.status, 400);
+      assert.equal(saved.body.error.code, "INVALID_CATEGORY");
+      assert.equal(
+        await db("products").where({ slug: body.slug }).first(),
+        undefined,
+      );
+      const current = await db("categories").where({ id: category.id }).first();
+      assert.equal(current.is_active, false);
+    } finally {
+      await Promise.allSettled([saving, archiving]);
+    }
+  });
 });
 
 test("Two checkouts contend for one coupon use without over-redemption", async () => {
