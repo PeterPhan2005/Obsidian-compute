@@ -1,11 +1,11 @@
 # Obsidian Compute — Project State
 
-Checkpoint recorded 2026-11-25. Batches 01–04 have received technical advisor acceptance and are finalized on `origin/fix-issue`. Batch 04 closes Core Acceptance in its verified technical scope. Instructor assessment and external verification remain open.
+Checkpoint recorded 2026-11-26. Batches 01–04 have received technical advisor acceptance and are finalized on `origin/fix-issue`. Batch 04 closes Core Acceptance in its verified technical scope. Instructor assessment and external verification remain open.
 
 ## Repository and decisions
 
 - The previous linked worktree was removed after verifying the accepted Git tree and local-file hashes.
-- HEAD and verified remote `refs/heads/fix-issue` are `7233d6e4fbe0b02b14402dd76c4d5c35f0d544c0`. Upstream `origin/fix-issue` is 0 ahead / 0 behind at checkpoint. [GitHub commit](https://github.com/PeterPhan2005/Obsidian-compute/commit/7233d6e4fbe0b02b14402dd76c4d5c35f0d544c0)
+- HEAD and verified remote fix-issue are `f53ab3dd659ad40d374d413c0d7cc81b38a2ab71`. Upstream is 0 ahead / 0 behind. [GitHub commit](https://github.com/PeterPhan2005/Obsidian-compute/commit/f53ab3dd659ad40d374d413c0d7cc81b38a2ab71)
 - GitHub repository visibility was verified as public. Remote `main` remains at `47a62730a071a316d61ee089fdfb435c5100abfc` (Batch 01 baseline). Local `main` remains at `f135e63e3bf48aadff564db22773c877b9c5660b` (TASK 01/02 runtime baseline). Checkpoint authorization covers the accepted `fix-issue` implementation and the two progress documents on `progress`.
 - Remote `backup-main` was independently verified at `47a62730a071a316d61ee089fdfb435c5100abfc`, preserving the pre-fast-forward `main` checkpoint. Both remote branches remain at that SHA.
 - Owner approved fixing the core issues on the shared `fix-issue` branch, completing mandatory requirements, then implementing all four Bonus groups. Category recreation with an archived slug reactivates that record and preserves its identity. Restore as a separate Admin feature was excluded.
@@ -31,7 +31,7 @@ Checkpoint recorded 2026-11-25. Batches 01–04 have received technical advisor 
 - Phase 2/6 **Batch 02, TASK 07–09** is accepted in the implementation scope and finalized. The original blueprint's construction phases are historical.
 - Phase 3/6 **Batch 03, TASK 10–12 and 12.1**, covering ISSUE 05, 06, 07, 19 and 20, is accepted and finalized.
 - Phase 4/6 **Batch 04, TASK 13 — Core Acceptance** passed independent re-review and the technical advisor accepted the verified implementation. Git finalization published the implementation to `origin/fix-issue`. The next planned work is **Batch 05, TASK 14, ISSUE 17.1 — CI/CD**.
-- Phase 4/6 follow-up **TASK 13.1 — Independent Core Defect Audit** reviewed authentication and account access, commerce and transaction integrity, catalog and Admin analytics, and infrastructure at the accepted Core commit against the pre-remediation baseline. Additional pre-existing defects remain open for technical advisor assessment and Owner authorization. Batch 05, source remediation and the fast-forward remain pending.
+- Phase 4/6 follow-up **TASK 13.1** completed the independent Core defect audit at `7233d6e4fbe0b02b14402dd76c4d5c35f0d544c0`. **TASK 13.2** resolved ISSUE 23–31 and received technical advisor acceptance after focused re-review. The final isolated verifier passed 74 results (46 backend and OAuth fixture results and 28 Playwright tests on local Chrome). Production build passed. Fast-forward remains deferred. The next planned work is **Batch 05, TASK 14, ISSUE 17.1 — CI/CD**.
 
 | Phase | Batch | Tasks | Issues / Scope |
 |---|---|---|---|
@@ -56,6 +56,7 @@ Checkpoint recorded 2026-11-25. Batches 01–04 have received technical advisor 
 | TASK 07–09 / ISSUE 04, 08 and 09 | `4e2b9a34b37aa22c2834b43f74f8ba1651a238c3` | fix(core): harden authentication, checkout, and email delivery |
 | TASK 10–12, 12.1 / ISSUE 05, 06, 07, 19 and 20 | `65d5f5392a49501a2b773f183a0c58114e50cc55` | fix(core): complete catalog navigation and dashboard analytics |
 | TASK 13 / ISSUE 21, 22, 02, 09 and 11 | `7233d6e4fbe0b02b14402dd76c4d5c35f0d544c0` | fix(core): ensure checkout consistency and deployment reliability |
+| TASK 13.2 / ISSUE 23–31 | `f53ab3dd659ad40d374d413c0d7cc81b38a2ab71` | fix(core): resolve security, concurrency, and data integrity defects |
 
 ## Issue register
 
@@ -83,6 +84,15 @@ Checkpoint recorded 2026-11-25. Batches 01–04 have received technical advisor 
 | 20 Dashboard tooltip resize overflow | **ACCEPTED / FIXED** | Pre-existing P3 reproduced on the accepted baseline and Batch 03 candidate. Recharts retained the desktop transform on a hidden revenue tooltip when the viewport narrowed. Scoped CSS removes the hidden box from layout. The targeted resize fixture measured 798 px before and 375 px after the fix at a 375 px viewport. Visible hover and keyboard behavior and shared charts were verified. |
 | 21 Checkout Quote Consistency | **ACCEPTED / FIXED** | Checkout could commit a changed cart after Review. The browser freezes the reviewed snapshot and request key. The transaction compares a signed fingerprint of cart and variant details, prices, coupon eligibility, loyalty and totals before writing. Mismatch requires fresh Review. Equal-subtotal substitutions, concurrent price changes, ambiguous response retry and historical replay passed. |
 | 22 Receipt Token Exposure | **ACCEPTED / FIXED for new access logs** | Receipt paths and referrers could expose bearer tokens in logs. Both Nginx layers suppress sensitive receipt request logging and retain only the referrer origin. New success URLs use fragments, legacy query links still work, and HTTP and SPA protections suppress outgoing referrers. Isolated synthetic probes passed. Historical logs may still contain previously logged tokens. Existing tokens were not revoked. |
+| 23 Cross-account session isolation | **ACCEPTED / FIXED** | Identity-scoped caches, cross-tab session synchronization and an API identity check protect private state. Google callback hands off to a CSRF-protected SPA POST under the refresh lock. OAuth fixtures and a controlled browser probe verified ordering. |
+| 24 WebSocket error isolation | **ACCEPTED / FIXED** | Room handlers validate payloads, contain failures and process room changes in order. |
+| 25 Password recovery privacy | **ACCEPTED / FIXED** | New recovery links use fragments. Legacy submission works. Both proxies protect new access logs and referrers. Browser test metadata excludes reset and receipt tokens. |
+| 26 Authentication transaction ordering | **ACCEPTED / FIXED** | Account locks protect credential and session changes. Logout can revoke the session after one rotation. Refresh requires the current hash. |
+| 27 Guest cart initialization | **ACCEPTED / FIXED** | Web Locks and IndexedDB fallback serialize guest initialization across tabs. Initialization fails if neither locking mechanism is available. |
+| 28 Analytics category identity | **ACCEPTED / FIXED** | New orders snapshot category UUIDs. Legacy grouping by name is approximate where identity cannot be established. Existing snapshots and financial values are preserved. |
+| 29 Admin bootstrap | **ACCEPTED / FIXED** | Fresh non-demo databases require explicit Admin credentials. Startup preserves an existing Admin and password. |
+| 30 Product tag editing | **ACCEPTED / FIXED** | Form preserves raw input during typing and retains the persisted array when tags are untouched, including tags with commas. |
+| 31 Active variant aggregation | **ACCEPTED / FIXED** | Selling price and inventory use active variants. Historical variants, IDs and stock versions are retained. |
 
 **ISSUE 17 subtasks** per `NodeJS Final Project.pdf` (p. 6): CI/CD Pipeline, Microservices Architecture (at least three additional services and evidence of asynchronous decoupling), AI-related Features, and Elasticsearch Product Search. Each is planned and unverified. Public repo status does not imply an application deployment or working CI/CD. Verify provider access, costs and grading evidence before external actions.
 
@@ -101,3 +111,5 @@ Checkpoint recorded 2026-11-25. Batches 01–04 have received technical advisor 
 - Email delivery remains at least once. The baseline worker can retry the same Message-ID if SMTP accepts a message before the database records `sent`. This is a non-blocking local/configuration acceptance risk.
 - The validation stacks were stopped with their volumes retained. `npm run verify` creates a fresh isolated project, checks DB identity and ports before mutations, and stops only that project after each run. The verifier does not remove retained volumes. The primary `source/docker-compose.yml` is the documented one-command entry point.
 - Open verification includes real Google OAuth consent and callback, external SMTP, instructor acceptance of payment sandbox and Mailpit, actual search-engine indexing, actual teamwork and final submission evidence, and delivery gates/vendor selection for Bonus. Historical receipt logs were left in place and may contain tokens from before the fix. Technical Core acceptance covers verified behavior and does not determine grading compliance.
+
+- Remaining verification includes real Google OAuth consent and callback, external SMTP, instructor acceptance of sandbox payment and Mailpit, search indexing, final deployment, teamwork and submission evidence. Historical receipt and password-reset logs can retain previously recorded tokens. The demo video remains outstanding.

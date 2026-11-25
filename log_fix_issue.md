@@ -147,3 +147,57 @@
 **Vấn đề:** Một số Playwright spec ghi ảnh thẳng vào `docs/evidence/`, nên một lượt test có thể ghi đè ảnh demo trong Git.
 
 **Khắc phục:** Dùng `testInfo.outputPath` cho ảnh tạo trong test, ghi artifact và báo cáo HTML vào thư mục riêng theo project. Lượt verify cuối giữ nguyên ảnh demo tracked.
+
+### 26. ISSUE 23 – Cross-Account Session Isolation
+
+**Vấn đề:** Cache dùng chung giữa các tài khoản có thể giữ dữ liệu riêng tư sau khi đổi phiên. Callback Google cũng có thể chồng lấn với refresh và bị phản hồi đến muộn ghi đè cookie phiên.
+
+**Khắc phục:** Phân vùng cache theo danh tính, đồng bộ đổi phiên giữa các tab và kiểm tra danh tính dự kiến ở API. SPA hoàn tất callback Google bằng POST có CSRF dưới cùng khóa với refresh. Kiểm chứng dùng OAuth fixture và trình duyệt cô lập.
+
+### 27. ISSUE 24 – WebSocket Error Isolation
+
+**Vấn đề:** Dữ liệu sự kiện không hợp lệ hoặc lỗi bất đồng bộ có thể thoát khỏi handler và làm dừng API replica.
+
+**Khắc phục:** Kiểm tra payload trong vùng xử lý lỗi và tuần tự hóa thay đổi room theo kết nối. Luồng cập nhật comment và rating giữa replica vẫn hoạt động.
+
+### 28. ISSUE 25 – Password Recovery Token Privacy
+
+**Vấn đề:** Link reset dạng query có thể đưa token vào access log. Metadata báo cáo kiểm thử cũng có thể ghi URL chứa token reset hoặc receipt.
+
+**Khắc phục:** Link mới dùng fragment, giao diện tiếp tục hỗ trợ link cũ và dọn URL sau khi đọc. Hai lớp Nginx bảo vệ log mới và referrer. Test điều hướng nhạy cảm tránh ghi token vào metadata. Log lịch sử được giữ nguyên.
+
+### 29. ISSUE 26 – Authentication Transaction Ordering
+
+**Vấn đề:** Các thao tác thay thông tin xác thực, cấp challenge và tạo hoặc thu hồi phiên có thể chồng lấn. Logout có thể bỏ sót phiên vừa xoay refresh hash.
+
+**Khắc phục:** Khóa theo tài khoản và kiểm tra lại trạng thái trước khi ghi. Logout nhận hash hiện hành hoặc ngay trước lần xoay để thu hồi đúng phiên. Refresh chỉ nhận hash hiện hành.
+
+### 30. ISSUE 27 – Guest Cart Initialization
+
+**Vấn đề:** Hai request đầu chưa có định danh guest có thể tạo hai giỏ. Phản hồi đến muộn có thể khiến giỏ đang hiển thị mất món vừa thêm.
+
+**Khắc phục:** Mutation chờ khởi tạo giỏ và backend kiểm tra lại định danh trước khi ghi. Web Locks hoặc transaction IndexedDB tuần tự hóa khởi tạo giữa các tab. Checkout bị từ chối vẫn không tạo giỏ.
+
+### 31. ISSUE 28 – Category Identity in Analytics
+
+**Vấn đề:** Nhóm theo tên làm gộp danh mục trùng tên hoặc tách một danh mục sau khi đổi tên.
+
+**Khắc phục:** Lưu UUID danh mục lúc mua và giữ tên snapshot. Dữ liệu cũ thiếu căn cứ xác định UUID được nhóm xấp xỉ theo tên lịch sử. Migration giữ nguyên snapshot và số tiền cũ.
+
+### 32. ISSUE 29 – Admin Bootstrap Without Demo Seed
+
+**Vấn đề:** Tắt demo seed cũng bỏ qua đường tạo Admin trên cơ sở dữ liệu mới.
+
+**Khắc phục:** Tách bootstrap Admin khỏi demo seed, yêu cầu credential non-demo tường minh khi chưa có Admin và giữ nguyên Admin hiện hữu khi khởi động lại.
+
+### 33. ISSUE 30 – Product Tag Editing
+
+**Vấn đề:** Parse từng phím làm mất dấu phân cách. Parse lại mảng tag đã lưu khi chỉ sửa trường khác có thể tách tag chứa dấu phẩy.
+
+**Khắc phục:** Giữ text trong lúc nhập, chỉ parse khi lưu nội dung tag đã sửa và giữ nguyên mảng đã lưu khi ô tag chưa đổi.
+
+### 34. ISSUE 31 – Active Variant Aggregation
+
+**Vấn đề:** Variant đã archive vẫn góp vào giá tối thiểu và tổng tồn đang bán trong Admin Products.
+
+**Khắc phục:** Tính giá và tồn đang bán từ variant active. Giữ bản ghi inactive, ID và stock version phục vụ quản trị và lịch sử.
