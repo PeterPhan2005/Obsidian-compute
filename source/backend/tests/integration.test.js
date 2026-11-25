@@ -6,6 +6,9 @@ import { db } from "../src/db.js";
 import { BASE, Client, ORIGIN, shipping, purchase, submit, review } from "./checkout-fixtures.js";
 let admin, product, variant;
 async function add(c, v = variant, quantity = 1) {
+  if (!c.cookies.get("guest_cart")) {
+    assert.equal((await c.request("/cart")).status, 200);
+  }
   const r = await c.request("/cart/items", "POST", {
     variantId: v.id,
     quantity,
@@ -141,6 +144,28 @@ test("Guest comments and authenticated ratings persist without purchase requirem
     .count()
     .first();
   assert.equal(Number(count), 1);
+});
+test("A guest add requires the identity established by the initial cart read", async () => {
+  const client = new Client();
+  const csrf = await client.request("/auth/csrf");
+  client.csrf = csrf.body.data.csrfToken;
+  const item = { variantId: variant.id, quantity: 1 };
+  const [initialized, rejected] = await Promise.all([
+    client.request("/cart"),
+    client.request("/cart/items", "POST", item),
+  ]);
+  assert.equal(initialized.status, 200);
+  assert.equal(initialized.body.data.itemCount, 0);
+  assert.equal(rejected.status, 409);
+  assert.equal(rejected.body.error.code, "CART_NOT_INITIALIZED");
+  assert.equal(rejected.headers.getSetCookie().length, 0);
+
+  const added = await client.request("/cart/items", "POST", item);
+  assert.equal(added.status, 200);
+  assert.equal(added.body.data.id, initialized.body.data.id);
+  const reloaded = await client.request("/cart");
+  assert.equal(reloaded.body.data.id, initialized.body.data.id);
+  assert.equal(reloaded.body.data.itemCount, 1);
 });
 test("Missing, legacy-only, mixed, invalid and declined payments leave checkout data intact", async () => {
   const c = new Client();
@@ -836,8 +861,13 @@ test("Registration only allows email/name/address; recovery tokens single-use; a
   addresses = (await c.request("/me/addresses")).body.data;
   assert.equal(addresses[0].isDefault, true);
   await c.request("/auth/password/recover/request", "POST", { email });
-  const mail = await lastMail(email, "Reset"),
-    t = mail.Text.match(/token=([\w-]+)/)[1];
+  const mail = await lastMail(email, "Reset");
+  const resetLink = mail.Text.match(/https?:\/\/\S+\/reset-password[?#]\S+/)?.[0];
+  assert.ok(resetLink, "The recovery email includes a reset link.");
+  const resetUrl = new URL(resetLink);
+  assert.equal(resetUrl.search.length, 0, "The recovery link must not use a query string.");
+  const t = new URLSearchParams(resetUrl.hash.slice(1)).get("token");
+  assert.equal(typeof t, "string", "The recovery link carries a fragment token.");
   assert.equal(
     (
       await c.request("/auth/password/recover/confirm", "POST", {
@@ -1112,9 +1142,18 @@ test("Refresh tokens rotate, foreign Origin fails, another customer cannot read 
     .first();
   assert.equal((await c.request(`/me/orders/${foreign.id}`)).status, 404);
   const unauth = new Client();
-  assert.equal(
-    (await unauth.request("/auth/google/callback?code=invalid&state=invalid"))
-      .status,
-    401,
-  );
+  const callback = await fetch(`${BASE}/api/v1/auth/google/callback?code=invalid&state=invalid`, {
+    redirect: "manual",
+  });
+  assert.equal(callback.status, 302);
+  assert.equal(callback.headers.get("location"), "/oauth/google#code=invalid&state=invalid");
+  assert.equal(callback.headers.getSetCookie().length, 0);
+  await callback.body?.cancel();
+  const rejected = await unauth.request("/auth/google/callback", "POST", {
+    code: "invalid",
+    state: "invalid",
+  });
+  assert.equal(rejected.status, 401);
+  assert.equal(rejected.body.error.code, "OAUTH_STATE");
+  assert.equal(rejected.headers.getSetCookie().length, 0);
 });

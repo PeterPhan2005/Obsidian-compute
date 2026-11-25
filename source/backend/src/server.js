@@ -14,6 +14,7 @@ import { catalog, reviewRoutes } from "./catalog.js";
 import { shopRoutes } from "./orders.js";
 import { admin } from "./admin.js";
 import { baseUrl, check, AppError } from "./lib.js";
+import { bindProductRooms } from "./product-rooms.js";
 const app = express(),
   server = http.createServer(app),
   redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
@@ -106,24 +107,9 @@ reviewRoutes(requireCustomer, limiter, io);
 app.use("/api/v1", catalog, shopRoutes(limiter));
 app.use("/api/v1/admin", admin);
 io.on("connection", (socket) => {
-  socket.on("product.join", async ({ productId } = {}) => {
-    try {
-      if (
-        typeof productId === "string" &&
-        /^[a-f0-9-]{36}$/.test(productId) &&
-        (await db("products").where({ id: productId, is_active: true }).first())
-      ) {
-        for (const room of socket.rooms)
-          if (room.startsWith("product:")) socket.leave(room);
-        socket.join(`product:${productId}`);
-      }
-    } catch {
-      socket.emit("error", { message: "Unable to join product updates." });
-    }
-  });
-  socket.on("product.leave", ({ productId } = {}) => {
-    if (typeof productId === "string") socket.leave(`product:${productId}`);
-  });
+  bindProductRooms(socket, (productId) =>
+    db("products").where({ id: productId, is_active: true }).first("id"),
+  );
 });
 app.use((req, res) =>
   res

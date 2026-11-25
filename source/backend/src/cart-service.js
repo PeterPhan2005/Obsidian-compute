@@ -31,6 +31,27 @@ export async function resolveCart(req, res, { create = true } = {}) {
   }
   return c;
 }
+export async function requireInitializedCart(req, res) {
+  const cart = await resolveCart(req, res, { create: Boolean(req.user) });
+  check(cart, 409, "CART_NOT_INITIALIZED", "Open your bag and try again.");
+  return cart;
+}
+
+export function lockCart(cart, conn) {
+  const owner = cart.user_id
+    ? { user_id: cart.user_id }
+    : { guest_token_hash: cart.guest_token_hash };
+  return conn("carts").where({ id: cart.id, ...owner }).forUpdate().first();
+}
+
+export async function lockInitializedCart(cart, conn) {
+  check(
+    await lockCart(cart, conn),
+    409,
+    "CART_NOT_INITIALIZED",
+    "Open your bag and try again.",
+  );
+}
 export async function cartDto(cart, conn = db) {
   const rows = await conn("cart_items as ci")
     .join("product_variants as v", "v.id", "ci.variant_id")

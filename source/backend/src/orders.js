@@ -14,7 +14,13 @@ import {
   keyedHash,
   equal,
 } from "./lib.js";
-import { resolveCart, cartDto } from "./cart-service.js";
+import {
+  cartDto,
+  lockCart,
+  lockInitializedCart,
+  requireInitializedCart,
+  resolveCart,
+} from "./cart-service.js";
 import { quoteTotals } from "./pricing.js";
 import { requireCustomer } from "./auth.js";
 export async function orderDto(row, conn = db, admin = false) {
@@ -155,9 +161,9 @@ export function shopRoutes(limiter) {
       .object({ variantId: id, quantity: z.number().int().min(1).max(999) })
       .strict()
       .parse(req.body);
-    const cart = await resolveCart(req, res);
+    const cart = await requireInitializedCart(req, res);
     await db.transaction(async (tx) => {
-      await tx("carts").where({ id: cart.id }).forUpdate().first();
+      await lockInitializedCart(cart, tx);
       const v = await tx("product_variants as v")
         .join("products as p", "p.id", "v.product_id")
         .where("v.id", b.variantId)
@@ -189,9 +195,9 @@ export function shopRoutes(limiter) {
       .object({ quantity: z.number().int().min(1).max(999) })
       .strict()
       .parse(req.body);
-    const cart = await resolveCart(req, res);
+    const cart = await requireInitializedCart(req, res);
     await db.transaction(async (tx) => {
-      await tx("carts").where({ id: cart.id }).forUpdate().first();
+      await lockInitializedCart(cart, tx);
       const item = await tx("cart_items")
         .where({ id: req.params.itemId, cart_id: cart.id })
         .first();
@@ -213,9 +219,9 @@ export function shopRoutes(limiter) {
   });
   router.delete("/cart/items/:itemId", async (req, res) => {
     id.parse(req.params.itemId);
-    const cart = await resolveCart(req, res);
+    const cart = await requireInitializedCart(req, res);
     await db.transaction(async (tx) => {
-      await tx("carts").where({ id: cart.id }).forUpdate().first();
+      await lockInitializedCart(cart, tx);
       check(
         await tx("cart_items")
           .where({ id: req.params.itemId, cart_id: cart.id })
@@ -239,7 +245,7 @@ export function shopRoutes(limiter) {
         "NOT_FOUND",
         "Address not found.",
       );
-    const cart = await cartDto(await resolveCart(req, res));
+    const cart = await cartDto(await requireInitializedCart(req, res));
     const coupon = await couponQuote(b.couponCode);
     const couponValid = !!coupon && coupon.used_count < coupon.usage_limit;
     const totals = quoteTotals({
@@ -287,7 +293,7 @@ export function shopRoutes(limiter) {
       const { demoPaymentToken, demoPaymentOutcome, reviewedQuote, ...b } =
         orderSchema.parse(req.body);
       const key = id.parse(req.get("Idempotency-Key"));
-      const cart = await resolveCart(req, res, { create: false });
+      const resolvedCart = await resolveCart(req, res, { create: false });
       const paymentApproved = demoPaymentToken === "DEMO-APPROVE";
       const tokenOutcome = paymentApproved ? "success" : "failure";
       // Keep the historical hash shape for completed requests made before quote binding.
@@ -304,7 +310,7 @@ export function shopRoutes(limiter) {
         await tx.raw("SELECT pg_advisory_xact_lock(hashtext(?))", [
           `checkout:${key}`,
         ]);
-        if (cart) await tx("carts").where({ id: cart.id }).forUpdate().first();
+        const cart = resolvedCart && (await lockCart(resolvedCart, tx));
         const previous = await tx("checkout_idempotency")
           .where({ key })
           .first();
@@ -401,6 +407,7 @@ export function shopRoutes(limiter) {
             unit_cost_vnd: v.cost_price_vnd,
             quantity: line.quantity,
             line_total_vnd: v.price_vnd * line.quantity,
+            category_id_snapshot: category.id,
             category_name_snapshot: category.name,
           });
         }

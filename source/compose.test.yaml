@@ -5,8 +5,6 @@ x-test-env: &test-env
   GOOGLE_CLIENT_ID: ""
   GOOGLE_CLIENT_SECRET: ""
   GOOGLE_CALLBACK_URL: ""
-  ADMIN_EMAIL: admin@obsidian.local
-  ADMIN_PASSWORD: ObsidianAdmin!2026
   DEMO_PAYMENT_ENABLED: "true"
   SEED_DEMO_DATA: "true"
 services:
@@ -16,7 +14,10 @@ services:
     ports: !override
       - "127.0.0.1:15433:5432"
   init:
-    environment: *test-env
+    environment:
+      <<: *test-env
+      ADMIN_EMAIL: admin@obsidian.local
+      ADMIN_PASSWORD: ObsidianAdmin!2026
   api-a:
     environment: *test-env
     ports:

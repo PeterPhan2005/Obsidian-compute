@@ -6,7 +6,7 @@ import {
   useParams,
   useSearchParams,
 } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { io } from "socket.io-client";
 import {
   ArrowRight,
@@ -28,7 +28,15 @@ import {
   MoveUpRight,
   X,
 } from "lucide-react";
-import { api, useData, useAction, money, queryString } from "./api";
+import {
+  api,
+  useData,
+  useAction,
+  useScopedQuery,
+  isAuthorizationError,
+  money,
+  queryString,
+} from "./api";
 import { readReceiptToken, receiptHref } from "./receipt-location";
 import {
   Loading,
@@ -450,7 +458,7 @@ export function ProductDetail() {
     commentAction = useAction(),
     ratingAction = useAction(),
     client = useQueryClient(),
-    { user } = useSession();
+    { user, cacheScope } = useSession();
   const p = q.data?.data;
   useStoreMetadata(
     p?.name || (q.isError ? "Product unavailable" : "Product details"),
@@ -619,7 +627,7 @@ export function ProductDetail() {
             <button
               className="button"
               disabled={
-                !v.isAvailable || action.pending || user?.role === "ADMIN"
+                !cacheScope || !v.isAvailable || action.pending || user?.role === "ADMIN"
               }
               onClick={async () => {
                 const r = await action.run(() =>
@@ -908,6 +916,15 @@ function CheckoutItems({ items }) {
     </div>
   ));
 }
+const emptyCheckoutAddress = {
+  recipientName: "",
+  phone: "",
+  line1: "",
+  ward: "",
+  district: "",
+  city: "",
+  country: "VN",
+};
 export function Checkout() {
   const { user } = useSession(),
     cartQ = useData("/cart"),
@@ -916,15 +933,7 @@ export function Checkout() {
     }),
     [step, setStep] = useState(0),
     [buyer, setBuyer] = useState({ fullName: "", email: "" }),
-    [address, setAddress] = useState({
-      recipientName: "",
-      phone: "",
-      line1: "",
-      ward: "",
-      district: "",
-      city: "",
-      country: "VN",
-    }),
+    [address, setAddress] = useState(emptyCheckoutAddress),
     [addressLoaded, setAddressLoaded] = useState(false),
     [coupon, setCoupon] = useState(""),
     [appliedCoupon, setAppliedCoupon] = useState(""),
@@ -939,24 +948,7 @@ export function Checkout() {
   useEffect(() => {
     if (user) setBuyer({ fullName: user.fullName, email: user.email });
   }, [user?.id]);
-  useEffect(() => {
-    const a = addresses.data?.data.find((a) => a.isDefault);
-    if (a && !addressLoaded) {
-      setAddress(
-        ({ recipientName, phone, line1, ward, district, city, country }) => ({
-          recipientName: a.recipientName,
-          phone: a.phone || "",
-          line1: a.line1,
-          ward: a.ward,
-          district: a.district,
-          city: a.city,
-          country: a.country,
-        }),
-      );
-      setAddressLoaded(true);
-    }
-  }, [addresses.data, addressLoaded]);
-  const quote = useQuery({
+  const quote = useScopedQuery({
     queryKey: [
       "checkout-quote",
       cart?.id,
@@ -972,9 +964,10 @@ export function Checkout() {
       appliedCoupon,
       points,
     ],
-    queryFn: () =>
+    queryFn: ({ signal }) =>
       api("/checkout/quote", {
         method: "POST",
+        signal,
         body: {
           couponCode: appliedCoupon || undefined,
           pointsToRedeem: points,
@@ -984,6 +977,35 @@ export function Checkout() {
     retry: false,
     staleTime: 0,
   });
+  const denied = [
+    cartQ.error,
+    addresses.error,
+    quote.error,
+    action.error,
+  ].find(isAuthorizationError);
+  useEffect(() => {
+    if (denied) {
+      setAddress(emptyCheckoutAddress);
+      setAddressLoaded(false);
+      setReview(null);
+      setStep(0);
+    }
+  }, [denied]);
+  useEffect(() => {
+    const a = addresses.data?.data.find((a) => a.isDefault);
+    if (!denied && a && !addressLoaded) {
+      setAddress({
+        recipientName: a.recipientName,
+        phone: a.phone || "",
+        line1: a.line1,
+        ward: a.ward,
+        district: a.district,
+        city: a.city,
+        country: a.country,
+      });
+      setAddressLoaded(true);
+    }
+  }, [addresses.data, addressLoaded, denied]);
   const startReview = () => {
     const snapshot = quote.data.data;
     action.clearError();
@@ -1036,6 +1058,12 @@ export function Checkout() {
         replace: true,
       });
   };
+  if (denied)
+    return (
+      <main className="container page">
+        <ErrorBox error={denied} />
+      </main>
+    );
   if (cartQ.isPending && !review) return <Loading />;
   if (!cart?.items.length && !review)
     return (

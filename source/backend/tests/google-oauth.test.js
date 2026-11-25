@@ -147,8 +147,19 @@ test(
       return { code, state, path: `/auth/google/callback?code=${code}&state=${state}` };
     }
 
+    async function finish(client, api, attempt) {
+      const csrfToken = (await (await client.request(api, "/auth/csrf")).json()).data.csrfToken;
+      return client.request(api, "/auth/google/callback", {
+        method: "POST",
+        headers: { "X-CSRF-Token": csrfToken, "Content-Type": "application/json" },
+        body: JSON.stringify({ code: attempt.code, state: attempt.state }),
+      });
+    }
+
     async function reject(client, path, status, code) {
-      const response = await client.request(apiB, path);
+      const response = typeof path === "string"
+        ? await client.request(apiB, path)
+        : await finish(client, apiB, path);
       assert.equal(response.status, status);
       assert.equal((await response.json()).code, code);
     }
@@ -159,14 +170,23 @@ test(
       const attempt = await begin(first);
       const key = `oauth:${attempt.state}`;
       assert.ok(await redisB.ttl(key) > 0);
-      await reject(browser([["oauth_binding", "mismatch"]]), attempt.path, 401, "OAUTH_STATE");
+      await reject(browser([["oauth_binding", "mismatch"]]), attempt, 401, "OAUTH_STATE");
       assert.equal(issued.has(attempt.code), true);
       const replay = browser(first.cookies);
       const callback = await first.request(apiB, attempt.path);
       assert.equal(callback.status, 302);
-      assert.equal(callback.headers.get("location"), "/account/addresses?welcome=1");
+      assert.equal(callback.headers.get("referrer-policy"), "no-referrer");
+      assert.equal(callback.headers.getSetCookie().length, 0);
+      const handoff = new URL(callback.headers.get("location"), baseUrl);
+      assert.equal(handoff.pathname, "/oauth/google");
+      assert.equal(handoff.search, "");
+      const params = new URLSearchParams(handoff.hash.slice(1));
+      assert.ok(params.get("code") === attempt.code && params.get("state") === attempt.state);
+      const completed = await finish(first, apiA, attempt);
+      assert.equal(completed.status, 200);
+      assert.equal((await completed.json()).data.returnTo, "/account/addresses?welcome=1");
       assert.equal(await redisA.get(key), null);
-      await reject(replay, attempt.path, 401, "OAUTH_STATE");
+      await reject(replay, attempt, 401, "OAUTH_STATE");
       const session = (await (await first.request(apiA, "/auth/session")).json()).data;
       assert.equal(session.user.role, "CUSTOMER");
       assert.equal(session.user.emailVerified, true);
@@ -180,7 +200,7 @@ test(
 
       const expired = await begin(first);
       await redisA.expire(`oauth:${expired.state}`, 0);
-      await reject(first, expired.path, 401, "OAUTH_STATE");
+      await reject(first, expired, 401, "OAUTH_STATE");
       assert.equal(issued.has(expired.code), true);
     });
 
@@ -199,7 +219,7 @@ test(
       for (const [claims, key, code] of failures) {
         const client = browser();
         const attempt = await begin(client, { email, ...claims }, key);
-        await reject(client, attempt.path, 401, code);
+        await reject(client, attempt, 401, code);
         assert.equal(issued.has(attempt.code), false);
         assert.equal(client.cookies.has("access_token"), false);
       }
@@ -213,23 +233,23 @@ test(
       const a = await begin(first, { email, sub });
       const b = await begin(second, { email, sub });
       const responses = await Promise.all([
-        first.request(apiA, a.path),
-        second.request(apiB, b.path),
+        finish(first, apiA, a),
+        finish(second, apiB, b),
       ]);
-      assert.deepEqual(responses.map((response) => response.status), [302, 302]);
+      assert.deepEqual(responses.map((response) => response.status), [200, 200]);
       const [identity] = await db("auth_identities").where({ provider_subject: sub });
       const [user] = await db("users").where({ email });
       assert.equal(identity.user_id, user.id);
       const bob = browser();
       const changed = await begin(bob, { email });
-      await reject(bob, changed.path, 409, "GOOGLE_ALREADY_LINKED");
+      await reject(bob, changed, 409, "GOOGLE_ALREADY_LINKED");
       assert.equal((await db("auth_identities").where({ user_id: user.id })).length, 1);
       await db("users").where({ id: user.id }).update({ is_banned: true });
       const banned = await begin(bob, { email, sub });
-      await reject(bob, banned.path, 403, "BANNED");
+      await reject(bob, banned, 403, "BANNED");
       const admin = await db("users").where({ role: "ADMIN" }).first("email");
       const forbidden = await begin(bob, { email: admin.email });
-      await reject(bob, forbidden.path, 403, "CUSTOMER_REQUIRED");
+      await reject(bob, forbidden, 403, "CUSTOMER_REQUIRED");
     });
 
     await t.test("third-party Google email needs an active matching verified session to link", async () => {
@@ -237,7 +257,7 @@ test(
       const sub = randomUUID();
       const client = browser();
       const missing = await begin(client, { email, sub });
-      await reject(client, missing.path, 403, "GOOGLE_EMAIL_PROOF_REQUIRED");
+      await reject(client, missing, 403, "GOOGLE_EMAIL_PROOF_REQUIRED");
       assert.equal(await db("users").where({ email }).first(), undefined);
       const password = "fixture-password";
       const [user] = await db("users")
@@ -249,7 +269,7 @@ test(
         })
         .returning("*");
       const unsigned = await begin(client, { email, sub });
-      await reject(client, unsigned.path, 403, "GOOGLE_EMAIL_PROOF_REQUIRED");
+      await reject(client, unsigned, 403, "GOOGLE_EMAIL_PROOF_REQUIRED");
       assert.equal(await db("auth_identities").where({ user_id: user.id }).first(), undefined);
       const csrfToken = (await (await client.request(apiA, "/auth/csrf")).json()).data.csrfToken;
       const login = await client.request(apiA, "/auth/login/password", {
@@ -259,12 +279,12 @@ test(
       });
       assert.equal(login.status, 200);
       const link = await begin(client, { email, sub });
-      assert.equal((await client.request(apiB, link.path)).status, 302);
+      assert.equal((await finish(client, apiB, link)).status, 200);
       const identity = await db("auth_identities").where({ provider_subject: sub }).first();
       assert.equal(identity.user_id, user.id);
       const next = browser();
       const returning = await begin(next, { email, sub });
-      assert.equal((await next.request(apiB, returning.path)).status, 302);
+      assert.equal((await finish(next, apiB, returning)).status, 200);
       const session = (await (await next.request(apiA, "/auth/session")).json()).data;
       assert.equal(session.user.id, user.id);
     });

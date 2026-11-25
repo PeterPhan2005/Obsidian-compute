@@ -15,8 +15,6 @@ x-app: &app
     MEDIA_DIR: /media
     DEMO_PAYMENT_ENABLED: ${DEMO_PAYMENT_ENABLED:-true}
     SEED_DEMO_DATA: ${SEED_DEMO_DATA:-true}
-    ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@obsidian.local}
-    ADMIN_PASSWORD: ${ADMIN_PASSWORD:-ObsidianAdmin!2026}
   volumes:
     - ./media/catalog:/media/catalog:ro
     - uploads:/media/uploads
@@ -59,7 +57,10 @@ services:
     build:
       context: .
       dockerfile: backend/Dockerfile
-    environment: *env
+    environment:
+      <<: *env
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
     command: [node, backend/src/init.js]
     depends_on:
       postgres:

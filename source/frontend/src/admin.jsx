@@ -158,16 +158,21 @@ function Chart({ data, keys, moneyValues = false, stacked = false }) {
   );
 }
 function CategorySalesChart({ series, byCategory }) {
-  const keys = byCategory.map(({ categoryName }, i) => [
+  const keys = byCategory.map(({ displayName }, i) => [
     `category${i}`,
-    categoryName,
+    displayName,
   ]);
-  const keyByName = new Map(keys.map(([key, name]) => [name, key]));
+  const keyByCategory = new Map(
+    byCategory.map(({ categoryKey, categoryName }, i) => [
+      categoryKey ?? categoryName,
+      keys[i][0],
+    ]),
+  );
   const data = series.map(({ bucket, categoryUnits }) => ({
     bucket,
     ...Object.fromEntries(
-      categoryUnits.map(({ categoryName, unitsSold }) => [
-        keyByName.get(categoryName),
+      categoryUnits.map(({ categoryKey, categoryName, unitsSold }) => [
+        keyByCategory.get(categoryKey ?? categoryName),
         unitsSold,
       ]),
     ),
@@ -252,6 +257,22 @@ export function Dashboard({ advanced = false }) {
   );
   const d = q.data?.data,
     t = d?.totals;
+  const categoryRows = d?.byCategory ?? [];
+  const categoryBreakdown = categoryRows.map((c) => ({
+    ...c,
+    displayName:
+      c.categoryId === null
+        ? `${c.categoryName} (legacy)`
+        : c.categoryId &&
+            categoryRows.some(
+              (other) =>
+                other !== c &&
+                other.categoryId &&
+                other.categoryName === c.categoryName,
+            )
+          ? `${c.categoryName} (${c.categoryId.slice(0, 8)})`
+          : c.categoryName,
+  }));
   const update = (key, value) => setFilters({ ...filters, [key]: value });
   return (
     <>
@@ -441,28 +462,34 @@ export function Dashboard({ advanced = false }) {
                       ["distinctCategoryCount", "Distinct categories"],
                     ]}
                   />
+                  {t.legacyCategoryNameCount > 0 && (
+                    <p className="fine-print">
+                      Category counts include legacy groups by snapshot name.
+                      Historical category identities are unknown for these groups.
+                    </p>
+                  )}
                 </div>
                 <section
                   className="panel"
                   aria-labelledby="category-sales-title"
                 >
                   <h3 id="category-sales-title">Product types sold over time</h3>
-                  {d.byCategory.length ? (
+                  {categoryBreakdown.length ? (
                     <CategorySalesChart
                       series={d.series}
-                      byCategory={d.byCategory}
+                      byCategory={categoryBreakdown}
                     />
                   ) : (
                     <p className="muted">No product types sold in this period.</p>
                   )}
                 </section>
-                {d.byCategory.length > 0 && (
+                {categoryBreakdown.length > 0 && (
                   <div className="panel">
                     <h3>Performance by product type</h3>
                     <Chart
-                      data={d.byCategory.map((c) => ({
+                      data={categoryBreakdown.map((c) => ({
                         ...c,
-                        bucket: c.categoryName,
+                        bucket: c.displayName,
                       }))}
                       keys={[["unitsSold", "Units sold"]]}
                     />
@@ -477,9 +504,9 @@ export function Dashboard({ advanced = false }) {
                           </tr>
                         </thead>
                         <tbody>
-                          {d.byCategory.map((c) => (
-                            <tr key={c.categoryName}>
-                              <td>{c.categoryName}</td>
+                          {categoryBreakdown.map((c) => (
+                            <tr key={c.categoryKey ?? c.categoryName}>
+                              <td>{c.displayName}</td>
                               <td>{c.unitsSold}</td>
                               <td>{money(c.revenueVnd)}</td>
                               <td>{money(c.grossProfitVnd)}</td>
@@ -572,8 +599,19 @@ export function AdminProducts() {
                         </div>
                       </div>
                     </td>
-                    <td>{money(p.minPriceVnd)}</td>
-                    <td>{p.variants.reduce((s, v) => s + v.stock, 0)}</td>
+                    <td>
+                      {p.isActive && p.minPriceVnd != null
+                        ? money(p.minPriceVnd)
+                        : "—"}
+                    </td>
+                    <td>
+                      {p.isActive
+                        ? p.variants.reduce(
+                            (stock, v) => stock + (v.isActive ? v.stock : 0),
+                            0,
+                          )
+                        : 0}
+                    </td>
                     <td>
                       <Status value={p.isActive ? "active" : "archived"} />
                     </td>
@@ -628,7 +666,7 @@ const blankProduct = () => ({
   categoryId: "",
   shortDescription: "",
   descriptionLines: ["", "", "", "", ""],
-  tags: [],
+  tagInput: "",
   images: [],
   variants: [
     newVariant(),
@@ -648,6 +686,7 @@ export function ProductForm() {
   useEffect(() => {
     if (q.data && loaded !== id) {
       const p = q.data.data;
+      const tagInput = p.tags.join(", ");
       setForm({
         name: p.name,
         slug: p.slug,
@@ -655,7 +694,8 @@ export function ProductForm() {
         categoryId: p.category.id,
         shortDescription: p.shortDescription,
         descriptionLines: p.descriptionLines,
-        tags: p.tags,
+        tagInput,
+        initialTagInput: tagInput,
         images: p.imageDetails.map((i) => ({ url: i.url, alt: i.alt })),
         variants: p.variants
           .filter((v) => v.isActive)
@@ -684,6 +724,7 @@ export function ProductForm() {
       ),
     }));
   if (id && q.isPending) return <Loading />;
+  if (id && q.error) return <ErrorBox error={q.error} />;
   return (
     <>
       <div className="section-heading">
@@ -696,11 +737,21 @@ export function ProductForm() {
       <form
         onSubmit={async (e) => {
           e.preventDefault();
+          const { tagInput, initialTagInput, ...product } = form;
+          // An untouched field must round-trip tags that already contain commas.
+          const tags =
+            id && tagInput === initialTagInput
+              ? undefined
+              : tagInput
+                  .split(",")
+                  .map((tag) => tag.trim())
+                  .filter(Boolean);
           const r = await action.run(() =>
             api(id ? `/admin/products/${id}` : "/admin/products", {
               method: id ? "PATCH" : "POST",
               body: {
-                ...form,
+                ...product,
+                tags,
                 variants: form.variants.map(
                   ({ initialStock, stockVersion, ...variant }) => ({
                     ...variant,
@@ -772,16 +823,8 @@ export function ProductForm() {
           </Field>
           <Field
             label="Tags (comma separated)"
-            value={form.tags.join(", ")}
-            onChange={(e) =>
-              set(
-                "tags",
-                e.target.value
-                  .split(",")
-                  .map((t) => t.trim())
-                  .filter(Boolean),
-              )
-            }
+            value={form.tagInput}
+            onChange={(e) => set("tagInput", e.target.value)}
           />
           <label className="checkbox">
             <input

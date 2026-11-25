@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   Link,
   NavLink,
   Outlet,
+  useLocation,
   useNavigate,
   useParams,
   useSearchParams,
@@ -22,7 +23,8 @@ import {
   Mail,
   KeyRound,
 } from "lucide-react";
-import { api, useData, useAction, money, date } from "./api";
+import { api, useData, useAction, isAuthorizationError, money, date } from "./api";
+import { readResetToken, resetPasswordPath } from "./receipt-location";
 import {
   useSession,
   Field,
@@ -65,7 +67,7 @@ function AuthLayout({ title, eyebrow, children }) {
   );
 }
 export function Login() {
-  const { googleEnabled, user } = useSession(),
+  const { googleEnabled, changeIdentity } = useSession(),
     [params] = useSearchParams(),
     [mode, setMode] = useState(params.has("registered") ? "code" : "password"),
     [sent, setSent] = useState(params.has("registered")),
@@ -95,19 +97,23 @@ export function Login() {
       if (r) setSent(true);
       return;
     }
-    const r = await action.run(() =>
-      api(
-        mode === "password"
-          ? "/auth/login/password"
-          : "/auth/login/verify-code",
-        {
-          method: "POST",
-          body:
+    const r = await action.run(
+      () =>
+        changeIdentity(() =>
+          api(
             mode === "password"
-              ? { email: b.email, password: b.password }
-              : { email: b.email, code: b.code },
-        },
-      ),
+              ? "/auth/login/password"
+              : "/auth/login/verify-code",
+            {
+              method: "POST",
+              body:
+                mode === "password"
+                  ? { email: b.email, password: b.password }
+                  : { email: b.email, code: b.code },
+            },
+          ),
+        ),
+      { changesSession: true },
     );
     if (r) go(r.data.user);
   };
@@ -303,10 +309,54 @@ export function ForgotPassword() {
     </AuthLayout>
   );
 }
+export const googleCompletionPath = "/oauth/google";
+
+export function GoogleCompletion() {
+  const { hash } = useLocation();
+  const navigate = useNavigate();
+  const { changeIdentity } = useSession();
+  const started = useRef(false);
+  const [error, setError] = useState(null);
+  useEffect(() => {
+    if (started.current) return;
+    started.current = true;
+    const params = new URLSearchParams(hash.slice(1));
+    const code = params.get("code"), state = params.get("state");
+    if (hash) navigate(googleCompletionPath, { replace: true });
+    if (!code || !state) {
+      setError(new Error("Google sign-in expired. Please try again."));
+      return;
+    }
+    changeIdentity(() => api("/auth/google/callback", {
+      method: "POST",
+      body: { code, state },
+    })).then(
+      ({ data }) => navigate(data.returnTo, { replace: true }),
+      setError,
+    );
+  }, [hash, changeIdentity, navigate]);
+  if (!error) return <Loading />;
+  return (
+    <AuthLayout eyebrow="WELCOME BACK" title="Google sign-in unavailable">
+      <ErrorBox error={error} />
+      <Link className="button full" to="/login">Back to sign in</Link>
+    </AuthLayout>
+  );
+}
+
 export function ResetPassword() {
-  const [params] = useSearchParams(),
+  const urlToken = readResetToken(useLocation()),
+    navigate = useNavigate(),
+    { changeIdentity } = useSession(),
+    [token, setToken] = useState(urlToken),
     action = useAction(),
     [done, setDone] = useState(false);
+  useLayoutEffect(() => {
+    if (urlToken !== null) {
+      setToken(urlToken);
+      navigate(resetPasswordPath, { replace: true });
+    }
+  }, [navigate, urlToken]);
   return (
     <AuthLayout eyebrow="A FRESH START" title="Choose a new password.">
       {done ? (
@@ -321,17 +371,24 @@ export function ResetPassword() {
           onSubmit={async (e) => {
             e.preventDefault();
             const fd = new FormData(e.currentTarget);
-            const r = await action.run(async () => {
-              await api("/auth/password/recover/confirm", {
-                method: "POST",
-                body: {
-                  token: params.get("token"),
-                  newPassword: fd.get("password"),
-                },
-              });
-              return true;
-            });
-            if (r) setDone(true);
+            const r = await action.run(
+              () =>
+                changeIdentity(async () => {
+                  await api("/auth/password/recover/confirm", {
+                    method: "POST",
+                    body: {
+                      token,
+                      newPassword: fd.get("password"),
+                    },
+                  });
+                  return true;
+                }),
+              { changesSession: true },
+            );
+            if (r) {
+              setToken(null);
+              setDone(true);
+            }
           }}
         >
           <Field
@@ -471,6 +528,14 @@ export function Addresses() {
     [editing, setEditing] = useState(null),
     [form, setForm] = useState(emptyAddress),
     action = useAction();
+  const denied = [q.error, action.error].find(isAuthorizationError);
+  useEffect(() => {
+    if (denied) {
+      setEditing(null);
+      setForm(emptyAddress);
+    }
+  }, [denied]);
+  if (denied) return <ErrorBox error={denied} />;
   return (
     <>
       <div className="section-heading">

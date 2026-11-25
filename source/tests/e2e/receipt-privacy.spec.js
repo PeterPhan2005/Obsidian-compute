@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { randomBytes, randomUUID } from "node:crypto";
 import { expect, test } from "@playwright/test";
+import { navigateWithToken } from "./sensitive-navigation.js";
 
 test.use({ trace: "off", screenshot: "off", video: "off" });
 
@@ -88,11 +89,12 @@ test("Guest receipt sends no referrer after SPA and legacy navigation", async ({
   await expect(page.locator(".product-card").first()).toBeVisible();
 
   const fromLegacy = receiptResponse();
-  const legacy = await page
-    .goto(`${receiptPath}?${new URLSearchParams({ receipt: token })}`)
-    .catch(() => {
-      throw new Error("Legacy receipt navigation failed.");
-    });
+  const document = page.waitForResponse((response) =>
+    response.request().isNavigationRequest() &&
+    new URL(response.url()).pathname === receiptPath,
+  );
+  await navigateWithToken(page, `${receiptPath}?${new URLSearchParams({ receipt: token })}`);
+  const legacy = await document;
   expect(legacy.status()).toBe(200);
   expect(await legacy.headerValue("referrer-policy")).toBe("no-referrer");
   await checkReceiptResponse(await fromLegacy);
@@ -136,7 +138,7 @@ async function probe(baseURL, path, referer) {
     await response.arrayBuffer();
     return response.status;
   } catch {
-    throw new Error("Receipt access-log probe request failed.");
+    throw new Error("Sensitive-page access-log probe request failed.");
   }
 }
 
@@ -179,4 +181,67 @@ test("Both Nginx access logs omit synthetic receipt tokens", async ({
       `Receipt token absent from ${service} logs`,
     ).toBe(false);
   }
+});
+
+test("Recovery navigation suppresses referrers and both Nginx access logs omit the legacy query", async ({
+  page,
+  baseURL,
+}) => {
+  const project = process.env.OBSIDIAN_VERIFY_PROJECT;
+  test.skip(!project, "Run the isolated verifier for proxy log checks.");
+  expect(/^obsidian-test-[a-f0-9]{32}$/.test(project)).toBe(true);
+
+  const marker = `recovery-log-check-${randomUUID()}`;
+  const fixture = randomBytes(32).toString("base64url");
+  const legacy = `/reset-password?${new URLSearchParams({ token: fixture })}`;
+  await page.goto(`/products?verify=${marker}-start`);
+  const document = page.waitForResponse((response) =>
+    response.request().isNavigationRequest() &&
+    new URL(response.url()).pathname === "/reset-password",
+  );
+  await navigateWithToken(page, legacy);
+  const response = await document;
+  expect(response.status()).toBe(200);
+  expect(await response.headerValue("referrer-policy")).toBe("no-referrer");
+  expect(await response.headerValue("cache-control")).toBe("no-store");
+  await expect(page.getByRole("heading", { name: /new password/i })).toBeVisible();
+  await expect.poll(() => Boolean(new URL(page.url()).search)).toBe(false);
+
+  const outgoing = page.waitForRequest((request) =>
+    request.url().includes(`/products?verify=${marker}`),
+  );
+  const path = `/products?verify=${marker}`;
+  await page.evaluate((url) => fetch(url).then((r) => r.text()).then(() => {}), path);
+  expect(Boolean(await (await outgoing).headerValue("referer"))).toBe(false);
+  expect(await probe(baseURL, `${path}-referer`, new URL(legacy, baseURL).href)).toBe(200);
+
+  for (const service of ["nginx", "frontend"]) {
+    let logs;
+    await expect.poll(() => {
+      logs = recentAccessLogs(project, service);
+      return logs.includes(`${marker}-referer`);
+    }).toBe(true);
+    expect(logs.includes(fixture), `Recovery credential absent from ${service} logs`).toBe(false);
+  }
+
+  await page.route("**/api/v1/auth/password/recover/confirm", async (route) => {
+    await route.fulfill({ status: 204 });
+  });
+  async function submitReset(expectedToken) {
+    const request = page.waitForRequest((request) =>
+      new URL(request.url()).pathname === "/api/v1/auth/password/recover/confirm",
+    );
+    await page.getByLabel("New password", { exact: true }).fill(randomUUID());
+    await page.getByRole("button", { name: "Reset password" }).click();
+    expect((await request).postDataJSON()?.token === expectedToken).toBe(true);
+    await expect(page.getByText("Your password is updated.")).toBeVisible();
+  }
+
+  await submitReset(fixture);
+  await page.goto(`/products?verify=${marker}-leave`);
+  const fragment = randomBytes(32).toString("base64url");
+  await navigateWithToken(page, `/reset-password#${new URLSearchParams({ token: fragment })}`);
+  await expect(page.getByRole("heading", { name: /new password/i })).toBeVisible();
+  await expect.poll(() => Boolean(new URL(page.url()).hash)).toBe(false);
+  await submitReset(fragment);
 });

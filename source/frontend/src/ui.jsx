@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useLocation, Navigate, Outlet } from "react-router-dom";
 import {
   ArrowUpRight,
@@ -13,9 +13,8 @@ import {
   Star,
   X,
 } from "lucide-react";
-import { useData, money, date } from "./api";
-export const SessionContext = createContext(null);
-export const useSession = () => useContext(SessionContext);
+import { useSession, money, date } from "./api";
+export { useSession };
 export function Loading() {
   return (
     <div className="loading" role="status">

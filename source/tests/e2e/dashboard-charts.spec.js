@@ -316,3 +316,91 @@ test("Long category legends leave room for positive bars on mobile and desktop",
   }
   await expectNoOverflow(page);
 });
+
+test("Category chart preserves distinct IDs, renamed series and legacy labels", async ({
+  page,
+}) => {
+  await loginAsAdmin(page);
+  const current = "11111111-ffff-4fff-8fff-111111111111";
+  const distinct = "22222222-ffff-4fff-8fff-222222222222";
+  const category = (categoryId, categoryName, unitsSold) => ({
+    categoryId,
+    categoryKey: categoryId ?? `legacy:${categoryName}`,
+    categoryName,
+    unitsSold,
+    revenueVnd: unitsSold * 100,
+    grossProfitVnd: unitsSold * 40,
+  });
+  const byCategory = [
+    category(current, "Hardware", 4),
+    category(distinct, "Hardware", 2),
+    category(null, "Hardware", 1),
+  ];
+  const totals = {
+    ordersSold: 4,
+    revenueVnd: 700,
+    grossProfitVnd: 280,
+    unitsSold: 7,
+    distinctProductCount: 3,
+    distinctCategoryCount: 3,
+    legacyCategoryNameCount: 1,
+  };
+  await page.route("**/api/v1/admin/dashboard/analytics?*", (route) =>
+    route.fulfill({
+      json: {
+        data: {
+          range: { from: "2026-01-01", to: "2026-12-31" },
+          previousRange: { from: "2025-01-01", to: "2025-12-31" },
+          totals,
+          previousTotals: totals,
+          byCategory,
+          series: [
+            {
+              ...totals,
+              bucket: "2026-01",
+              categoryUnits: [category(current, "Old hardware name", 1)],
+            },
+            {
+              ...totals,
+              bucket: "2026-02",
+              categoryUnits: [
+                category(current, "Hardware", 3),
+                ...byCategory.slice(1),
+              ],
+            },
+          ],
+        },
+      },
+    }),
+  );
+  await page.getByRole("link", { name: "Advanced analytics" }).click();
+  const chart = page.getByRole("region", {
+    name: "Product types sold over time",
+  });
+  const legend = chart.getByRole("list", { name: "Product type legend" });
+  await expect(legend.getByRole("listitem")).toHaveText([
+    "Hardware (11111111)",
+    "Hardware (22222222)",
+    "Hardware (legacy)",
+  ]);
+  await expect
+    .poll(() =>
+      chart.locator(".recharts-bar-rectangle path").evaluateAll(
+        (bars) =>
+          bars.filter((bar) => {
+            const { width, height } = bar.getBoundingClientRect();
+            return (
+              width > 0 &&
+              height > 0 &&
+              getComputedStyle(bar).visibility === "visible"
+            );
+          }).length,
+      ),
+    )
+    .toBe(4);
+  await expect(
+    page.getByText("Historical category identities are unknown", {
+      exact: false,
+    }),
+  ).toBeVisible();
+});

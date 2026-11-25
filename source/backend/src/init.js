@@ -3,30 +3,47 @@ import { readFile } from "node:fs/promises";
 import argon2 from "argon2";
 import { DateTime } from "luxon";
 import { db, json } from "./db.js";
+import { email } from "./lib.js";
 const migrations = fileURLToPath(new URL("../migrations", import.meta.url));
+const demoEmail = "admin@obsidian.local";
+const demoPassword = "ObsidianAdmin!2026";
+const seedDemo = process.env.SEED_DEMO_DATA !== "false";
 try {
   await db.migrate.latest({ directory: migrations });
-  if (process.env.SEED_DEMO_DATA !== "false")
-    await db.transaction(async (tx) => {
-      await tx.raw(
-        "SELECT pg_advisory_xact_lock(hashtext('obsidian-seed-v1'))",
+  await db.transaction(async (tx) => {
+    await tx.raw("SELECT pg_advisory_xact_lock(hashtext('obsidian-seed-v1'))");
+    let admin = await tx("users").where({ role: "ADMIN" }).first();
+    if (!admin) {
+      const adminEmail = email.safeParse(
+        process.env.ADMIN_EMAIL || (seedDemo ? demoEmail : ""),
       );
-      if (await tx("seed_versions").where({ version: "demo-v1" }).first())
-        return;
-      const passwordHash = await argon2.hash("ObsidianCustomer!2026");
-      const [admin] = await tx("users")
+      const adminPassword =
+        process.env.ADMIN_PASSWORD || (seedDemo ? demoPassword : "");
+      if (
+        !adminEmail.success ||
+        !adminPassword.trim() ||
+        adminPassword.length < 10 ||
+        adminPassword.length > 128 ||
+        (!seedDemo &&
+          (adminEmail.data === demoEmail || adminPassword === demoPassword))
+      )
+        throw new Error(
+          "Initial Admin requires ADMIN_EMAIL and ADMIN_PASSWORD (10–128 characters). Use non-demo credentials when demo seed is disabled.",
+        );
+      [admin] = await tx("users")
         .insert({
-          email: (
-            process.env.ADMIN_EMAIL || "admin@obsidian.local"
-          ).toLowerCase(),
+          email: adminEmail.data,
           full_name: "Store Administrator",
           role: "ADMIN",
           email_verified: true,
-          password_hash: await argon2.hash(
-            process.env.ADMIN_PASSWORD || "ObsidianAdmin!2026",
-          ),
+          password_hash: await argon2.hash(adminPassword),
         })
         .returning("*");
+    }
+    if (seedDemo) {
+      if (await tx("seed_versions").where({ version: "demo-v1" }).first())
+        return;
+      const passwordHash = await argon2.hash("ObsidianCustomer!2026");
       const users = await tx("users")
         .insert([
           {
@@ -213,6 +230,7 @@ try {
           unit_cost_vnd: Math.floor((subtotal / quantity) * 0.72),
           quantity,
           line_total_vnd: subtotal,
+          category_id_snapshot: p.category_id,
           category_name_snapshot: p.category,
         });
         for (const state of [
@@ -255,8 +273,13 @@ try {
         }
       }
       await tx("seed_versions").insert({ version: "demo-v1" });
-    });
-  console.log("Database ready: migrations and idempotent demo seed complete.");
+    }
+  });
+  console.log(
+    seedDemo
+      ? "Database ready: migrations, Admin bootstrap and demo seed complete."
+      : "Database ready: migrations and Admin bootstrap complete.",
+  );
 } finally {
   await db.destroy();
 }

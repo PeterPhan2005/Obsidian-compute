@@ -115,6 +115,7 @@ const empty = () => ({
   unitsSold: 0,
   distinctProductCount: 0,
   distinctCategoryCount: 0,
+  legacyCategoryNameCount: 0,
 });
 export function allocatedItems(order, items) {
   const net = Math.max(
@@ -149,7 +150,12 @@ export function allocatedItems(order, items) {
 function metrics(orders, items, byCategory = new Map()) {
   const total = empty(),
     products = new Set();
-  for (const o of orders) {
+  // The newest sale in the selected range supplies the display name. The
+  // category ID still joins sales under both old and new names.
+  const newestFirst = [...orders].sort(
+    (a, b) => b.created_at - a.created_at || a.id.localeCompare(b.id),
+  );
+  for (const o of newestFirst) {
     total.ordersSold++;
     for (const i of allocatedItems(
       o,
@@ -160,15 +166,20 @@ function metrics(orders, items, byCategory = new Map()) {
       total.unitsSold += i.quantity;
       products.add(i.product_id);
       const categoryName = i.category_name_snapshot;
-      let category = byCategory.get(categoryName);
+      const categoryId = i.category_id_snapshot ?? null;
+      const categoryKey = categoryId ?? `legacy:${categoryName}`;
+      let category = byCategory.get(categoryKey);
       if (!category) {
         category = {
+          categoryId,
+          categoryKey,
           categoryName,
           unitsSold: 0,
           revenueVnd: 0,
           grossProfitVnd: 0,
         };
-        byCategory.set(categoryName, category);
+        byCategory.set(categoryKey, category);
+        if (categoryId === null) total.legacyCategoryNameCount++;
       }
       category.unitsSold += i.quantity;
       category.revenueVnd += i.revenueVnd;
@@ -179,13 +190,13 @@ function metrics(orders, items, byCategory = new Map()) {
   total.distinctCategoryCount = byCategory.size;
   return total;
 }
-export async function analytics(q) {
+export async function analytics(q, conn = db) {
   const r = timeRange(q);
-  const all = await db("orders")
+  const all = await conn("orders")
     .where("created_at", ">=", r.previousStart.toJSDate())
     .where("created_at", "<", r.end.toJSDate());
   const items = all.length
-    ? await db("order_items").whereIn(
+    ? await conn("order_items").whereIn(
         "order_id",
         all.map((o) => o.id),
       )
@@ -223,7 +234,12 @@ export async function analytics(q) {
       ...bucketMetrics,
       categoryUnits: Array.from(
         categories.values(),
-        ({ categoryName, unitsSold }) => ({ categoryName, unitsSold }),
+        ({ categoryId, categoryKey, categoryName, unitsSold }) => ({
+          categoryId,
+          categoryKey,
+          categoryName,
+          unitsSold,
+        }),
       ),
     });
     cursor = next;

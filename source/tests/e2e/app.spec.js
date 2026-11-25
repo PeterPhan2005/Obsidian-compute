@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { navigateWithToken } from "./sensitive-navigation.js";
 const root = fileURLToPath(new URL("../../", import.meta.url));
 test.use({ trace: "off", screenshot: "off", video: "off" });
 async function login(page, admin = false) {
@@ -170,9 +171,11 @@ test("Guest checkout preserves stock when Admin saves an already open product fo
   expect(await readStock()).toBe(variant.stock - 1);
 
   await adminContext.close();
-  await page.reload().catch(() => {
-    throw new Error("Receipt page reload failed.");
+  const reloaded = page.waitForEvent("domcontentloaded");
+  await page.evaluate(() => {
+    setTimeout(() => window.location.reload(), 0);
   });
+  await reloaded;
   await expect(
     page.getByRole("heading", { name: "Order placed" }),
   ).toBeVisible();
@@ -197,7 +200,7 @@ test("Checkout success requires a receipt and handles an unavailable receipt", a
     const response = page.waitForResponse((r) =>
       r.url().endsWith(`/api/v1/checkout/receipts/${receipt}`),
     );
-    await page.goto(`/checkout/success${separator}receipt=${receipt}`);
+    await navigateWithToken(page, `/checkout/success${separator}receipt=${receipt}`);
     expect((await response).status()).toBe(404);
     await expect(unavailable).toBeVisible();
     await expect(page.getByRole("alert")).toBeVisible();
@@ -213,7 +216,7 @@ test("Checkout success requires a receipt and handles an unavailable receipt", a
     await route.abort("failed");
   });
   try {
-    await page.goto(`/checkout/success#receipt=${"1".repeat(64)}`);
+    await navigateWithToken(page, `/checkout/success#receipt=${"1".repeat(64)}`);
     await expect(page.getByRole("status")).toBeVisible();
     await expect(success).toHaveCount(0);
   } finally {

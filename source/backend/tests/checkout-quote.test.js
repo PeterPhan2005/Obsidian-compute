@@ -20,6 +20,9 @@ before(async () => {
 after(() => db.destroy());
 
 async function changeCart(client, method, body, itemId) {
+  if (method === "POST" && !client.cookies.get("guest_cart")) {
+    assert.equal((await client.request("/cart")).status, 200);
+  }
   const result = await client.request(
     `/cart/items${itemId ? `/${itemId}` : ""}`,
     method,

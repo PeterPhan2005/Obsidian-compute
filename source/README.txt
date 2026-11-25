@@ -27,9 +27,12 @@ Customer:      alex@example.com / ObsidianCustomer!2026
 Customer:      jordan@example.com / ObsidianCustomer!2026
 Passwordless:  sam@example.com (choose Email code; read code in Mailpit)
 
-ADMIN_EMAIL / ADMIN_PASSWORD may override the initial admin seed. These values
-only take effect when a new database is first seeded. The seed never resets
-existing passwords, orders or stock on restart.
+ADMIN_EMAIL / ADMIN_PASSWORD override the initial Administrator credentials.
+With SEED_DEMO_DATA=false, a database without an Administrator requires both
+values explicitly, using a valid non-demo email and a non-demo password of
+10–128 characters. Startup creates the sole Administrator and skips demo data.
+An existing Administrator and password are preserved on subsequent starts.
+The seed never resets existing orders or stock on restart.
 
 DEMO COUPONS
 ------------
@@ -117,6 +120,9 @@ FEATURES
   customers/ban, orders/status history, coupons, simple and advanced dashboards.
 - Advanced dashboard calendar ranges and day/week/month/quarter/year grouping;
   merchandise revenue after discounts and gross profit using order cost snapshots.
+  New order items also retain the category ID at sale. Older items without an
+  ID appear in legacy groups by their original snapshot names. Their precise
+  category identities are unknown and count as separate reported groups.
 - Responsive English interface, dark minimal design and VND formatting.
 
 ARCHITECTURE
@@ -133,6 +139,9 @@ bonus claim. No bonus features are claimed in this delivery.
 API base: /api/v1
 Health: /api/v1/health (X-Instance-Id header identifies the responding replica)
 API contracts and business rules: ../BLUEPRINT_NODEJS_ECOMMERCE.md
+Guest API clients should start with GET /api/v1/cart and keep its guest_cart
+cookie before changing items or requesting a checkout quote. A cart mutation
+without that identity returns CART_NOT_INITIALIZED.
 
 TESTS
 -----

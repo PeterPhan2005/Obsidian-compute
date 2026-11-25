@@ -111,6 +111,16 @@ export async function self(user) {
     createdAt: user.created_at,
   };
 }
+function checkSessionIdentity(req, user = req.user) {
+  const expected = req.get("X-Session-Identity");
+  check(
+    expected === undefined || expected === (user?.id ?? "guest"),
+    409,
+    "SESSION_CHANGED",
+    "Your session changed. Please try again.",
+  );
+}
+
 export async function authenticate(req, res, next) {
   req.user = null;
   if (req.cookies.access_token) {
@@ -137,7 +147,7 @@ export async function authenticate(req, res, next) {
   if (
     !req.user &&
     req.cookies.refresh_token &&
-    !req.path.startsWith("/auth/")
+    (!req.path.startsWith("/auth/") || req.path === "/auth/password/change")
   ) {
     const refreshSession = await db("refresh_sessions")
       .where({ token_hash: hash(req.cookies.refresh_token) })
@@ -150,9 +160,10 @@ export async function authenticate(req, res, next) {
       "ACCESS_EXPIRED",
       "Refresh your session to continue.",
     );
-    res.clearCookie("access_token", cookieOptions);
-    res.clearCookie("refresh_token", cookieOptions);
+    // Ordinary API responses must not clear cookies from a newer sign-in.
+    // Invalid cookies confer no access and expire or are replaced by auth.
   }
+  if (!["/auth/refresh", "/auth/logout"].includes(req.path)) checkSessionIdentity(req);
   next();
 }
 export function requireUser(req, res, next) {
@@ -197,10 +208,23 @@ async function setCookies(res, user, session, refresh) {
     maxAge: 14 * 86400000,
   });
 }
-async function createSession(user, client = db) {
+// Existing accounts are locked before challenge or session rows. This matches
+// Admin suspension and Google linking. Cart merging happens after commit.
+function lockUser(tx, where) {
+  return tx("users").where(where).forUpdate().first();
+}
+function liveSession(tx, where) {
+  return tx("refresh_sessions")
+    .where(where)
+    .whereNull("revoked_at")
+    .where("expires_at", ">", new Date())
+    .forUpdate()
+    .first();
+}
+async function createSession(user, tx) {
   check(!user.is_banned, 403, "BANNED", "This account is suspended.");
   const refresh = token();
-  const [session] = await client("refresh_sessions")
+  const [session] = await tx("refresh_sessions")
     .insert({
       user_id: user.id,
       token_hash: hash(refresh),
@@ -209,8 +233,7 @@ async function createSession(user, client = db) {
     .returning("*");
   return { session, refresh };
 }
-async function signIn(req, res, user, credentials) {
-  const { session, refresh } = credentials ?? (await createSession(user));
+async function signIn(req, res, user, { session, refresh }) {
   await setCookies(res, user, session, refresh);
   await mergeGuestCart(req, res, user);
   return self(user);
@@ -241,7 +264,7 @@ async function enqueue(tx, type, to, subject, textBody) {
     payload: json({ to, subject, text: textBody }),
   });
 }
-async function sendOtp(user, tx = db) {
+async function sendOtp(user, tx) {
   const code = String(randomInt(100000, 1000000));
   await tx("login_otps")
     .where({ email: user.email })
@@ -309,10 +332,10 @@ export function authRoutes(redis, limiter) {
     limiter("auth", 20, 60),
     async (req, res) => {
       const b = z.object({ email }).strict().parse(req.body);
-      const u = await db("users")
-        .where({ email: b.email, is_banned: false })
-        .first();
-      if (u) await db.transaction((tx) => sendOtp(u, tx));
+      await db.transaction(async (tx) => {
+        const user = await lockUser(tx, { email: b.email });
+        if (user && !user.is_banned) await sendOtp(user, tx);
+      });
       ok(
         res,
         {
@@ -330,7 +353,9 @@ export function authRoutes(redis, limiter) {
         .object({ email, code: z.string().regex(/^\d{6}$/) })
         .strict()
         .parse(req.body);
-      const u = await db.transaction(async (tx) => {
+      const result = await db.transaction(async (tx) => {
+        const account = await lockUser(tx, { email: b.email });
+        if (!account) return null;
         const otp = await tx("login_otps")
           .where({ email: b.email })
           .whereNull("consumed_at")
@@ -342,17 +367,18 @@ export function authRoutes(redis, limiter) {
         await tx("login_otps").where({ id: otp.id }).increment("attempts", 1);
         if (!equal(otp.code_hash, keyedHash(`${b.email}:${b.code}`)))
           return null;
+        check(!account.is_banned, 403, "BANNED", "This account is suspended.");
         await tx("login_otps")
           .where({ id: otp.id })
           .update({ consumed_at: new Date() });
         const [user] = await tx("users")
-          .where({ email: b.email })
+          .where({ id: account.id })
           .update({ email_verified: true })
           .returning("*");
-        return user;
+        return { user, credentials: await createSession(user, tx) };
       });
-      check(u, 401, "INVALID_CODE", "The code is invalid or expired.");
-      ok(res, { user: await signIn(req, res, u) });
+      check(result, 401, "INVALID_CODE", "The code is invalid or expired.");
+      ok(res, { user: await signIn(req, res, result.user, result.credentials) });
     },
   );
   router.post(
@@ -370,7 +396,17 @@ export function authRoutes(redis, limiter) {
         "INVALID_CREDENTIALS",
         "Email or password is incorrect.",
       );
-      ok(res, { user: await signIn(req, res, u) });
+      const result = await db.transaction(async (tx) => {
+        const user = await lockUser(tx, { id: u.id });
+        check(
+          user?.password_hash === u.password_hash,
+          401,
+          "INVALID_CREDENTIALS",
+          "Email or password is incorrect.",
+        );
+        return { user, credentials: await createSession(user, tx) };
+      });
+      ok(res, { user: await signIn(req, res, result.user, result.credentials) });
     },
   );
   router.post("/auth/refresh", async (req, res) => {
@@ -383,14 +419,15 @@ export function authRoutes(redis, limiter) {
     const oldHash = hash(req.cookies.refresh_token),
       refresh = token();
     const result = await db.transaction(async (tx) => {
-      const s = await tx("refresh_sessions")
+      const owner = await tx("refresh_sessions")
         .where({ token_hash: oldHash })
-        .forUpdate()
-        .first();
-      if (!s || s.revoked_at || new Date(s.expires_at) < new Date())
-        return null;
-      const u = await tx("users").where({ id: s.user_id }).first();
-      if (u.is_banned) return null;
+        .first("user_id");
+      if (!owner) return null;
+      const u = await lockUser(tx, { id: owner.user_id });
+      if (!u || u.is_banned) return null;
+      checkSessionIdentity(req, u);
+      const s = await liveSession(tx, { token_hash: oldHash, user_id: u.id });
+      if (!s) return null;
       await tx("refresh_sessions")
         .where({ id: s.id })
         .update({ previous_hash: oldHash, token_hash: hash(refresh) });
@@ -401,14 +438,25 @@ export function authRoutes(redis, limiter) {
     ok(res, { user: await self(result.u) });
   });
   router.post("/auth/logout", async (req, res) => {
-    if (req.session)
-      await db("refresh_sessions")
-        .where({ id: req.session.id })
-        .update({ revoked_at: new Date() });
-    else if (req.cookies.refresh_token)
-      await db("refresh_sessions")
-        .where({ token_hash: hash(req.cookies.refresh_token) })
-        .update({ revoked_at: new Date() });
+    let session = req.session;
+    if (!session && req.cookies.refresh_token) {
+      const refreshHash = hash(req.cookies.refresh_token);
+      // A refresh in another tab may have rotated the cookie before logout
+      // arrived. Only logout may resolve the immediately previous hash.
+      session = await db("refresh_sessions")
+        .where({ token_hash: refreshHash })
+        .orWhere({ previous_hash: refreshHash })
+        .first("id", "user_id");
+    }
+    if (session) {
+      checkSessionIdentity(req, { id: session.user_id });
+      await db.transaction(async (tx) => {
+        await lockUser(tx, { id: session.user_id });
+        await tx("refresh_sessions")
+          .where({ id: session.id, user_id: session.user_id })
+          .update({ revoked_at: new Date() });
+      });
+    }
     res
       .clearCookie("access_token", cookieOptions)
       .clearCookie("refresh_token", cookieOptions)
@@ -423,24 +471,44 @@ export function authRoutes(redis, limiter) {
       })
       .strict()
       .parse(req.body);
-    if (req.user.password_hash)
+    check(
+      !req.user.password_hash ||
+        (b.currentPassword &&
+          (await argon2.verify(req.user.password_hash, b.currentPassword))),
+      401,
+      "INVALID_PASSWORD",
+      "Current password is incorrect.",
+    );
+    const passwordHash = await argon2.hash(b.newPassword);
+    await db.transaction(async (tx) => {
+      const user = await lockUser(tx, { id: req.user.id });
+      check(user, 401, "LOGIN_REQUIRED", "Please sign in to continue.");
+      check(!user.is_banned, 403, "BANNED", "This account is suspended.");
       check(
-        b.currentPassword &&
-          (await argon2.verify(req.user.password_hash, b.currentPassword)),
+        user.role === "CUSTOMER",
+        403,
+        "FORBIDDEN",
+        "A customer account is required.",
+      );
+      const session = await liveSession(tx, {
+        id: req.session.id,
+        user_id: user.id,
+      });
+      check(session, 401, "SESSION_EXPIRED", "Please sign in again.");
+      check(
+        user.password_hash === req.user.password_hash,
         401,
         "INVALID_PASSWORD",
         "Current password is incorrect.",
       );
-    else
-      check(
-        req.user.email_verified &&
-          Date.now() - new Date(req.session.created_at).getTime() < 15 * 60000,
-        401,
-        "REAUTH_REQUIRED",
-        "Sign in with an email code or Google again before setting your password.",
-      );
-    const passwordHash = await argon2.hash(b.newPassword);
-    await db.transaction(async (tx) => {
+      if (!user.password_hash)
+        check(
+          user.email_verified &&
+            Date.now() - new Date(session.created_at).getTime() < 15 * 60000,
+          401,
+          "REAUTH_REQUIRED",
+          "Sign in with an email code or Google again before setting your password.",
+        );
       await tx("users")
         .where({ id: req.user.id })
         .update({ password_hash: passwordHash });
@@ -456,12 +524,10 @@ export function authRoutes(redis, limiter) {
     limiter("auth", 20, 60),
     async (req, res) => {
       const b = z.object({ email }).strict().parse(req.body);
-      const u = await db("users")
-        .where({ email: b.email, is_banned: false })
-        .first();
-      if (u) {
-        const t = token();
-        await db.transaction(async (tx) => {
+      await db.transaction(async (tx) => {
+        const u = await lockUser(tx, { email: b.email });
+        if (u && !u.is_banned) {
+          const t = token();
           await tx("password_reset_tokens")
             .where({ user_id: u.id })
             .whereNull("used_at")
@@ -476,10 +542,10 @@ export function authRoutes(redis, limiter) {
             "RESET",
             u.email,
             "Reset your Obsidian password",
-            `Reset your password within 30 minutes: ${baseUrl}/reset-password?token=${t}\nIgnore this message if you did not request it.`,
+            `Reset your password within 30 minutes: ${baseUrl}/reset-password#token=${t}\nIgnore this message if you did not request it.`,
           );
-        });
-      }
+        }
+      });
       ok(
         res,
         {
@@ -500,8 +566,14 @@ export function authRoutes(redis, limiter) {
         .parse(req.body);
       const passwordHash = await argon2.hash(b.newPassword);
       await db.transaction(async (tx) => {
+        const tokenHash = hash(b.token);
+        const owner = await tx("password_reset_tokens")
+          .where({ token_hash: tokenHash })
+          .first("user_id");
+        const u = owner && (await lockUser(tx, { id: owner.user_id }));
+        check(u, 400, "INVALID_TOKEN", "This reset link is invalid or expired.");
         const t = await tx("password_reset_tokens")
-          .where({ token_hash: hash(b.token) })
+          .where({ token_hash: tokenHash, user_id: u.id })
           .whereNull("used_at")
           .where("expires_at", ">", new Date())
           .forUpdate()
@@ -512,7 +584,6 @@ export function authRoutes(redis, limiter) {
           "INVALID_TOKEN",
           "This reset link is invalid or expired.",
         );
-        const u = await tx("users").where({ id: t.user_id }).first();
         check(!u.is_banned, 403, "BANNED", "This account is suspended.");
         await tx("users")
           .where({ id: t.user_id })
@@ -571,14 +642,23 @@ export function authRoutes(redis, limiter) {
       "OAUTH_FAILED",
       "Google sign-in was cancelled or invalid.",
     );
+    // Finish from the same-origin SPA so session cookies use its cross-tab lock.
+    res.set("Referrer-Policy", "no-referrer");
+    res.redirect(`/oauth/google#${new URLSearchParams({ code: req.query.code, state: req.query.state })}`);
+  });
+  router.post("/auth/google/callback", limiter("google-complete", 30, 60), async (req, res) => {
+    const { code, state: stateToken } = z.object({
+      code: z.string().min(1).max(4096),
+      state: z.string(),
+    }).strict().parse(req.body);
     const binding = req.cookies.oauth_binding;
     check(
-      oauthTokenPattern.test(req.query.state) && typeof binding === "string",
+      oauthTokenPattern.test(stateToken) && typeof binding === "string",
       401,
       "OAUTH_STATE",
       "Google sign-in expired. Please try again.",
     );
-    const key = `oauth:${req.query.state}`;
+    const key = `oauth:${stateToken}`;
     const raw = await redis.get(key);
     check(
       raw,
@@ -602,7 +682,7 @@ export function authRoutes(redis, limiter) {
     );
     const profile = await googleIdentity(
       google,
-      req.query.code,
+      code,
       state.verifier,
       state.nonce,
     );
@@ -618,10 +698,10 @@ export function authRoutes(redis, limiter) {
         await tx.raw("SELECT pg_advisory_xact_lock(hashtext(?))", [
           profile.email,
         ]);
-      let user = await tx("users")
-        .where(identity ? { id: identity.user_id } : { email: profile.email })
-        .forUpdate()
-        .first();
+      let user = await lockUser(
+        tx,
+        identity ? { id: identity.user_id } : { email: profile.email },
+      );
       check(
         !user || user.role === "CUSTOMER",
         403,
@@ -646,12 +726,7 @@ export function authRoutes(redis, limiter) {
         if (!authoritativeEmail) {
           const session =
             user?.email_verified && user.id === req.user?.id && req.session
-              ? await tx("refresh_sessions")
-                  .where({ id: req.session.id, user_id: user.id })
-                  .whereNull("revoked_at")
-                  .where("expires_at", ">", new Date())
-                  .forUpdate()
-                  .first("id")
+              ? await liveSession(tx, { id: req.session.id, user_id: user.id })
               : null;
           check(
             session,
@@ -683,7 +758,7 @@ export function authRoutes(redis, limiter) {
     });
     await signIn(req, res, user, credentials);
     const hasAddress = await db("addresses").where({ user_id: user.id }).first();
-    res.redirect(hasAddress ? state.returnTo : "/account/addresses?welcome=1");
+    ok(res, { returnTo: hasAddress ? state.returnTo : "/account/addresses?welcome=1" });
   });
   router.get("/me", requireCustomer, async (req, res) =>
     ok(res, await self(req.user)),

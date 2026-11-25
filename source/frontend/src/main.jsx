@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useLayoutEffect } from "react";
+import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { createRoot } from "react-dom/client";
 import {
   BrowserRouter,
@@ -23,17 +23,32 @@ import {
   LogOut,
   ChevronDown,
 } from "lucide-react";
-import { api, useData } from "./api";
-import { SessionContext, Guard, ScrollTop, ErrorBoundary } from "./ui";
+import {
+  api,
+  changeSession,
+  currentSessionMarker,
+  isPrivateQuery,
+  sessionChangeKey,
+  sessionQueryKey,
+  setRequestIdentity,
+  SessionContext,
+  useAction,
+  useData,
+  useSession,
+} from "./api";
+import { Guard, ScrollTop, ErrorBoundary, ErrorBox } from "./ui";
 import {
   receiptSuccessPath,
-  setReceiptReferrerPolicy,
+  resetPasswordPath,
+  setSensitiveReferrerPolicy,
 } from "./receipt-location";
 import { Home, Catalog, ProductDetail, Cart, Checkout, Success } from "./store";
 import {
   Login,
   Register,
   ForgotPassword,
+  GoogleCompletion,
+  googleCompletionPath,
   ResetPassword,
   AccountLayout,
   Profile,
@@ -66,14 +81,96 @@ const client = new QueryClient({
 function Layout() {
   const location = useLocation();
   const isReceipt = Boolean(useMatch(receiptSuccessPath));
+  const isReset = Boolean(useMatch(resetPasswordPath));
+  const isGoogleCompletion = Boolean(useMatch(googleCompletionPath));
   useLayoutEffect(() => {
-    setReceiptReferrerPolicy(isReceipt);
-  }, [isReceipt]);
-  const session = useData("/auth/session"),
-    user = session.data?.data.user;
+    setSensitiveReferrerPolicy(isReceipt || isReset || isGoogleCompletion);
+  }, [isReceipt, isReset, isGoogleCompletion]);
+  const sessionChangePending = useRef(false);
+  const [changing, setChanging] = useState(false);
+  const [revision, setRevision] = useState(0);
+  const session = useData(sessionQueryKey[0], { enabled: !changing });
+  const marker = currentSessionMarker();
+  const usableSession = !changing && !session.isError && session.data?.marker === marker
+    && session.data?.data;
+  const user = usableSession?.user;
+  const cacheScope = usableSession
+    ? `${revision}:${user ? `${user.role}:${user.id}` : "guest"}`
+    : null;
+  useLayoutEffect(() => {
+    setRequestIdentity(usableSession ? user?.id ?? "guest" : undefined, marker);
+    client.removeQueries({
+      predicate: (query) =>
+        isPrivateQuery(query) && query.queryKey[1] !== cacheScope,
+    });
+  }, [cacheScope, marker, usableSession, user?.id]);
+  const reloadIdentity = async (operation) => {
+    if (sessionChangePending.current) {
+      if (operation) throw new Error("Please wait for the session update to finish.");
+      return;
+    }
+    sessionChangePending.current = true;
+    setRequestIdentity(undefined, currentSessionMarker());
+    setChanging(true);
+    try {
+      return await changeSession(client, operation);
+    } finally {
+      try {
+        let requestedMarker;
+        do {
+          requestedMarker = currentSessionMarker();
+          try {
+            await client.fetchQuery({
+              queryKey: sessionQueryKey,
+              queryFn: ({ signal }) => api(sessionQueryKey[0], { signal }),
+              staleTime: 0,
+              retry: false,
+            });
+          } catch {
+            // A failed session read leaves private queries disabled.
+          }
+        } while (requestedMarker !== currentSessionMarker());
+      } finally {
+        sessionChangePending.current = false;
+        setRevision((value) => value + 1);
+        setChanging(false);
+      }
+    }
+  };
+  useLayoutEffect(() => {
+    const onStorage = (event) => {
+      if (event.key === sessionChangeKey) void reloadIdentity();
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+  return (
+    <SessionContext.Provider
+      value={{
+        user,
+        cacheScope,
+        isPending: session.isPending || changing ||
+          (!session.isError && session.data && session.data.marker !== marker),
+        googleEnabled: usableSession?.googleEnabled,
+        changeIdentity: reloadIdentity,
+      }}
+    >
+      <LayoutContent
+        outletKey={
+          isReset || isGoogleCompletion || ["/login", "/register", "/forgot-password"].includes(location.pathname)
+            ? undefined
+            : (cacheScope ?? "session-loading")
+        }
+      />
+    </SessionContext.Provider>
+  );
+}
+function LayoutContent({ outletKey }) {
+  const { user, cacheScope, changeIdentity } = useSession();
   const cart = useData("/cart", {
-    enabled: !session.isPending && (!user || user.role === "CUSTOMER"),
+    enabled: !!cacheScope && (!user || user.role === "CUSTOMER"),
   });
+  const logoutAction = useAction();
   const navigate = useNavigate();
   const [mobile, setMobile] = useState(false),
     [search, setSearch] = useState("");
@@ -84,19 +181,20 @@ function Layout() {
     window.addEventListener("keydown", onEscape);
     return () => window.removeEventListener("keydown", onEscape);
   }, []);
-  const logout = async () => {
-    await api("/auth/logout", { method: "POST" });
-    await client.invalidateQueries();
-    navigate("/");
-  };
+  const logout = () =>
+    logoutAction.run(
+      () =>
+        changeIdentity(async () => {
+          await api("/auth/logout", {
+            method: "POST",
+            headers: { "X-Session-Identity": user.id },
+          });
+          navigate("/", { replace: true });
+        }),
+      { changesSession: true },
+    );
   return (
-    <SessionContext.Provider
-      value={{
-        user,
-        isPending: session.isPending,
-        googleEnabled: session.data?.data.googleEnabled,
-      }}
-    >
+    <>
       <ScrollTop />
       <div className="announcement">
         <span>CONSIDERED HARDWARE. EXTRAORDINARY POSSIBILITIES.</span>
@@ -192,7 +290,8 @@ function Layout() {
           </div>
         </div>
       </header>
-      <Outlet />
+      <ErrorBox error={logoutAction.error} />
+      <Outlet key={outletKey} />
       <footer className="footer">
         <div className="container footer-top">
           <div>
@@ -237,7 +336,7 @@ function Layout() {
           <span>Academic demo · Sandbox payments</span>
         </div>
       </footer>
-    </SessionContext.Provider>
+    </>
   );
 }
 function App() {
@@ -256,7 +355,8 @@ function App() {
               <Route path="login" element={<Login />} />
               <Route path="register" element={<Register />} />
               <Route path="forgot-password" element={<ForgotPassword />} />
-              <Route path="reset-password" element={<ResetPassword />} />
+              <Route path={resetPasswordPath} element={<ResetPassword />} />
+              <Route path={googleCompletionPath} element={<GoogleCompletion />} />
               <Route element={<Guard />}>
                 <Route path="account" element={<AccountLayout />}>
                   <Route index element={<Profile />} />

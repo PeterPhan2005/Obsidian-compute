@@ -40,7 +40,7 @@ export async function productDto(row, conn = db, admin = false) {
     images: images.map((i) => i.url),
     imageDetails: camel(images),
     thumbnailUrl: images[0]?.url,
-    minPriceVnd: Math.min(...variants.map((v) => v.price_vnd)),
+    minPriceVnd: variants.find((v) => v.is_active)?.price_vnd ?? null,
     variants: variants.map((v) => {
       const c = camel(v);
       if (!admin) {
