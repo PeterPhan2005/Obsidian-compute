@@ -237,3 +237,15 @@
 **Vấn đề:** Catalog public không có từ khóa chạy truy vấn đếm và truy vấn lấy trang trên các snapshot khác nhau. Một lần archive xen giữa có thể làm tổng báo còn sản phẩm trong khi trang trả về rỗng.
 
 **Khắc phục:** Dùng chung transaction `REPEATABLE READ READ ONLY` cho tổng, trang và DTO. Regression test commit thao tác archive giữa hai truy vấn để xác nhận cùng phản hồi vẫn đọc một snapshot. Luồng tìm kiếm Elasticsearch giữ nguyên hành vi.
+
+### 41. ISSUE 17.3 – WASM Asset Resolution in Vite Development
+
+**Vấn đề:** Worker để ONNX Runtime tự tìm WASM trong thư mục dependency đã optimize của Vite dev. Đường dẫn đó trả HTML với HTTP 200, khiến Chromium không khởi tạo được runtime và Catalog báo trợ lý tạm thời không khả dụng.
+
+**Khắc phục:** Import WASM đã pin qua Vite `?url` và đặt `wasmPaths.wasm` tới URL cùng origin. Review độc lập kiểm tra Vite dev trả `application/wasm` và truy vấn lưu trữ tiếng Việt chạy inference thành công. Chromium cũng chạy inference từ frontend image production.
+
+### 42. ISSUE 17.3 – Unsupported Negation and Exact-Capacity Requests
+
+**Vấn đề:** Điểm tương đồng có thể cao dù kết quả vi phạm điều kiện trong câu nhập. Review độc lập tái hiện truy vấn yêu cầu chuột và loại trừ desktop trả desktop, câu tiếng Việt yêu cầu máy in trả màn hình, và câu yêu cầu laptop RAM 64 GB trả laptop hoặc RAM 16 GB.
+
+**Khắc phục:** Phát hiện các mẫu phủ định và dung lượng chính xác để yêu cầu diễn đạt lại mục đích trước khi lấy ứng viên hoặc tải model. Review độc lập kiểm tra lại bốn ca đã tái hiện và xác nhận các truy vấn Anh–Việt phù hợp vẫn chạy model thật. Các cách diễn đạt ngoài mẫu phát hiện vẫn là giới hạn của trợ lý.
