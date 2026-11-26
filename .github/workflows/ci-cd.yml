@@ -36,13 +36,15 @@ jobs:
       - run: npm run build
       - name: Build candidate images from the checked-out commit
         run: |
+          context_dir="$(mktemp -d "$RUNNER_TEMP/obsidian-build.XXXXXX")"
+          git -C "$GITHUB_WORKSPACE" archive HEAD:source | tar -xf - -C "$context_dir"
           for component in backend frontend; do
             tag_var="OBSIDIAN_${component^^}_IMAGE"
-            git archive HEAD:source | docker build --file "$component/Dockerfile" \
+            docker build --file "$context_dir/$component/Dockerfile" \
               --platform linux/amd64 --provenance=false \
               --label "org.opencontainers.image.source=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" \
               --label "org.opencontainers.image.revision=$GITHUB_SHA" \
-              --tag "${!tag_var}" -
+              --tag "${!tag_var}" "$context_dir"
           done
       - name: Run full verification with candidate images
         run: npm run verify -- --images
