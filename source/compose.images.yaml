@@ -13,6 +13,9 @@ services:
   api-b:
     <<: *backend-image
     build: !reset null
+  realtime:
+    <<: *backend-image
+    build: !reset null
   worker:
     <<: *backend-image
     build: !reset null

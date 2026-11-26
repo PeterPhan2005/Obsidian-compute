@@ -4,6 +4,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { setTimeout as delay } from "node:timers/promises";
 import { db } from "../src/db.js";
 import { BASE, Client, ORIGIN, shipping, purchase, submit, review } from "./checkout-fixtures.js";
+import { isolatedServices } from "./isolated-services.js";
 let admin, product, variant;
 async function add(c, v = variant, quantity = 1) {
   if (!c.cookies.get("guest_cart")) {
@@ -1029,89 +1030,113 @@ test("Loyalty redemption and zero-amount payments reconcile exactly with the led
   assert.equal(final.pointsBalance, Number(ledger.total));
   assert.ok(final.pointsBalance >= 0);
 });
-test("Cross-replica WebSocket comments and ratings arrive without reload", async () => {
+test("Both API replicas publish comments and ratings to the matching Gateway room", async () => {
   const { io } = await import("socket.io-client");
-  const sockets = [
-    io("http://localhost:3101", {
-      transports: ["websocket"],
-      extraHeaders: { Origin: ORIGIN },
-    }),
-    io("http://localhost:3102", {
-      transports: ["websocket"],
-      extraHeaders: { Origin: ORIGIN },
-    }),
-  ];
+  const connect = (origin = ORIGIN) => io(BASE, {
+    transports: ["websocket"],
+    extraHeaders: { Origin: origin },
+    reconnection: false,
+    timeout: 3000,
+  });
+  const sockets = [connect(), connect()];
+  const foreign = connect("http://localhost:9999");
+  const unrelatedEvents = [];
   try {
+    const rejectedOrigin = new Promise((resolve, reject) => {
+      foreign.once("connect_error", resolve);
+      foreign.once("connect", () => reject(new Error("Foreign Origin accepted")));
+    });
+    await rejectedOrigin;
+    const other = (await new Client().request("/products")).body.data.find((p) => p.id !== product.id);
     await Promise.all(
-      sockets.map(
-        (s) =>
-          new Promise((resolve, reject) => {
-            const timer = setTimeout(
-              () => reject(new Error("Socket connection timed out")),
-              5000,
-            );
-            s.on("connect", () => {
-              clearTimeout(timer);
-              s.emit("product.join", { productId: product.id });
-              resolve();
-            });
-            s.on("connect_error", reject);
-          }),
-      ),
+      sockets.map((s, i) => s.timeout(5000).emitWithAck("product.join", {
+        productId: i ? other.id : product.id,
+      }).then((joined) => assert.equal(joined, true))),
     );
-    await delay(150);
-    const body = `Cross-replica event ${randomUUID()}`;
-    const received = Promise.all(
-      sockets.map(
-        (s) =>
-          new Promise((resolve, reject) => {
-            const t = setTimeout(
-              () => reject(new Error("Cross-instance event timed out")),
-              5000,
-            );
-            s.on("comment.created", (event) => {
-              if (event.comment.body === body) {
-                clearTimeout(t);
-                resolve(event);
-              }
-            });
-          }),
-      ),
-    );
-    const c = new Client("http://localhost:3101");
-    assert.equal(
-      (
-        await c.request(`/products/${product.slug}/comments`, "POST", {
-          guestName: "Realtime tester",
-          body,
-        })
-      ).status,
-      201,
-    );
-    const events = await received;
-    assert.equal(events[0].comment.id, events[1].comment.id);
-    const rating = Promise.all(
-      sockets.map(
-        (s) =>
-          new Promise((resolve, reject) => {
-            const t = setTimeout(
-              () => reject(new Error("Rating event timed out")),
-              5000,
-            );
-            s.once("rating.updated", (event) => {
-              clearTimeout(t);
-              resolve(event);
-            });
-          }),
-      ),
-    );
-    await c.login("alex@example.com", "ObsidianCustomer!2026");
-    await c.request(`/products/${product.slug}/rating`, "PUT", { stars: 4 });
-    assert.equal((await rating)[0].productId, product.id);
+    assert.equal(await sockets[0].timeout(3000).emitWithAck("product.join", { productId: "invalid" }), false);
+    assert.equal(await sockets[0].timeout(3000).emitWithAck("product.join", { productId: randomUUID() }), false);
+    sockets[1].on("comment.created", (event) => unrelatedEvents.push(event));
+    sockets[1].on("rating.updated", (event) => unrelatedEvents.push(event));
+    const path = `/internal/realtime/products/${product.id}`;
+    assert.equal((await fetch(BASE + path)).status, 404);
+    for (const [port, instance, stars] of [[3101, "api-a", 3], [3102, "api-b", 4]]) {
+      const api = new Client(`http://localhost:${port}`);
+      assert.equal((await fetch(api.base + path)).status, 204);
+      await api.login("alex@example.com", "ObsidianCustomer!2026");
+      for (const [event, route, method, body, status] of [
+        ["comment.created", "comments", "POST", { guestName: "Realtime tester", body: `Realtime ${randomUUID()}` }, 201],
+        ["rating.updated", "rating", "PUT", { stars }, 200],
+      ]) {
+        const received = Promise.withResolvers();
+        const listener = (data) => received.resolve(data);
+        sockets[0].once(event, listener);
+        try {
+          const response = await api.request(`/products/${product.slug}/${route}`, method, body);
+          assert.equal(response.status, status);
+          assert.equal(response.headers.get("x-instance-id"), instance);
+          const notification = await Promise.race([received.promise, delay(3000, null, { ref: false })]);
+          assert.equal(notification?.productId, product.id);
+          if (route === "comments") assert.equal(notification.comment.id, response.body.data.id);
+          else assert.deepEqual(notification.summary, response.body.data.summary);
+        } finally {
+          sockets[0].off(event, listener);
+        }
+      }
+    }
+    assert.deepEqual(unrelatedEvents, []);
+
+    if (process.env.OBSIDIAN_VERIFY_PROJECT) {
+      const { docker, container } = isolatedServices();
+      const paused = [];
+      try {
+        for (const service of ["api-a", "api-b"]) {
+          const replica = container(service);
+          docker("pause", replica);
+          paused.push(replica);
+        }
+        const failure = Promise.withResolvers();
+        sockets[0].once("error", failure.resolve);
+        sockets[0].emit("product.join", { productId: other.id });
+        assert.deepEqual(
+          await Promise.race([failure.promise, delay(4000, null, { ref: false })]),
+          { message: "Unable to join product updates." },
+        );
+        assert.equal(sockets[0].connected, true);
+      } finally {
+        for (const replica of paused) docker("unpause", replica);
+      }
+      assert.equal(await sockets[0].timeout(5000).emitWithAck("product.join", { productId: product.id }), true);
+    }
   } finally {
+    foreign.disconnect();
     sockets.forEach((s) => s.disconnect());
   }
 });
+test("Checkout commits with the Notification Worker stopped and sends queued email after restart",
+  { skip: !process.env.OBSIDIAN_VERIFY_PROJECT }, async () => {
+    const { docker, container } = isolatedServices();
+    const worker = container("worker");
+    const email = `outbox-${randomUUID()}@example.com`;
+    const client = new Client();
+    await add(client);
+    const quote = await review(client, purchase(email));
+    docker("stop", worker);
+    let order;
+    try {
+      const response = await submit(client, quote);
+      assert.equal(response.status, 201);
+      order = response.body.data.order;
+      assert.equal((await db("email_outbox").where({ order_id: order.id }).first()).status, "pending");
+    } finally {
+      docker("start", worker);
+    }
+    await lastMail(email, order.orderNumber);
+    for (let attempt = 0; attempt < 20; attempt++) {
+      if ((await db("email_outbox").where({ order_id: order.id }).first()).status === "sent") return;
+      await delay(100);
+    }
+    assert.fail("Worker did not mark the queued email as sent.");
+  });
 test("Refresh tokens rotate, foreign Origin fails, another customer cannot read an order", async () => {
   const c = new Client();
   await c.login("alex@example.com", "ObsidianCustomer!2026");

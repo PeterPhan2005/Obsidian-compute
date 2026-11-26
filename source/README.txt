@@ -15,7 +15,7 @@ Open http://localhost:8080
 Email inbox: http://localhost:8025
 
 To inspect readiness: docker compose ps
-To inspect a startup issue: docker compose logs --tail=100 init api-a api-b worker
+To inspect a startup issue: docker compose logs --tail=100 init api-a api-b realtime worker
 After changing source code: docker compose up -d --build
 To stop without deleting data: docker compose down
 Database and uploaded media persist in named volumes.
@@ -127,14 +127,17 @@ FEATURES
 
 ARCHITECTURE
 ------------
-Nginx routes one origin to frontend static files and two Express API replicas.
-PostgreSQL is the persistent source of truth. Redis shares rate limits, OAuth
-state and Socket.IO events. Access cookies use signed short-lived tokens; refresh
-sessions and guest carts persist in PostgreSQL. An independent worker drains the
-email outbox to Mailpit. Uploaded images live in a shared volume.
+Nginx routes one origin to frontend static files, the two Core API replicas
+and the Realtime Gateway. After comment and rating writes, Core API publishes
+events on Redis Pub/Sub. The Gateway delivers them to product rooms over
+Socket.IO and asks Core API whether a product is active through a private
+HTTP listener. Browsers refresh product state through REST after reconnect or
+subscriber recovery. Redis also shares rate limits and OAuth state.
 
-The application is a modular monolith with horizontal scaling, not a microservice
-bonus claim.
+PostgreSQL is the persistent source of truth for Core transactions and the
+email outbox. The independent Notification Worker drains the outbox to
+Mailpit. Uploaded images live in a shared volume. Core API, Realtime Gateway
+and Notification Worker share one Backend image with separate entrypoints.
 
 API base: /api/v1
 Health: /api/v1/health (X-Instance-Id header identifies the responding replica)
@@ -216,8 +219,9 @@ PowerShell example. Replace the placeholders with the actual digest references.
     curl.exe --fail http://localhost:8080/api/v1/health
 
 After startup, open http://localhost:8080 and check that catalog images load.
-The override removes application build definitions. Init, both API replicas and
-the email worker use the same Backend image. The Frontend uses its own image.
+The override removes application build definitions. Init, both API replicas,
+the Realtime Gateway and the email worker use the same Backend image. The
+Frontend uses its own image.
 Named volumes keep the delivered stack's data separate from the source stack.
 To use the normal submission, run docker compose up -d without the override
 or any GHCR sign-in. The pipeline provides Continuous Delivery through GHCR.

@@ -5,30 +5,28 @@ import path from "node:path";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import Redis from "ioredis";
-import { Server } from "socket.io";
-import { createAdapter } from "@socket.io/redis-adapter";
 import { ZodError } from "zod";
 import { db } from "./db.js";
 import { authenticate, csrf, authRoutes, requireCustomer } from "./auth.js";
 import { catalog, reviewRoutes } from "./catalog.js";
 import { shopRoutes } from "./orders.js";
 import { admin } from "./admin.js";
-import { baseUrl, check, AppError } from "./lib.js";
-import { bindProductRooms } from "./product-rooms.js";
+import { id, AppError } from "./lib.js";
+import { productEventsChannel } from "./product-events.js";
 const app = express(),
   server = http.createServer(app),
   redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
-const subscriber = redis.duplicate();
-const io = new Server(server, {
-  transports: ["websocket"],
-  cors: { origin: new URL(baseUrl).origin, credentials: true },
-  allowRequest: (req, done) =>
-    done(
-      null,
-      !req.headers.origin || req.headers.origin === new URL(baseUrl).origin,
-    ),
+const publisher = redis.duplicate({
+  enableOfflineQueue: false,
+  autoResendUnfulfilledCommands: false,
+  maxRetriesPerRequest: 0,
+  commandTimeout: 1000,
 });
-io.adapter(createAdapter(redis, subscriber));
+
+function publishProductEvent(event, payload) {
+  void publisher.publish(productEventsChannel, JSON.stringify({ event, payload }))
+    .catch(() => console.warn("Could not publish product update."));
+}
 app.set("trust proxy", 1);
 app.use(
   helmet({
@@ -93,6 +91,12 @@ app.get("/api/v1/health", async (req, res) => {
     },
   });
 });
+app.get("/internal/realtime/products/:productId", async (req, res) => {
+  const productId = id.safeParse(req.params.productId);
+  const product = productId.success &&
+    await db("products").where({ id: productId.data, is_active: true }).first("id");
+  res.status(product ? 204 : 404).end();
+});
 app.use(
   "/api/v1",
   authenticate,
@@ -103,14 +107,9 @@ app.use(
   },
   authRoutes(redis, limiter),
 );
-reviewRoutes(requireCustomer, limiter, io);
+reviewRoutes(requireCustomer, limiter, publishProductEvent);
 app.use("/api/v1", catalog, shopRoutes(limiter));
 app.use("/api/v1/admin", admin);
-io.on("connection", (socket) => {
-  bindProductRooms(socket, (productId) =>
-    db("products").where({ id: productId, is_active: true }).first("id"),
-  );
-});
 app.use((req, res) =>
   res
     .status(404)
@@ -172,8 +171,7 @@ server.listen(process.env.PORT || 3000, "0.0.0.0", () =>
 );
 async function shutdown() {
   server.close();
-  await io.close();
-  await subscriber.quit();
+  publisher.disconnect();
   await redis.quit();
   await db.destroy();
   process.exit(0);

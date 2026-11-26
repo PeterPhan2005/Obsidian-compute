@@ -20,6 +20,11 @@ const expectedPorts = {
   "api-b": [3000, 3102],
 };
 const useImages = process.argv.includes("--images");
+const backendServices = ["init", "api-a", "api-b", "worker", "realtime"];
+const applicationImages = {
+  ...Object.fromEntries(backendServices.map((service) => [service, process.env.OBSIDIAN_BACKEND_IMAGE])),
+  frontend: process.env.OBSIDIAN_FRONTEND_IMAGE,
+};
 const compose = [
   "compose",
   "-p",
@@ -85,10 +90,7 @@ function checkComposeConfig() {
   const config = JSON.parse(docker(...compose, "config", "--format", "json"));
   requireCondition(config.name === project, "Unexpected Compose project name.");
   if (useImages) {
-    for (const service of ["init", "api-a", "api-b", "worker", "frontend"]) {
-      const expected = service === "frontend"
-        ? dockerEnv.OBSIDIAN_FRONTEND_IMAGE
-        : dockerEnv.OBSIDIAN_BACKEND_IMAGE;
+    for (const [service, expected] of Object.entries(applicationImages)) {
       requireCondition(
         expected && config.services[service].image === expected &&
           !config.services[service].build,
@@ -96,6 +98,14 @@ function checkComposeConfig() {
       );
     }
   }
+  const realtime = config.services.realtime.environment;
+  requireCondition(
+    realtime.APP_BASE_URL === baseURL &&
+      realtime.REDIS_URL === "redis://redis:6379" &&
+      realtime.CORE_INTERNAL_URL === "http://nginx:8082" &&
+      Object.keys(realtime).length === 3,
+    "Unexpected Realtime Gateway environment.",
+  );
   for (const [service, { ports = [] }] of Object.entries(config.services)) {
     const expected = expectedPorts[service];
     const [binding] = ports;
@@ -191,6 +201,22 @@ function checkFreePort(host, port) {
 }
 
 async function verifyRunningProject() {
+  if (useImages) {
+    const imageIds = new Map(
+      [...new Set(Object.values(applicationImages))].map((image) => [
+        image,
+        docker("image", "inspect", "--format", "{{.Id}}", image),
+      ]),
+    );
+    for (const [service, image] of Object.entries(applicationImages)) {
+      const container = docker(...compose, "ps", "--all", "--quiet", service);
+      requireCondition(
+        container && docker("container", "inspect", "--format", "{{.Image}}", container) === imageIds.get(image),
+        `Unexpected running image ID for ${service}.`,
+      );
+    }
+    console.log("Verified all six application container image IDs.");
+  }
   for (const [service, [containerPort, hostPort]] of Object.entries(
     expectedPorts,
   )) {
@@ -234,6 +260,13 @@ async function verifyRunningProject() {
   }
   for (const service of ["nginx", "api-a", "api-b"]) {
     await verifyHealth(service);
+  }
+  const gateway = docker(...compose, "ps", "--quiet", "realtime");
+  requireCondition(gateway, "Realtime Gateway did not start.");
+  for (let attempt = 0; ; attempt++) {
+    if (docker("container", "inspect", "--format", "{{.State.Health.Status}}", gateway) === "healthy") break;
+    requireCondition(attempt < 20, "Realtime Gateway is not subscribed to Redis.");
+    await delay(500);
   }
   console.log(
     `Verified ${project} and PostgreSQL ${loopback}:15433/${databaseName}.`,

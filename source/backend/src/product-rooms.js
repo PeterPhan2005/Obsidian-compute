@@ -3,7 +3,7 @@ import { id } from "./lib.js";
 export function bindProductRooms(socket, findActiveProduct) {
   let pending = Promise.resolve();
   function updateRooms(change, message) {
-    // Preserve event order across the lookup and adapter operations.
+    // Preserve event order across the lookup and room operations.
     pending = pending.then(async () => {
       try {
         await change();
@@ -14,13 +14,16 @@ export function bindProductRooms(socket, findActiveProduct) {
     return pending;
   }
 
-  socket.on("product.join", (message) =>
+  socket.on("product.join", (message, ack) =>
     updateRooms(async () => {
       const productId = id.safeParse(message?.productId);
-      if (!productId.success || !(await findActiveProduct(productId.data))) return;
-      for (const room of socket.rooms)
-        if (room.startsWith("product:")) await socket.leave(room);
-      await socket.join(`product:${productId.data}`);
+      const active = productId.success && await findActiveProduct(productId.data);
+      if (active && socket.connected !== false) {
+        for (const room of socket.rooms)
+          if (room.startsWith("product:")) await socket.leave(room);
+        await socket.join(`product:${productId.data}`);
+      }
+      if (typeof ack === "function") ack(Boolean(active));
     }, "Unable to join product updates."),
   );
   socket.on("product.leave", (message) =>

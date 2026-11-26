@@ -14,6 +14,7 @@ jobs:
       !github.event.deleted &&
       github.head_ref != 'progress' && github.head_ref != 'backup-main'
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     permissions:
       contents: read
     env:
@@ -70,6 +71,7 @@ jobs:
       github.repository == 'PeterPhan2005/Obsidian-compute' &&
       (github.ref == 'refs/heads/fix-issue' || github.ref == 'refs/heads/main')
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     permissions:
       packages: write
     steps:

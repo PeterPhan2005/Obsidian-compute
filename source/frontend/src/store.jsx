@@ -481,13 +481,22 @@ export function ProductDetail() {
           q.queryKey[0]?.startsWith(`/products/${slug}/comments`),
       });
     };
-    socket.on("connect", () => {
-      socket.emit("product.join", { productId: p.id });
-      refresh();
-    });
+    let joinRetry;
+    const joinProductRoom = () => {
+      const connectionId = socket.id;
+      socket.timeout(2500).emit("product.join", { productId: p.id }, (error) => {
+        if (!socket.connected || socket.id !== connectionId) return;
+        if (error) joinRetry = setTimeout(joinProductRoom, 1000);
+        else refresh();
+      });
+    };
+    socket.on("connect", joinProductRoom);
+    socket.on("disconnect", () => clearTimeout(joinRetry));
     socket.on("comment.created", refresh);
     socket.on("rating.updated", refresh);
+    socket.on("product.resync", refresh);
     return () => {
+      clearTimeout(joinRetry);
       socket.emit("product.leave", { productId: p.id });
       socket.disconnect();
     };

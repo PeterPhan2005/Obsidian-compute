@@ -246,7 +246,7 @@ catalog.get("/home", async (req, res) =>
     categories: await categories(),
   }),
 );
-export function reviewRoutes(requireCustomer, limiter, io) {
+export function reviewRoutes(requireCustomer, limiter, publishProductEvent) {
   catalog.get("/products/:slug/comments", async (req, res) => {
     const p = await db("products")
       .where({ slug: req.params.slug, is_active: true })
@@ -303,7 +303,7 @@ export function reviewRoutes(requireCustomer, limiter, io) {
         .where({ product_id: p.id })
         .count()
         .first();
-      io.to(`product:${p.id}`).emit("comment.created", {
+      publishProductEvent("comment.created", {
         productId: p.id,
         comment,
         commentCount: Number(count),
@@ -326,7 +326,7 @@ export function reviewRoutes(requireCustomer, limiter, io) {
       .merge({ stars, updated_at: db.fn.now() })
       .returning("*");
     const summary = (await productDto(p)).reviewSummary;
-    io.to(`product:${p.id}`).emit("rating.updated", {
+    publishProductEvent("rating.updated", {
       productId: p.id,
       summary,
     });

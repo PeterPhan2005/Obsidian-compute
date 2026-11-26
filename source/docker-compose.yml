@@ -1,8 +1,9 @@
 name: obsidian-compute
+x-backend-build: &backend-build
+  context: .
+  dockerfile: backend/Dockerfile
 x-app: &app
-  build:
-    context: .
-    dockerfile: backend/Dockerfile
+  build: *backend-build
   environment: &env
     NODE_ENV: development
     APP_BASE_URL: ${APP_BASE_URL:-http://localhost:8080}
@@ -54,9 +55,7 @@ services:
       interval: 3s
       retries: 20
   init:
-    build:
-      context: .
-      dockerfile: backend/Dockerfile
+    build: *backend-build
     environment:
       <<: *env
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}
@@ -75,6 +74,21 @@ services:
     environment:
       <<: *env
       INSTANCE_ID: api-b
+  realtime:
+    build: *backend-build
+    command: [node, backend/src/realtime.js]
+    environment:
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:8080}
+      REDIS_URL: redis://redis:6379
+      CORE_INTERNAL_URL: http://nginx:8082
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://localhost:3000/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 3s
+      timeout: 2s
+      retries: 10
   worker:
     <<: *app
     environment:
