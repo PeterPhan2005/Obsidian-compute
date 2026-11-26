@@ -1,11 +1,11 @@
 # Obsidian Compute — Project State
 
-Checkpoint recorded 2026-11-26. Batches 01–06 have received technical advisor acceptance and are finalized on `origin/fix-issue`. Batch 04 closes Core Acceptance in its verified technical scope. Batches 05 and 06 close technical acceptance of CI/CD and Microservices, respectively. Instructor assessment and remaining external Core verification are open.
+Checkpoint recorded 2026-11-26. Batches 01–07 have received technical advisor acceptance and are finalized on `origin/fix-issue`. Batch 04 closes Core Acceptance in its verified technical scope. Batches 05–07 close technical acceptance of CI/CD, Microservices and Elasticsearch Product Search. Instructor assessment and remaining external Core verification are open.
 
 ## Repository and decisions
 
 - The previous linked worktree was removed after verifying the accepted Git tree and local-file hashes.
-- HEAD and verified remote `fix-issue` are `35d7324423b8a0e941d3c88d548842b86b74d70c`. Upstream is 0 ahead / 0 behind. The accepted Core baseline is `f53ab3dd659ad40d374d413c0d7cc81b38a2ab71`. [GitHub commit](https://github.com/PeterPhan2005/Obsidian-compute/commit/35d7324423b8a0e941d3c88d548842b86b74d70c)
+- HEAD and verified remote `fix-issue` are `f74cabeb48ec8b93f51423949ed9b829eba6f9c8`. Upstream is 0 ahead / 0 behind. The accepted Core baseline is `f53ab3dd659ad40d374d413c0d7cc81b38a2ab71`. [GitHub commit](https://github.com/PeterPhan2005/Obsidian-compute/commit/f74cabeb48ec8b93f51423949ed9b829eba6f9c8)
 - GitHub repository visibility was verified as public. Remote `main` remains at `47a62730a071a316d61ee089fdfb435c5100abfc` (Batch 01 baseline). Local `main` remains at `f135e63e3bf48aadff564db22773c877b9c5660b` (TASK 01/02 runtime baseline). Checkpoint authorization covers the accepted `fix-issue` implementation and the two progress documents on `progress`.
 - Remote `backup-main` was independently verified at `47a62730a071a316d61ee089fdfb435c5100abfc`, preserving the pre-fast-forward `main` checkpoint. Both remote branches remain at that SHA.
 - Owner approved fixing the core issues on the shared `fix-issue` branch, completing mandatory requirements, then implementing all four Bonus groups. Category recreation with an archived slug reactivates that record and preserves its identity. Restore as a separate Admin feature was excluded.
@@ -34,7 +34,8 @@ Checkpoint recorded 2026-11-26. Batches 01–06 have received technical advisor 
 - Phase 4/6 **Batch 04, TASK 13 — Core Acceptance** passed independent re-review and the technical advisor accepted the verified implementation. Git finalization published the implementation to `origin/fix-issue`.
 - Phase 4/6 follow-up **TASK 13.1** completed the independent Core defect audit at `7233d6e4fbe0b02b14402dd76c4d5c35f0d544c0`. **TASK 13.2** resolved ISSUE 23–31 and received technical advisor acceptance after focused re-review. The final isolated verifier passed 74 results (46 backend and OAuth fixture results and 28 Playwright tests on local Chrome). Production build passed. Fast-forward remains deferred.
 - Phase 5/6 **Batch 05, TASK 14, ISSUE 17.1 — CI/CD** is **ACCEPTED / FINALIZED**. GitHub Actions and GHCR delivery were introduced after Core Acceptance and remain active for subsequent Bonus development.
-- Phase 5/6 **Batch 06, TASK 15, ISSUE 17.2 — Microservices** is **ACCEPTED / FINALIZED**. The technical advisor accepted the published candidate after independent diff review, remote CI/CD and delivered-image deployment. Next implementation task is **Batch 07, TASK 16, ISSUE 17.4 — Elasticsearch Product Search**.
+- Phase 5/6 **Batch 06, TASK 15, ISSUE 17.2 — Microservices** is **ACCEPTED / FINALIZED**. The technical advisor accepted the published candidate after independent diff review, remote CI/CD and delivered-image deployment.
+- Phase 5/6 **Batch 07, TASK 16, ISSUE 17.4 — Elasticsearch Product Search** is **ACCEPTED / FINALIZED** in the verified technical scope. Next implementation task is **Batch 08, TASK 17, ISSUE 17.3 — AI-related Features**, pending Owner scope approval and implementation authorization.
 
 | Phase | Batch | Tasks | Issues / Scope |
 |---|---|---|---|
@@ -45,8 +46,8 @@ Checkpoint recorded 2026-11-26. Batches 01–06 have received technical advisor 
 | 4 | 04 | TASK 13 | Core Acceptance (ISSUE 10–13), ISSUE 21 and 22, and follow-ups to ISSUE 02, 09 and 11 — accepted and committed |
 | 5 | 05 | TASK 14 | ISSUE 17.1: CI/CD — accepted and finalized |
 | 5 | 06 | TASK 15 | ISSUE 17.2: Microservices — accepted and finalized |
-| 5 | 07 | TASK 16 | ISSUE 17.4: Elasticsearch — next implementation |
-| 5 | 08 | TASK 17 | ISSUE 17.3: AI Features |
+| 5 | 07 | TASK 16 | ISSUE 17.4: Elasticsearch — accepted and finalized |
+| 5 | 08 | TASK 17 | ISSUE 17.3: AI Features — next implementation, pending authorization |
 | 6 | 09 | TASK 18 | Final System Acceptance |
 | 6 | Delivery | TASK 19 | ISSUE 15: Teamworking evidence, tracked throughout development |
 | 6 | Delivery | TASK 20 | ISSUE 16: Report, Demo and Submission |
@@ -63,6 +64,7 @@ Checkpoint recorded 2026-11-26. Batches 01–06 have received technical advisor 
 | TASK 14 / ISSUE 17.1 | `f32426ac4bf84ebf155ec9583c144b925ff7eb6a` | ci(delivery): automate verification and container image delivery |
 | TASK 14 / ISSUE 17.1 | `ab48843896a2440c110dccbd00159392cbc6ae00` | fix(ci): use extracted Git archive as Docker build context |
 | TASK 15 / ISSUE 17.2 | `35d7324423b8a0e941d3c88d548842b86b74d70c` | feat(microservices): separate realtime gateway from core API |
+| TASK 16 / ISSUE 17.4 | `f74cabeb48ec8b93f51423949ed9b829eba6f9c8` | feat(search): integrate Elasticsearch product search |
 
 ## Issue register
 
@@ -84,7 +86,7 @@ Checkpoint recorded 2026-11-26. Batches 01–06 have received technical advisor 
 | 14 Category Lifecycle | **ACCEPTED / FIXED** | Recreate reopens the archived same-slug row. Concurrent POST tests verify one success and one conflict, stable ID and unchanged archived product status. |
 | 15 Teamworking | **NOT VERIFIED** | TASK 02 excluded this issue. TASK 01 local Git was insufficient for the PDF requirements. Confirm actual team roster, GitHub Insights, at least a month and at least two commits per member per week. |
 | 16 Submission Package | **NOT VERIFIED** | `Report_Chapter1-3.docx` exists and can be revised. The demo video has not been recorded. Confirm PDF outputs, including video coverage, completed instructor Rubrik, Git evidence, the final ZIP and exact naming, demo access and e-learning submission. |
-| 17 Bonus Features | **APPROVED FOR LATER / PLANNED** | No Bonus implementation or award accepted at this checkpoint. See the four subtasks below. |
+| 17 Bonus Features | **17.1, 17.2 and 17.4 ACCEPTED / FINALIZED** | ISSUE 17.3 remains pending implementation. Acceptance covers the verified technical scope. Instructor assessment remains open. |
 | 18 Product save / category archive race | **ACCEPTED / FIXED** | Save holds a category row `FOR SHARE` through commit. Archive uses `FOR UPDATE`; application-level concurrency tests cover create/reassign first and archive first. Isolated DB had zero inconsistent rows before and after. |
 | 19 Catalog sort selection | **ACCEPTED / FIXED** | Pre-existing P3 identified during Batch 03 review. The selector now follows the API's effective sort and offers Relevance for keyword searches. Eleven search, collection, tag and explicit-sort combinations matched the actual API result order. URL state, pagination reset and Back behavior were verified. |
 | 20 Dashboard tooltip resize overflow | **ACCEPTED / FIXED** | Pre-existing P3 reproduced on the accepted baseline and Batch 03 candidate. Recharts retained the desktop transform on a hidden revenue tooltip when the viewport narrowed. Scoped CSS removes the hidden box from layout. The targeted resize fixture measured 798 px before and 375 px after the fix at a 375 px viewport. Visible hover and keyboard behavior and shared charts were verified. |
@@ -113,7 +115,13 @@ Checkpoint recorded 2026-11-26. Batches 01–06 have received technical advisor 
 - Fresh source-based and local-image Compose deployments passed before publication. A fresh delivered-image deployment pulled both GHCR digests and started with `--no-build`. Init exited 0, both Core replicas and Gateway were healthy, worker ran, and all six image IDs matched. A comment written through `api-a` returned HTTP 201 and arrived through Redis and the Gateway WebSocket with the same product and comment IDs. The test stack was stopped.
 - Redis Pub/Sub is non-durable. An isolated publisher failure can drop a UI notification after the business write commits, even with an active subscriber and browser connection. PostgreSQL remains shared and the Gateway runs as one instance. The verification establishes service isolation and recovery in Compose. It establishes neither exactly-once delivery nor full service high availability.
 
-**ISSUE 17.3 — AI-related Features** and **ISSUE 17.4 — Elasticsearch Product Search** remain **PENDING**. Verify provider access, costs and grading evidence before external actions.
+**ISSUE 17.3 — AI-related Features** remains **PENDING IMPLEMENTATION**. Batch 08 / TASK 17 requires Owner approval of scope before implementation. Verify runtime, licensing, costs and grading evidence before external actions.
+
+**ISSUE 17.4 — Elasticsearch Product Search** is **ACCEPTED / FINALIZED** at `f74cabeb48ec8b93f51423949ed9b829eba6f9c8`. Public keyword queries use one internal Elasticsearch 9.5.7 node for text matching and relevance. PostgreSQL remains authoritative for current visibility, filters, explicit sorting, totals, pagination and checkout. A transactional change queue and advisory lock coordinate the two Core replicas for asynchronous indexing, catch-up and rebuild. The API reports its backend in `X-Search-Backend` and runs the full SQL substring query when Elasticsearch fails, times out, or exceeds the 50,000-hit collection bound.
+
+- [Actions run 45803094915](https://github.com/PeterPhan2005/Obsidian-compute/actions/runs/45803094915) passed the production build, both image builds and **82/82** results (53 backend/OAuth and 29 Playwright) with the committed Compose configuration and no IPAM override. Six search tests verified real queries from both replicas, matching, visibility and pagination, timeout and outage fallback, catch-up, concurrent committed edits, rollback and index rebuild. All six application-container image IDs matched. The publish job loaded the verified artifact after CI passed. Full-SHA tags and OCI revision labels matched the accepted commit.
+- GHCR backend digest is `sha256:05d4361f82c1041b678310d34dc5e0b7745d9a04beb74a65ea925cbaea8bce22`. Frontend digest is `sha256:05b8a603216fda1f6d14a4b14fa2c33bc8a1c5a702801ec2c8086aa11bed1204`. The locally delivered stack pulled both digests and ran with `--no-build`. Init exited 0, all six image IDs matched and Elasticsearch indexed 60 products on a private network with a project-local volume and no published port. The API returned Elasticsearch for a relevance query and for four filtered results across four pages. A successful Admin edit became searchable. Local Docker required a temporary IPAM override because its default address pool was exhausted. The delivered stack was stopped with volumes retained. A separate local upgrade from Batch 06 preserved all 60 product IDs and indexed the existing catalog.
+- On the local 60-product seed, the direct probe used three warmed brand-filtered queries with explicit name sort, 12 results per page and 30 full responses per mode. Elasticsearch measured median/p95 **23.7/32.1 ms** and direct SQL **15.8/23.1 ms**. The earlier local Nginx probe measured Elasticsearch **26.7/35.2 ms** and degraded SQL fallback **58.8/82.9 ms**, including the failed Elasticsearch attempt. Matching and default relevance can differ between backends. These measurements describe the sampled demo and do not establish a production-scale speedup.
 
 ## Implementation invariants and verification
 
