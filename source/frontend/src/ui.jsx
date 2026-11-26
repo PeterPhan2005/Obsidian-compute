@@ -77,7 +77,7 @@ export function PageTitle({ eyebrow, title, children, action }) {
     </div>
   );
 }
-export function Pagination({ meta, onChange }) {
+export function Pagination({ meta, onChange, label = "Pagination" }) {
   if (!meta) return null;
   const pages = [
     ...new Set([
@@ -89,11 +89,12 @@ export function Pagination({ meta, onChange }) {
     ]),
   ].sort((a, b) => a - b);
   return (
-    <nav className="pagination" aria-label="Pagination">
+    <nav className="pagination" aria-label={label}>
       <button
+        type="button"
         aria-label="Previous page"
         disabled={meta.page <= 1}
-        onClick={() => onChange(meta.page - 1)}
+        onClick={() => onChange?.(meta.page - 1)}
       >
         <ChevronLeft size={16} />
       </button>
@@ -101,19 +102,21 @@ export function Pagination({ meta, onChange }) {
         <React.Fragment key={n}>
           {i > 0 && n - pages[i - 1] > 1 && <span>…</span>}
           <button
+            type="button"
             aria-label={`Page ${n}`}
             aria-current={meta.page === n ? "page" : undefined}
             className={meta.page === n ? "selected" : ""}
-            onClick={() => onChange(n)}
+            onClick={() => onChange?.(n)}
           >
             {n}
           </button>
         </React.Fragment>
       ))}
       <button
+        type="button"
         aria-label="Next page"
         disabled={meta.page >= meta.totalPages}
-        onClick={() => onChange(meta.page + 1)}
+        onClick={() => onChange?.(meta.page + 1)}
       >
         <ChevronRight size={16} />
       </button>

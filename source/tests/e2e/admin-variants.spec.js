@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { test, expect } from "@playwright/test";
 
-test("Admin product editing preserves untouched tags, saves typed tags and excludes archived inventory", async ({
+test("Admin product editing preserves variant keys and tags and excludes archived inventory", async ({
   page,
 }) => {
   const {
@@ -41,7 +41,7 @@ test("Admin product editing preserves untouched tags, saves typed tags and exclu
       })),
       variants: [true, true, true, false].map((isActive, i) => ({
         sku: `${fixtureId}-${i}`,
-        attributes: { configuration: `Configuration ${i}` },
+        attributes: { configuration: `Configuration ${i}`, memory_type: "DDR5", memoryType: "ECC" },
         priceVnd: isActive ? 1000000 + i * 100000 : 100000,
         costPriceVnd: 700000,
         stock: 7 + i,
@@ -77,6 +77,11 @@ test("Admin product editing preserves untouched tags, saves typed tags and exclu
   ).json();
   expect(unchangedTags.shortDescription).toBe(description);
   expect(unchangedTags.tags).toEqual(["desktop", "GPU, compact"]);
+  expect(unchangedTags.variants.find((variant) => variant.sku === `${fixtureId}-0`).attributes).toEqual({
+    configuration: "Configuration 0",
+    memory_type: "DDR5",
+    memoryType: "ECC",
+  });
 
   const stale = await page.context().newPage();
   const staleDescription = stale.getByLabel("Short description", { exact: true });

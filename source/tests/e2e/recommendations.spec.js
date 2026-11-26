@@ -80,6 +80,19 @@ test("English and Vietnamese needs rank different real catalog products without 
       .getByRole("link")
       .evaluateAll((links) => links.map((link) => link.pathname));
     expect(paths.length).toBeLessThanOrEqual(3);
+    if (query === portability) {
+      const pagination = panel(page).getByRole("navigation", { name: "Recommendation pagination" });
+      const currentPage = pagination.getByRole("button", { name: "Page 1" });
+      await expect(currentPage).toHaveAttribute("aria-current", "page");
+      await expect(pagination.getByRole("button", { name: "Previous page" })).toBeDisabled();
+      await expect(pagination.getByRole("button", { name: "Next page" })).toBeDisabled();
+      const catalogUrl = page.url();
+      const requestsBeforeClick = requested.filter((url) => url.includes("/api/v1/products")).length;
+      await currentPage.click();
+      await expect(status(page)).toHaveText(/^[1-3] recommended product/);
+      expect(requested.filter((url) => url.includes("/api/v1/products"))).toHaveLength(requestsBeforeClick);
+      expect(page.url()).toBe(catalogUrl);
+    }
     const response = await page.request.get("/api/v1" + paths[0]);
     expect(response.ok()).toBe(true);
     const { data: product } = await response.json();
@@ -104,6 +117,7 @@ test("English and Vietnamese needs rank different real catalog products without 
     await ask(page, query);
     await expect(status(page)).toHaveText(/No suitable products available/);
     await expect(results(page)).toHaveCount(0);
+    await expect(panel(page).getByRole("navigation", { name: "Recommendation pagination" })).toHaveCount(0);
   }
   for (const query of [
     "Not a desktop or laptop, I want a lightweight mouse for office work",

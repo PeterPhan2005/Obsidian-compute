@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowUpRight, Sparkles } from "lucide-react";
 import { api, money, queryString } from "./api";
-import { ErrorBox, Field, useSession } from "./ui";
+import { ErrorBox, Field, Pagination, useSession } from "./ui";
 import "./recommendations.css";
 
 const maxCandidates = 64;
@@ -279,31 +279,37 @@ function RecommendationForm({ categories }) {
         />
       )}
       {results.length > 0 && (
-        <ul
-          className="recommendation-results"
-          aria-label="Recommended products"
-        >
-          {results.map(({ product, variant }) => (
-            <li key={product.id}>
-              <Link
-                className="recommendation-result"
-                to={`/products/${product.slug}`}
-              >
-                <img
-                  src={product.thumbnailUrl}
-                  alt={product.imageDetails?.[0]?.alt || product.name}
-                  loading="lazy"
-                />
-                <span>
-                  <strong>{product.name}</strong>
-                  <small>{Object.values(variant.attributes).join(" · ")}</small>
-                  <span>{money(variant.priceVnd)} · In stock</span>
-                </span>
-                <ArrowUpRight size={16} aria-hidden="true" />
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <>
+          <ul
+            className="recommendation-results"
+            aria-label="Recommended products"
+          >
+            {results.map(({ product, variant }) => (
+              <li key={product.id}>
+                <Link
+                  className="recommendation-result"
+                  to={`/products/${product.slug}`}
+                >
+                  <img
+                    src={product.thumbnailUrl}
+                    alt={product.imageDetails?.[0]?.alt || product.name}
+                    loading="lazy"
+                  />
+                  <span>
+                    <strong>{product.name}</strong>
+                    <small>{Object.values(variant.attributes).join(" · ")}</small>
+                    <span>{money(variant.priceVnd)} · In stock</span>
+                  </span>
+                  <ArrowUpRight size={16} aria-hidden="true" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <Pagination
+            label="Recommendation pagination"
+            meta={{ page: 1, totalPages: 1, totalItems: results.length }}
+          />
+        </>
       )}
     </form>
   );

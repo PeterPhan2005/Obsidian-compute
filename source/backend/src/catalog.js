@@ -4,6 +4,10 @@ import { db, camel } from "./db.js";
 import { check, paging, meta, ok, text } from "./lib.js";
 import { searchProductText } from "./product-search.js";
 export const catalog = Router();
+export function variantDto({ attributes, ...row }) {
+  return { ...camel(row), attributes };
+}
+
 export async function productDto(row, conn = db, admin = false) {
   const [variants, images, summary] = await Promise.all([
     conn("product_variants")
@@ -43,7 +47,7 @@ export async function productDto(row, conn = db, admin = false) {
     thumbnailUrl: images[0]?.url,
     minPriceVnd: variants.find((v) => v.is_active)?.price_vnd ?? null,
     variants: variants.map((v) => {
-      const c = camel(v);
+      const c = variantDto(v);
       if (!admin) {
         delete c.costPriceVnd;
         delete c.stockVersion;

@@ -11,7 +11,8 @@ From this source/ directory, run:
 
 No npm install, manual database creation, migrations or seed command is needed.
 Compose automatically uses docker-compose.yml in this directory.
-The first run downloads images and builds the app; allow several minutes.
+The first run downloads images and builds the app. A clean build needs access
+to the image registries, npm and Hugging Face for the pinned AI model assets.
 Open http://localhost:8080
 Email inbox: http://localhost:8025
 
@@ -20,6 +21,21 @@ To inspect a startup issue: docker compose logs --tail=100 init api-a api-b real
 After changing source code: docker compose up -d --build
 To stop without deleting data: docker compose down
 Database, uploaded media and the search index persist in named volumes.
+
+CONTROLLED LAN DEMONSTRATION
+----------------------------
+The default one-command setup uses http://localhost:8080. To demonstrate
+interactively from another device on the LAN, find the Docker host's LAN IP
+or hostname. Add its exact browser origin to source/.env, for example:
+
+    APP_BASE_URL=http://192.168.1.25:8080
+
+Run docker compose up -d from source/ again, then open that exact URL in all
+storefront windows. API writes and WebSocket connections validate the Origin
+against APP_BASE_URL. For localhost mode, remove that override and run the
+same Compose command. Keep 8080:80 and leave Mailpit at 127.0.0.1:8025 on the
+Docker host. Use HTTP LAN mode with synthetic demo data on a controlled network.
+Production hosting needs HTTPS and private credentials.
 
 DEMO ACCOUNTS
 -------------
@@ -108,6 +124,7 @@ isolated, clean queue and an approved test inbox to check external delivery.
 FEATURES
 --------
 - Separate landing page and catalog; every product list has numbered pagination.
+- Browser-side English and Vietnamese product recommendations from the Catalog.
 - Search, category/brand/price/rating filters and name/price ascending/descending
   sorts; product variants with independent prices and stock.
 - 60 fictional demo products, six categories, 120 variants, three local licensed
@@ -200,6 +217,24 @@ See Elastic's Docker and virtual-memory documentation.
 https://www.elastic.co/docs/deploy-manage/deploy/self-managed/install-elasticsearch-docker-basic
 https://www.elastic.co/docs/deploy-manage/deploy/cloud-on-k8s/virtual-memory
 
+AI PRODUCT RECOMMENDATIONS
+--------------------------
+Open Catalog, expand AI product recommendations and describe your intended use.
+For example: "A portable notebook for reading documents while I travel" or
+"Tôi cần một chiếc laptop nhẹ để đọc tài liệu khi đi xa". Category and maximum
+budget are optional. The assistant ranks up to 64 public Catalog products and
+shows up to three results on numbered page 1. Price and stock refer to the same
+eligible variant and are checked again before display.
+
+Inference runs in a browser Web Worker using WASM, with model assets served
+from the storefront origin. A clean build downloads and verifies checksums for
+the pinned multilingual MiniLM q8 model. The first recommendation downloads
+about 158 MB from the storefront. It may take time and memory on slower devices.
+Describe the intended use in positive terms. Semantic ranking can be weak for
+similar products, negation and exact specifications. Use ordinary Catalog
+search and filters when needed. Real mobile-device performance is unmeasured.
+See ../Bonus/04_AI_Product_Recommendation.md for model and evidence details.
+
 TESTS
 -----
 Development prerequisites: Node.js 24 LTS, npm and Docker.
@@ -290,14 +325,13 @@ Newly created GHCR packages start private. Package visibility is managed separat
 
 CI/CD BONUS EVIDENCE
 --------------------
-After remote verification, put a short description and evidence in Bonus/:
-the successful development-push Actions run for a specific commit, both GHCR
-SHA tags and digests, and a clean Compose startup showing init completion,
-API health and the storefront from those digest references. Also capture the
-source-based one-command startup. Link the evidence in Readme.txt and record
-the verified result in Rubrik.docx. Show the Actions run, published versions
-and delivered storefront in the narrated 1080p demo.mp4. Keep credentials,
-test traces and private data out of the submission evidence.
+The accepted Batch 08 run is 45864609725 at 3c76f02021a4c123a456adc2ba53c0f41987dc39.
+Its two GHCR digest references are in ../Bonus/04_AI_Product_Recommendation.md.
+The four guides under ../Bonus/ cover CI/CD, Microservices, Elasticsearch and
+AI. Include them with the final submission and cite the matching evidence in
+Readme.txt, Rubrik.docx and the narrated 1080p demo.mp4. Capture the source-based
+one-command startup. Keep credentials, test traces and private data outside
+the submission evidence. The Batch 09 candidate uses local verification.
 
 KNOWN BOUNDARIES
 ----------------
@@ -305,6 +339,10 @@ KNOWN BOUNDARIES
   photos are category illustrations, not exact model/product photography.
   Attribution: /media/catalog/credits.html and ../docs/ASSET_SOURCES.md.
 - Mailpit captures email locally; it does not deliver to public email inboxes.
+- Real Google consent/callback and external SMTP delivery still need verification.
+- The Batch 08 frontend build/development audit recorded High Sharp advisories
+  through Transformers.js. The browser bundle excludes native Sharp. The
+  separate Backend upload dependency uses Sharp 0.35.5 at this checkpoint.
 - The outbox retries transient SMTP failures with exponential backoff and a stable
   Message-ID. As with SMTP generally, a crash after server acceptance but before
   marking a message sent can cause redelivery; exactly-once external delivery is

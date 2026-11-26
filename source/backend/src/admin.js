@@ -8,7 +8,7 @@ import { randomUUID } from "node:crypto";
 import { db, camel, json } from "./db.js";
 import { check, id, text, money, ok, paging, meta } from "./lib.js";
 import { requireAdmin } from "./auth.js";
-import { listProducts, getProduct } from "./catalog.js";
+import { listProducts, getProduct, variantDto } from "./catalog.js";
 import { listOrders, orderDto } from "./orders.js";
 import { analytics, summary, timeRange } from "./analytics.js";
 const mediaDir = process.env.MEDIA_DIR || path.resolve("media");
@@ -266,6 +266,9 @@ async function saveProduct(req, res, update = false) {
             stockChanges(current, v.stock, v.expectedStockVersion),
           );
         }
+        if (v.costPriceVnd !== current.cost_price_vnd) {
+          values.stock_version = current.stock_version + 1;
+        }
         await tx("product_variants").where({ id: v.id }).update(values);
         retained.push(v.id);
       } else {
@@ -345,15 +348,26 @@ admin.patch("/variants/:variantId/inventory", async (req, res) => {
   const variantId = id.parse(req.params.variantId);
   const v = await db.transaction(async (tx) => {
     const query = () => tx("product_variants").where({ id: variantId });
+    if (b.costPriceVnd !== undefined) {
+      // A cost change invalidates product forms. Lock in the same order as saveProduct.
+      await tx("products")
+        .whereIn("id", query().select("product_id"))
+        .forNoKeyUpdate()
+        .first();
+    }
     const current = await query().forUpdate().first();
     check(current, 404, "NOT_FOUND", "Variant not found.");
     const changes = stockChanges(current, b.stock, b.expectedStockVersion);
-    if (b.costPriceVnd !== undefined) changes.cost_price_vnd = b.costPriceVnd;
+    if (b.costPriceVnd !== undefined && b.costPriceVnd !== current.cost_price_vnd) {
+      changes.cost_price_vnd = b.costPriceVnd;
+      changes.stock_version = current.stock_version + 1;
+      await tx("products").where({ id: current.product_id }).increment("revision", 1);
+    }
     if (Object.keys(changes).length === 0) return current;
     const [updated] = await query().update(changes).returning("*");
     return updated;
   });
-  ok(res, camel(v));
+  ok(res, variantDto(v));
 });
 admin.get("/categories", async (req, res) => {
   const { page, pageSize } = paging(req.query, 20);
