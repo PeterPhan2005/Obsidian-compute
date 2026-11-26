@@ -54,6 +54,24 @@ services:
       test: [CMD, redis-cli, ping]
       interval: 3s
       retries: 20
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.5.7
+    mem_limit: 1g
+    restart: unless-stopped
+    environment:
+      action.auto_create_index: "false"
+      discovery.type: single-node
+      node.store.allow_mmap: "false"
+      xpack.security.enabled: "false"
+    networks: [search]
+    volumes:
+      - search-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: [CMD, curl, -fsS, "http://127.0.0.1:9200/_cluster/health?wait_for_status=yellow&timeout=3s"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
   init:
     build: *backend-build
     environment:
@@ -69,11 +87,15 @@ services:
     environment:
       <<: *env
       INSTANCE_ID: api-a
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+    networks: [default, search]
   api-b:
     <<: *app
     environment:
       <<: *env
       INSTANCE_ID: api-b
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+    networks: [default, search]
   realtime:
     build: *backend-build
     command: [node, backend/src/realtime.js]
@@ -133,3 +155,7 @@ services:
 volumes:
   db:
   uploads:
+  search-data:
+networks:
+  search:
+    internal: true

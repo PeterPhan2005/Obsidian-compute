@@ -120,6 +120,32 @@ function checkComposeConfig() {
       `Unexpected Compose port mapping for ${service}.`,
     );
   }
+  const search = config.services.elasticsearch;
+  const searchPeers = Object.entries(config.services)
+    .filter(([, service]) => Object.hasOwn(service.networks ?? {}, "search"))
+    .map(([name]) => name)
+    .sort();
+  requireCondition(
+    /^docker\.elastic\.co\/elasticsearch\/elasticsearch:\d+\.\d+\.\d+$/.test(
+      search?.image,
+    ) &&
+      config.networks.search?.internal === true &&
+      searchPeers.join(",") === "api-a,api-b,elasticsearch" &&
+      Object.keys(search.networks).join(",") === "search" &&
+      search.volumes?.some(
+        ({ type, source, target }) =>
+          type === "volume" &&
+          source === "search-data" &&
+          target === "/usr/share/elasticsearch/data",
+      ) &&
+      ["api-a", "api-b"].every(
+        (service) =>
+          config.services[service].environment.ELASTICSEARCH_URL ===
+          "http://elasticsearch:9200",
+      ),
+    "Verification requires the isolated internal Elasticsearch service and persistent project volume.",
+  );
+  testEnv.OBSIDIAN_VERIFY_SEARCH_VERSION = search.image.split(":").at(-1);
   requireCondition(
     config.services.postgres.environment.POSTGRES_DB === databaseName,
     "Unexpected Compose PostgreSQL database.",
@@ -325,9 +351,15 @@ try {
   const oauth = tests.find(
     (file) => file.split(/[\\/]/).at(-1) === "google-oauth.test.js",
   );
-  const localTests = tests.filter((file) => file !== oauth);
+  const search = tests.find(
+    (file) => file.split(/[\\/]/).at(-1) === "product-search.test.js",
+  );
+  const localTests = [
+    search,
+    ...tests.filter((file) => file !== search && file !== oauth),
+  ];
   requireCondition(
-    oauth && localTests.length,
+    oauth && search && localTests.length > 1,
     "Expected backend test suites were not found.",
   );
 

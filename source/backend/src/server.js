@@ -13,6 +13,7 @@ import { shopRoutes } from "./orders.js";
 import { admin } from "./admin.js";
 import { id, AppError } from "./lib.js";
 import { productEventsChannel } from "./product-events.js";
+import { startProductSearchSync } from "./product-search.js";
 const app = express(),
   server = http.createServer(app),
   redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
@@ -164,6 +165,7 @@ app.use((err, req, res, next) => {
     .status(status)
     .json({ error: { code, message, details, requestId: req.requestId } });
 });
+const stopProductSearchSync = startProductSearchSync();
 server.listen(process.env.PORT || 3000, "0.0.0.0", () =>
   console.log(
     `Obsidian API listening on ${process.env.PORT || 3000} (${process.env.INSTANCE_ID || "local"})`,
@@ -173,6 +175,7 @@ async function shutdown() {
   server.close();
   publisher.disconnect();
   await redis.quit();
+  await stopProductSearchSync();
   await db.destroy();
   process.exit(0);
 }

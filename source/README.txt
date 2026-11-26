@@ -3,7 +3,8 @@ Computer e-commerce final project — JavaScript / Node.js
 
 RUN THE APPLICATION
 -------------------
-Prerequisite: Docker Desktop (or Docker Engine with Compose v2) running.
+Prerequisite: Docker Desktop (or Docker Engine with Compose v2) running Linux
+containers. Allocate at least 4 GB of memory to Docker Desktop.
 From this source/ directory, run:
 
     docker compose up -d
@@ -15,10 +16,10 @@ Open http://localhost:8080
 Email inbox: http://localhost:8025
 
 To inspect readiness: docker compose ps
-To inspect a startup issue: docker compose logs --tail=100 init api-a api-b realtime worker
+To inspect a startup issue: docker compose logs --tail=100 init api-a api-b realtime worker elasticsearch
 After changing source code: docker compose up -d --build
 To stop without deleting data: docker compose down
-Database and uploaded media persist in named volumes.
+Database, uploaded media and the search index persist in named volumes.
 
 DEMO ACCOUNTS
 -------------
@@ -146,6 +147,59 @@ Guest API clients should start with GET /api/v1/cart and keep its guest_cart
 cookie before changing items or requesting a checkout quote. A cart mutation
 without that identity returns CART_NOT_INITIALIZED.
 
+PRODUCT SEARCH
+--------------
+Public catalog keyword searches use an Elasticsearch 9.5.7 single node.
+Core API uses the REST API through Node.js 24 fetch. PostgreSQL holds catalog
+data and applies visibility, filters, explicit sorting and pagination to the
+matching products. It also remains authoritative for checkout. Catalog requests
+with no keyword and Admin catalog queries use PostgreSQL directly.
+
+The index contains product UUIDs and searchable names, brands, short
+descriptions and tags. Elasticsearch analyzes typed text into case-insensitive
+tokens and requires all tokens across these fields. Relevance favors product
+names and phrase matches. Partial words that matched the SQL substring search
+may require complete tokens in Elasticsearch. The existing exact tag filter
+still applies independently of the keyword.
+
+The search node has a 1 GiB container memory limit and automatically sizes its
+JVM heap. The local stack disables mmap to run without changing host sysctl
+settings. The search network contains only Elasticsearch and the two Core API
+replicas. The node runs without authentication on that private Compose network
+and publishes no host port. Keep the search network private.
+
+These commands show search readiness and the active keyword backend. Use
+curl.exe for the last command in Windows PowerShell.
+
+    docker compose ps elasticsearch
+    docker compose exec -T elasticsearch curl -fsS "http://127.0.0.1:9200/_cluster/health?wait_for_status=yellow&timeout=3s"
+    docker compose exec -T elasticsearch curl -fsS http://127.0.0.1:9200/products-v1/_count
+    curl -sS -D - "http://localhost:8080/api/v1/products?q=gaming"
+
+The last command reports `X-Search-Backend: elasticsearch` when Elasticsearch
+handled the keyword. If the index is unavailable, Elasticsearch takes more than
+1.5 seconds, or the keyword matches over 50,000 documents, Core uses the existing
+SQL substring search and reports `X-Search-Backend: postgresql`. SQL can return
+a different match set and relevance order.
+
+The Core API syncs committed catalog data after init completes. PostgreSQL
+coalesces changes and the API replicas check for work every two seconds using
+one database advisory lock. Initial sync loads existing products and makes
+the products-v1 search alias available once the index is ready. Text edits can
+take additional time to appear in search, especially during an outage. Current
+visibility, active-variant prices, ratings and sales are read from PostgreSQL
+when serving search results.
+
+Core API rebuilds a missing index from PostgreSQL with the configured mapping
+and catches up after outages. Automatic index creation by document writes is
+disabled so a write cannot recreate a missing index with a dynamic mapping.
+If the search container is stopped, run docker compose up -d elasticsearch and
+check that keyword requests return to Elasticsearch. Retain existing volumes.
+
+See Elastic's Docker and virtual-memory documentation.
+https://www.elastic.co/docs/deploy-manage/deploy/self-managed/install-elasticsearch-docker-basic
+https://www.elastic.co/docs/deploy-manage/deploy/cloud-on-k8s/virtual-memory
+
 TESTS
 -----
 Development prerequisites: Node.js 24 LTS, npm and Docker.
@@ -158,8 +212,9 @@ From source/:
 
 npm test runs focused calculation/calendar tests.
 npm run verify requires a local Docker Engine. It creates a fresh project named
-obsidian-test-<random-id>, confirms its dedicated PostgreSQL database and port
-bindings, then discovers backend tests and runs all Playwright specifications.
+obsidian-test-<random-id>, confirms its dedicated PostgreSQL database, private
+Elasticsearch instance and port bindings, then discovers backend tests and runs
+all Playwright specifications.
 The Google OAuth fixture runs with isolated Redis/PostgreSQL and synthetic
 configuration. Test email stays inside the project's Mailpit instance.
 The verifier exits if the ports are already in use or the new project would

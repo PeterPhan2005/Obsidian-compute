@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { db, camel } from "./db.js";
 import { check, paging, meta, ok, text } from "./lib.js";
+import { searchProductText } from "./product-search.js";
 export const catalog = Router();
 export async function productDto(row, conn = db, admin = false) {
   const [variants, images, summary] = await Promise.all([
@@ -62,7 +63,7 @@ export async function getProduct(slug, conn = db, admin = false) {
   check(row, 404, "NOT_FOUND", "Product not found.");
   return productDto(row, conn, admin);
 }
-export async function listProducts(input = {}, admin = false) {
+export async function listProducts(input = {}, admin = false, onSearchBackend) {
   const { page, pageSize } = paging(input);
   const q = z
     .object({
@@ -95,13 +96,28 @@ export async function listProducts(input = {}, admin = false) {
     "INVALID_RANGE",
     "Minimum price must not exceed maximum price.",
   );
-  const query = db("products as p")
+  if (!admin && q.q?.trim()) {
+    const matches = await searchProductText(q.q.trim());
+    onSearchBackend?.(matches ? "elasticsearch" : "postgresql");
+    if (matches?.length === 0) {
+      return { data: [], meta: meta(page, pageSize, 0), filters: { selected: q } };
+    }
+    return db.transaction(
+      (conn) => listProductRows(conn, q, page, pageSize, admin, matches),
+      { isolationLevel: "repeatable read", readOnly: true },
+    );
+  }
+  return listProductRows(db, q, page, pageSize, admin, null);
+}
+
+async function listProductRows(conn, q, page, pageSize, admin, matches) {
+  const query = conn("products as p")
     .join("categories as c", "c.id", "p.category_id")
     .joinRaw(
       "JOIN (SELECT product_id, MIN(price_vnd) AS min_price FROM product_variants WHERE is_active=true GROUP BY product_id) v ON v.product_id=p.id",
     )
     .leftJoin(
-      db("ratings")
+      conn("ratings")
         .select("product_id")
         .avg("stars as avg_rating")
         .groupBy("product_id")
@@ -110,7 +126,7 @@ export async function listProducts(input = {}, admin = false) {
       "p.id",
     )
     .leftJoin(
-      db("order_items")
+      conn("order_items")
         .select("product_id")
         .sum("quantity as sold")
         .groupBy("product_id")
@@ -125,7 +141,12 @@ export async function listProducts(input = {}, admin = false) {
   if (q.maxPrice !== undefined) query.where("v.min_price", "<=", q.maxPrice);
   if (q.ratingMin) query.whereRaw("COALESCE(r.avg_rating,0)>=?", [q.ratingMin]);
   if (q.tag) query.whereRaw("p.tags @> ?::jsonb", [JSON.stringify([q.tag])]);
-  if (q.q)
+  if (matches) {
+    query.joinRaw(
+      "JOIN unnest(?::uuid[], ?::float8[]) AS search_match(product_id, score) ON search_match.product_id = p.id",
+      [matches.map((hit) => hit._id), matches.map((hit) => hit._score)],
+    );
+  } else if (q.q)
     query.whereRaw(
       "(p.name || ' ' || p.brand || ' ' || p.short_description || ' ' || p.tags::text) ILIKE ?",
       [`%${q.q.replace(/[\\%_]/g, "\\$&")}%`],
@@ -144,6 +165,8 @@ export async function listProducts(input = {}, admin = false) {
     query.orderBy("v.min_price", sort === "price_asc" ? "asc" : "desc");
   else if (sort === "best_selling")
     query.orderByRaw("COALESCE(sales.sold,0) DESC");
+  else if (sort === "relevance" && matches)
+    query.orderBy("search_match.score", "desc");
   else if (sort === "relevance" && q.q)
     query.orderByRaw("CASE WHEN p.name ILIKE ? THEN 0 ELSE 1 END", [
       `%${q.q}%`,
@@ -155,7 +178,7 @@ export async function listProducts(input = {}, admin = false) {
     .limit(pageSize)
     .offset((page - 1) * pageSize);
   return {
-    data: await Promise.all(rows.map((r) => productDto(r, db, admin))),
+    data: await Promise.all(rows.map((r) => productDto(r, conn, admin))),
     meta: meta(page, pageSize, total.count),
     filters: { selected: q },
   };
@@ -226,14 +249,19 @@ catalog.get("/tags", async (req, res) => {
     .pluck("t.tag");
   ok(res, tags);
 });
-catalog.get("/products", async (req, res) =>
-  res.json(await listProducts(req.query)),
-);
+async function listPublicProducts(res, input) {
+  const result = await listProducts(input, false, (backend) =>
+    res.set("X-Search-Backend", backend),
+  );
+  res.json(result);
+}
+
+catalog.get("/products", (req, res) => listPublicProducts(res, req.query));
 catalog.get("/products/:slug", async (req, res) =>
   ok(res, await getProduct(req.params.slug)),
 );
 catalog.get("/home/sections/:key/products", async (req, res) =>
-  res.json(await listProducts(sectionQuery(req.params.key, req.query))),
+  listPublicProducts(res, sectionQuery(req.params.key, req.query)),
 );
 catalog.get("/home", async (req, res) =>
   ok(res, {

@@ -14,7 +14,9 @@ Nguồn ảnh: docs/ASSET_SOURCES.md
 Kết quả kiểm thử và giới hạn: docs/IMPLEMENTATION_STATUS.md
 
 Ứng dụng dùng JavaScript, React/Vite, Express, PostgreSQL/Knex, Redis/Socket.IO,
-Nodemailer/Mailpit và Nginx. Docker tự migration/seed, có hai API replicas.
+Elasticsearch, Nodemailer/Mailpit và Nginx. Docker tự migration/seed, có hai
+API replicas. Mục PRODUCT SEARCH trong source/README.txt hướng dẫn kiểm tra
+Elasticsearch và khôi phục tìm kiếm.
 Thanh toán sandbox nội bộ không thu tiền thật. Email được giữ tại Mailpit.
 
 Không đưa source/.env chứa credentials vào gói nộp hoặc Git.
