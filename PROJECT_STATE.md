@@ -1,11 +1,11 @@
 # Obsidian Compute — Project State
 
-Checkpoint recorded 2026-11-26. Batches 01–04 have received technical advisor acceptance and are finalized on `origin/fix-issue`. Batch 04 closes Core Acceptance in its verified technical scope. Instructor assessment and external verification remain open.
+Checkpoint recorded 2026-11-26. Batches 01–05 have received technical advisor acceptance and are finalized on `origin/fix-issue`. Batch 04 closes Core Acceptance in its verified technical scope. Batch 05 closes technical acceptance of CI/CD. Instructor assessment and remaining external Core verification are open.
 
 ## Repository and decisions
 
 - The previous linked worktree was removed after verifying the accepted Git tree and local-file hashes.
-- HEAD and verified remote fix-issue are `f53ab3dd659ad40d374d413c0d7cc81b38a2ab71`. Upstream is 0 ahead / 0 behind. [GitHub commit](https://github.com/PeterPhan2005/Obsidian-compute/commit/f53ab3dd659ad40d374d413c0d7cc81b38a2ab71)
+- HEAD and verified remote `fix-issue` are `ab48843896a2440c110dccbd00159392cbc6ae00`. Upstream is 0 ahead / 0 behind. The accepted Core baseline is `f53ab3dd659ad40d374d413c0d7cc81b38a2ab71`. [GitHub commit](https://github.com/PeterPhan2005/Obsidian-compute/commit/ab48843896a2440c110dccbd00159392cbc6ae00)
 - GitHub repository visibility was verified as public. Remote `main` remains at `47a62730a071a316d61ee089fdfb435c5100abfc` (Batch 01 baseline). Local `main` remains at `f135e63e3bf48aadff564db22773c877b9c5660b` (TASK 01/02 runtime baseline). Checkpoint authorization covers the accepted `fix-issue` implementation and the two progress documents on `progress`.
 - Remote `backup-main` was independently verified at `47a62730a071a316d61ee089fdfb435c5100abfc`, preserving the pre-fast-forward `main` checkpoint. Both remote branches remain at that SHA.
 - Owner approved fixing the core issues on the shared `fix-issue` branch, completing mandatory requirements, then implementing all four Bonus groups. Category recreation with an archived slug reactivates that record and preserves its identity. Restore as a separate Admin feature was excluded.
@@ -18,6 +18,7 @@ Checkpoint recorded 2026-11-26. Batches 01–04 have received technical advisor 
 - Apply Selective Context Loading as defined in local `WORKFLOW_RULES.md`. Read relevant sections of the authoritative requirements PDF and affected source, and reuse valid evidence. Reconcile the full requirements during initial audit, Core Acceptance, Final Acceptance, or when requirements change. Maintain the full mandatory Batch Acceptance Review coverage.
 - Use Conventional Commits in English for future commits. Commit and push accepted implementation only when authorized.
 - Maintain `PROJECT_STATE.md` and `log_fix_issue.md` on the dedicated remote `progress` branch. Keep both progress documents out of `main` and `fix-issue` commits, and keep `WORKFLOW_RULES.md` local-only.
+- After technical advisor acceptance of each Bonus group, write its Vietnamese report and demo guide under the local root `Bonus/` folder. Include the implemented architecture, reproduction steps, demonstration sequence and verified evidence. Keep this folder outside `source/` and the `progress` branch.
 - Use `log_fix_issue.md` for accepted fixes from the initial audit and additional application defects identified during implementation, testing, or acceptance review. This includes pre-existing defects and newly introduced regressions. Keep unresolved findings in the project state.
 - Keep sequential entry numbers, original ISSUE IDs, descriptive titles, and the `Vấn đề` and `Khắc phục` labels. Explain the cause, practical impact, and corrective mechanism concisely. Additional accepted fixes may have separate entries under an existing ISSUE ID. New canonical IDs require Owner approval.
 - Update the issue log only after the technical advisor accepts the corresponding fix. Update the project checkpoint after acceptance and authorized Git finalization.
@@ -26,12 +27,13 @@ Checkpoint recorded 2026-11-26. Batches 01–04 have received technical advisor 
 
 ## Roadmap and commit history
 
-- Phase 0 preparation: **TASK 00** completed, repository declared ready. **TASK 01** produced `TASK_01_REQUIREMENTS_COMPLIANCE_AUDIT.md`. **TASK 02** produced `TASK_02_RUNTIME_VERIFICATION.md`. **TASK 02.1** did not independently reproduce the pre-fix duplicate-ID behavior over HTTP. The patched endpoint was subsequently verified in TASK 04.
+- Phase 0 preparation: **TASK 00** completed, repository declared ready. **TASK 01** produced the `TASK_01_REQUIREMENTS_COMPLIANCE_AUDIT.md`. **TASK 02** produced the `TASK_02_RUNTIME_VERIFICATION.md`. **TASK 02.1** did not independently reproduce the pre-fix duplicate-ID behavior over HTTP. The patched endpoint was subsequently verified in TASK 04.
 - Phase 1/6 **Batch 01**: **TASK 03–06**, covering ISSUE 01, 02, 03 and 14, accepted by independent review. **TASK 06.1** followed Batch 01, fixed ISSUE 18 and was separately accepted and committed.
 - Phase 2/6 **Batch 02, TASK 07–09** is accepted in the implementation scope and finalized. The original blueprint's construction phases are historical.
 - Phase 3/6 **Batch 03, TASK 10–12 and 12.1**, covering ISSUE 05, 06, 07, 19 and 20, is accepted and finalized.
-- Phase 4/6 **Batch 04, TASK 13 — Core Acceptance** passed independent re-review and the technical advisor accepted the verified implementation. Git finalization published the implementation to `origin/fix-issue`. The next planned work is **Batch 05, TASK 14, ISSUE 17.1 — CI/CD**.
-- Phase 4/6 follow-up **TASK 13.1** completed the independent Core defect audit at `7233d6e4fbe0b02b14402dd76c4d5c35f0d544c0`. **TASK 13.2** resolved ISSUE 23–31 and received technical advisor acceptance after focused re-review. The final isolated verifier passed 74 results (46 backend and OAuth fixture results and 28 Playwright tests on local Chrome). Production build passed. Fast-forward remains deferred. The next planned work is **Batch 05, TASK 14, ISSUE 17.1 — CI/CD**.
+- Phase 4/6 **Batch 04, TASK 13 — Core Acceptance** passed independent re-review and the technical advisor accepted the verified implementation. Git finalization published the implementation to `origin/fix-issue`.
+- Phase 4/6 follow-up **TASK 13.1** completed the independent Core defect audit at `7233d6e4fbe0b02b14402dd76c4d5c35f0d544c0`. **TASK 13.2** resolved ISSUE 23–31 and received technical advisor acceptance after focused re-review. The final isolated verifier passed 74 results (46 backend and OAuth fixture results and 28 Playwright tests on local Chrome). Production build passed. Fast-forward remains deferred.
+- Phase 5/6 **Batch 05, TASK 14, ISSUE 17.1 — CI/CD** is **ACCEPTED / FINALIZED**. GitHub Actions and GHCR delivery were introduced after Core Acceptance and remain active for subsequent Bonus development. Next implementation task is **Batch 06, TASK 15, ISSUE 17.2 — Microservices**.
 
 | Phase | Batch | Tasks | Issues / Scope |
 |---|---|---|---|
@@ -40,8 +42,8 @@ Checkpoint recorded 2026-11-26. Batches 01–04 have received technical advisor 
 | 2 | 02 | TASK 07–09 | ISSUE 04: Google Authentication; ISSUE 08: Checkout; ISSUE 09: Email |
 | 3 | 03 | TASK 10–12, 12.1 | ISSUE 05: Product Tags; ISSUE 06: Simple Dashboard; ISSUE 07: Advanced Dashboard; ISSUE 19: Catalog Sort; ISSUE 20: Dashboard Tooltip Resize — accepted and committed |
 | 4 | 04 | TASK 13 | Core Acceptance (ISSUE 10–13), ISSUE 21 and 22, and follow-ups to ISSUE 02, 09 and 11 — accepted and committed |
-| 5 | 05 | TASK 14 | ISSUE 17.1: CI/CD |
-| 5 | 06 | TASK 15 | ISSUE 17.2: Microservices |
+| 5 | 05 | TASK 14 | ISSUE 17.1: CI/CD — accepted and finalized |
+| 5 | 06 | TASK 15 | ISSUE 17.2: Microservices — next implementation, preliminary design approved |
 | 5 | 07 | TASK 16 | ISSUE 17.4: Elasticsearch |
 | 5 | 08 | TASK 17 | ISSUE 17.3: AI Features |
 | 6 | 09 | TASK 18 | Final System Acceptance |
@@ -57,6 +59,8 @@ Checkpoint recorded 2026-11-26. Batches 01–04 have received technical advisor 
 | TASK 10–12, 12.1 / ISSUE 05, 06, 07, 19 and 20 | `65d5f5392a49501a2b773f183a0c58114e50cc55` | fix(core): complete catalog navigation and dashboard analytics |
 | TASK 13 / ISSUE 21, 22, 02, 09 and 11 | `7233d6e4fbe0b02b14402dd76c4d5c35f0d544c0` | fix(core): ensure checkout consistency and deployment reliability |
 | TASK 13.2 / ISSUE 23–31 | `f53ab3dd659ad40d374d413c0d7cc81b38a2ab71` | fix(core): resolve security, concurrency, and data integrity defects |
+| TASK 14 / ISSUE 17.1 | `f32426ac4bf84ebf155ec9583c144b925ff7eb6a` | ci(delivery): automate verification and container image delivery |
+| TASK 14 / ISSUE 17.1 | `ab48843896a2440c110dccbd00159392cbc6ae00` | fix(ci): use extracted Git archive as Docker build context |
 
 ## Issue register
 
@@ -94,11 +98,17 @@ Checkpoint recorded 2026-11-26. Batches 01–04 have received technical advisor 
 | 30 Product tag editing | **ACCEPTED / FIXED** | Form preserves raw input during typing and retains the persisted array when tags are untouched, including tags with commas. |
 | 31 Active variant aggregation | **ACCEPTED / FIXED** | Selling price and inventory use active variants. Historical variants, IDs and stock versions are retained. |
 
-**ISSUE 17 subtasks** per `NodeJS Final Project.pdf` (p. 6): CI/CD Pipeline, Microservices Architecture (at least three additional services and evidence of asynchronous decoupling), AI-related Features, and Elasticsearch Product Search. Each is planned and unverified. Public repo status does not imply an application deployment or working CI/CD. Verify provider access, costs and grading evidence before external actions.
+**ISSUE 17.1 — CI/CD Pipeline** is **ACCEPTED / FINALIZED**. The initial [Actions run 45767628794](https://github.com/PeterPhan2005/Obsidian-compute/actions/runs/45767628794) failed at Docker image build and skipped delivery. The archive command ran from `source/` and returned an empty archive. The corrective commit extracts the tracked `source` tree from the repository root and uses explicit local context and Dockerfile paths.
+
+- [Actions run 45768557009](https://github.com/PeterPhan2005/Obsidian-compute/actions/runs/45768557009) at `ab48843896a2440c110dccbd00159392cbc6ae00` passed the production build and **74/74** remote verifier results (46 backend/OAuth and 28 Playwright). The downstream publish job loaded the verified-image artifact and published both images under the full commit SHA tag. Registry pulls confirmed the tag, digests and OCI revision labels.
+- Backend: `ghcr.io/peterphan2005/obsidian-compute-backend@sha256:0703f961b8b428cef8721499254fa493d920471862c8acad9acd0e9db7c30f1a`. Frontend: `ghcr.io/peterphan2005/obsidian-compute-frontend@sha256:3300d0e14dcdcc589eff545184398dafe717510afe0d2f2816e819af0c93ddb3`.
+- A fresh local Compose project started with the published digests and `--no-build`. Init exited with code 0, both API replicas were healthy, the worker was running and all five application containers matched the expected image IDs. API health, storefront, catalog media and Mailpit returned HTTP 200. The stack was stopped after verification. Source-based `docker compose up -d` compatibility was verified during Batch 05 local acceptance. GHCR provides Continuous Delivery; the evidence covers explicit local Compose deployment.
+
+**ISSUE 17.2 — Microservices** is **PENDING IMPLEMENTATION**. The preliminary Batch 06 design is approved: Core API, Realtime Gateway and Notification Worker, existing Redis Pub/Sub, and a shared Backend image with separate entrypoints. The requirement calls for at least three services in addition to the frontend and database, plus evidence of asynchronous decoupling. **ISSUE 17.3 — AI-related Features** and **ISSUE 17.4 — Elasticsearch Product Search** remain **PENDING**. Verify provider access, costs and grading evidence before external actions. See `NodeJS Final Project.pdf` (p. 6).
 
 ## Implementation invariants and verification
 
-- `NodeJS Final Project.pdf` controls scope. Computers/components only, exactly one Admin role holder, guest ordering without manual registration, registration limited to the specified fields, 5-character alphanumeric coupons with no expiration and at most 10 uses, and no extra Admin modules. Treat `TASK_01_REQUIREMENTS_COMPLIANCE_AUDIT.md` as historical where implementation has since changed.
+- `NodeJS Final Project.pdf` controls scope. Computers/components only, exactly one Admin role holder, guest ordering without manual registration, registration limited to the specified fields, 5-character alphanumeric coupons with no expiration and at most 10 uses, and no extra Admin modules. Treat the `TASK_01_REQUIREMENTS_COMPLIANCE_AUDIT.md` as historical where implementation has since changed.
 - Node.js/Express, React/Vite, PostgreSQL/Knex, Redis/Socket.IO, Nginx, two API replicas, and Mailpit/email worker under Compose. Checkout retains existing payment-state and transaction semantics. Guest receipt is token-based and time-limited; private Customer history is account-scoped. Neither the payment nor the order state machine changed in Batch 01.
 - [Stock migration](https://github.com/PeterPhan2005/Obsidian-compute/blob/7233d6e4fbe0b02b14402dd76c4d5c35f0d544c0/source/backend/migrations/002_variant_stock_version.js) adds `stock_version` default 0 without changing existing stock. Admin reads receive `stockVersion`. Inventory PATCH requires `expectedStockVersion`; Product PATCH updates existing variant stock only when that field is present. Stale versions return `409 STOCK_CONFLICT`. Checkout updates stock and version together.
 - [Admin transactions](https://github.com/PeterPhan2005/Obsidian-compute/blob/7233d6e4fbe0b02b14402dd76c4d5c35f0d544c0/source/backend/src/admin.js) lock the destination category before locking the product and variant rows. Product save and category archive serialize on the category row. Variant row locking follows ascending ID as in checkout. Category reactivation uses conditional upsert on unique slug. Keep seed and test DB separation.
@@ -110,6 +120,6 @@ Checkpoint recorded 2026-11-26. Batches 01–04 have received technical advisor 
 - TASK 13 initially reproduced a stale checkout quote creating a different order and identified receipt-token exposure in access logs from source. The advisor accepted the remediation after independent re-review of quote locking, replay, receipt paths, verifier isolation and follow-up fixes. Final `npm run verify` passed **54/54** results (6 pricing, 21 integration including three nested category-lock cases, 2 checkout quote, 5 OAuth fixture including the parent test, 20 Playwright on headless Chrome). Production build and clean Compose startup passed. The first full attempt stopped before tests because Compose `--wait` required a disabled worker healthcheck. A subsequent run passed 19/20 browser tests because the log observation missed its marker at the first read. Bounded readiness and marker polling corrected those test workflow issues. Finalization reused this evidence.
 - Email delivery remains at least once. The baseline worker can retry the same Message-ID if SMTP accepts a message before the database records `sent`. This is a non-blocking local/configuration acceptance risk.
 - The validation stacks were stopped with their volumes retained. `npm run verify` creates a fresh isolated project, checks DB identity and ports before mutations, and stops only that project after each run. The verifier does not remove retained volumes. The primary `source/docker-compose.yml` is the documented one-command entry point.
-- Open verification includes real Google OAuth consent and callback, external SMTP, instructor acceptance of payment sandbox and Mailpit, actual search-engine indexing, actual teamwork and final submission evidence, and delivery gates/vendor selection for Bonus. Historical receipt logs were left in place and may contain tokens from before the fix. Technical Core acceptance covers verified behavior and does not determine grading compliance.
+- Open verification includes real Google OAuth consent and callback, external SMTP, instructor acceptance of payment sandbox and Mailpit, actual search-engine indexing, actual teamwork and final submission evidence, and delivery gates or vendor selection for pending Bonus groups. Historical receipt logs were left in place and may contain tokens from before the fix. Technical Core acceptance covers verified behavior and does not determine grading compliance.
 
 - Remaining verification includes real Google OAuth consent and callback, external SMTP, instructor acceptance of sandbox payment and Mailpit, search indexing, final deployment, teamwork and submission evidence. Historical receipt and password-reset logs can retain previously recorded tokens. The demo video remains outstanding.

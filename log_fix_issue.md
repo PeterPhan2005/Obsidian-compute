@@ -201,3 +201,9 @@
 **Vấn đề:** Variant đã archive vẫn góp vào giá tối thiểu và tổng tồn đang bán trong Admin Products.
 
 **Khắc phục:** Tính giá và tồn đang bán từ variant active. Giữ bản ghi inactive, ID và stock version phục vụ quản trị và lịch sử.
+
+### 35. ISSUE 17.1 – Docker Build Context in GitHub Actions
+
+**Vấn đề:** Workflow chạy `git archive HEAD:source` từ thư mục `source/`, tạo archive rỗng. Docker không nhận stdin là build context và báo lỗi Dockerfile ở lần chạy `45767628794`. CI dừng tại bước build image và job publish được bỏ qua.
+
+**Khắc phục:** Chạy `git archive` từ workspace root, giải nén cây `source` đã commit vào thư mục tạm và chỉ rõ build context cùng đường dẫn Dockerfile của từng image. Lần chạy `45768557009` đạt 74/74, sau đó publish cả hai image lên GHCR. Compose khởi động sạch từ hai digest đã công bố.
