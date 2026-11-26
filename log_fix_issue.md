@@ -249,3 +249,27 @@
 **Vấn đề:** Điểm tương đồng có thể cao dù kết quả vi phạm điều kiện trong câu nhập. Review độc lập tái hiện truy vấn yêu cầu chuột và loại trừ desktop trả desktop, câu tiếng Việt yêu cầu máy in trả màn hình, và câu yêu cầu laptop RAM 64 GB trả laptop hoặc RAM 16 GB.
 
 **Khắc phục:** Phát hiện các mẫu phủ định và dung lượng chính xác để yêu cầu diễn đạt lại mục đích trước khi lấy ứng viên hoặc tải model. Review độc lập kiểm tra lại bốn ca đã tái hiện và xác nhận các truy vấn Anh–Việt phù hợp vẫn chạy model thật. Các cách diễn đạt ngoài mẫu phát hiện vẫn là giới hạn của trợ lý.
+
+### 43. ISSUE 11 – Interactive LAN HTTP Deployment
+
+**Vấn đề:** Với URL LAN HTTP, Core API và Realtime Gateway từ chối origin khác `APP_BASE_URL` mặc định. Sau khi cấu hình đúng origin, Checkout vẫn dừng ở bước Review vì gọi `crypto.randomUUID()`, API không có trong ngữ cảnh LAN HTTP thông thường.
+
+**Khắc phục:** Hướng dẫn đặt `APP_BASE_URL` khớp chính xác origin demo. Checkout dùng `crypto.getRandomValues()` để sinh UUID v4 khi thiếu `crypto.randomUUID()` và tái sử dụng khóa idempotency khi retry. Kiểm chứng guest và customer checkout trên LAN HTTP thật, cập nhật qua WebSocket, từ chối origin khác và guest checkout tại localhost mặc định.
+
+### 44. ISSUE 02 – Variant Attribute Preservation
+
+**Vấn đề:** DTO áp dụng `camel()` đệ quy lên JSON thuộc tính variant. Hai khóa hợp lệ như `memory_type` và `memoryType` có thể bị gộp. Form Admin hoặc Product PATCH chỉ sửa metadata có thể ghi lại DTO đã mất khóa vào DB.
+
+**Khắc phục:** Giữ nguyên JSON `attributes` ở DTO variant của Catalog, Admin và Inventory PATCH. Regression kiểm chứng hai khóa và giá trị còn nguyên khi đọc, lưu qua form Admin, PATCH metadata và cập nhật inventory.
+
+### 45. ISSUE 32 – Concurrent Cost-Price Updates
+
+**Vấn đề:** Inventory PATCH chỉ đổi giá vốn không tăng product revision hoặc stock version. Form Admin cũ và hai Inventory PATCH dùng chung version có thể ghi đè giá vốn mới, khiến đơn kế tiếp lưu sai giá vốn và dashboard tính sai lợi nhuận gộp.
+
+**Khắc phục:** Khi Inventory PATCH đổi giá vốn, khóa product trước variant và tăng product revision cùng stock version trong một transaction. Product PATCH đổi giá vốn cũng tăng stock version, buộc Inventory PATCH cũ trả `409`. Regression xác nhận xung đột hai chiều, hai cập nhật inventory cạnh tranh, bảo vệ tồn kho và snapshot giá vốn của đơn đã lưu.
+
+### 46. ISSUE 17.3 – AI Recommendation Pagination
+
+**Vấn đề:** Danh sách kết quả AI giới hạn ba sản phẩm nhưng thiếu số trang, vi phạm yêu cầu PDF về phân trang có số kể cả khi chỉ có một trang.
+
+**Khắc phục:** Dùng `Pagination` với metadata một trang và nhãn riêng của danh sách đề xuất. Nút có `type="button"`, hai nút chuyển trang bị vô hiệu hóa. Playwright xác nhận Page 1 xuất hiện khi có kết quả, không gửi lại form, không chạy lại inference và không đổi trang Catalog.

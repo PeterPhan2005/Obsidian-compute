@@ -1,13 +1,14 @@
 # Obsidian Compute — Project State
 
-Checkpoint recorded 2026-11-27. Batches 01–08 and the four post-Batch 07 remediation fixes have received technical advisor acceptance in the verified technical scope and are finalized on `origin/fix-issue`. All four Bonus groups are technically accepted and finalized. Instructor assessment and remaining external Core verification are open.
+Checkpoint recorded 2026-11-27. Batches 01–09 and the four post-Batch 07 remediation fixes are finalized on `origin/fix-issue`. The technical advisor granted Final Technical Acceptance in the verified scope, including all four Bonus groups. External verification, instructor assessment, teamworking evidence and submission artifacts remain open.
 
 ## Repository and decisions
 
 - The previous linked worktree was removed after verifying the accepted Git tree and local-file hashes.
-- HEAD and verified remote `fix-issue` are `3c76f02021a4c123a456adc2ba53c0f41987dc39`. Upstream is 0 ahead / 0 behind. The accepted Core baseline is `f53ab3dd659ad40d374d413c0d7cc81b38a2ab71`. [GitHub commit](https://github.com/PeterPhan2005/Obsidian-compute/commit/3c76f02021a4c123a456adc2ba53c0f41987dc39)
+- HEAD and verified remote `fix-issue` are `e1848ce8cfac26829706bfcc7b41ff5c7d5b62c1`. Upstream is 0 ahead / 0 behind. The accepted Core baseline is `f53ab3dd659ad40d374d413c0d7cc81b38a2ab71`. [GitHub commit](https://github.com/PeterPhan2005/Obsidian-compute/commit/e1848ce8cfac26829706bfcc7b41ff5c7d5b62c1)
 - GitHub repository visibility was verified as public. Remote `main` remains at `47a62730a071a316d61ee089fdfb435c5100abfc` (Batch 01 baseline). Local `main` remains at `f135e63e3bf48aadff564db22773c877b9c5660b` (TASK 01/02 runtime baseline). Checkpoint authorization covers the accepted `fix-issue` implementation and the two progress documents on `progress`.
 - Remote `backup-main` was independently verified at `47a62730a071a316d61ee089fdfb435c5100abfc`, preserving the pre-fast-forward `main` checkpoint. Both remote branches remain at that SHA.
+- `main` has yet to advance to the accepted implementation. Public repository visibility and access to the source remain considerations for the team's source protection and instructor review.
 - Owner approved fixing the core issues on the shared `fix-issue` branch, completing mandatory requirements, then implementing all four Bonus groups. Category recreation with an archived slug reactivates that record and preserves its identity. Restore as a separate Admin feature was excluded.
 - The Owner explicitly retained the default storefront mapping `8080:80`, public demo credentials and `docker compose up -d` for controlled demonstrations. The storefront binds to host network interfaces, so the published port and demo accounts limit where that configuration can be deployed.
 - Keep changes task-scoped, use an isolated DB for mutating tests, and stop on unexpected Git state. Stage exact files only when authorized. Keep secrets and other local-only documents out of Git.
@@ -39,7 +40,8 @@ Checkpoint recorded 2026-11-27. Batches 01–08 and the four post-Batch 07 remed
 - Phase 5/6 **Batch 07, TASK 16, ISSUE 17.4 — Elasticsearch Product Search** is **ACCEPTED / FINALIZED** in the verified technical scope.
 - The **post-Batch 07 remediation** is **ACCEPTED / FINALIZED** at `08f58ca28ba0fdc30a947886be7864d1abb13e5f`.
 - Phase 5/6 **Batch 08, TASK 17, ISSUE 17.3 — AI-related Features** is **ACCEPTED / FINALIZED** at `3c76f02021a4c123a456adc2ba53c0f41987dc39`.
-- Phase 6/6 **Batch 09, TASK 18 — Final System Acceptance** is next and requires Owner authorization. Synchronize `Readme.txt`, `docs/IMPLEMENTATION_STATUS.md` and `source/README.txt` during Batch 09.
+- Phase 6/6 **Batch 09, TASK 18 — Final System Acceptance** is **ACCEPTED / FINALIZED** in the verified technical scope at `e1848ce8cfac26829706bfcc7b41ff5c7d5b62c1`.
+- **TASK 19 / ISSUE 15 — Teamworking Evidence** is next, pending Owner authorization. **TASK 20 / ISSUE 16 — Report, Demo and Submission** remains pending.
 
 | Phase | Batch | Tasks | Issues / Scope |
 |---|---|---|---|
@@ -52,9 +54,9 @@ Checkpoint recorded 2026-11-27. Batches 01–08 and the four post-Batch 07 remed
 | 5 | 06 | TASK 15 | ISSUE 17.2: Microservices — accepted and finalized |
 | 5 | 07 | TASK 16 | ISSUE 17.4: Elasticsearch — accepted and finalized |
 | 5 | 08 | TASK 17 | ISSUE 17.3: AI Features — accepted and finalized |
-| 6 | 09 | TASK 18 | Final System Acceptance — next task, pending authorization |
-| 6 | Delivery | TASK 19 | ISSUE 15: Teamworking evidence, tracked throughout development |
-| 6 | Delivery | TASK 20 | ISSUE 16: Report, Demo and Submission |
+| 6 | 09 | TASK 18 | Final System Acceptance — accepted and finalized in verified technical scope |
+| 6 | Delivery | TASK 19 | ISSUE 15: Teamworking Evidence — next, pending Owner authorization |
+| 6 | Delivery | TASK 20 | ISSUE 16: Report, Demo and Submission — pending |
 
 | Accepted work | Commit | Message |
 |---|---|---|
@@ -71,6 +73,7 @@ Checkpoint recorded 2026-11-27. Batches 01–08 and the four post-Batch 07 remed
 | TASK 16 / ISSUE 17.4 | `f74cabeb48ec8b93f51423949ed9b829eba6f9c8` | feat(search): integrate Elasticsearch product search |
 | Post-Batch 07 remediation / ISSUE 22, 32–34 | `08f58ca28ba0fdc30a947886be7864d1abb13e5f` | fix(core): resolve post-review privacy and consistency defects |
 | TASK 17 / ISSUE 17.3 | `3c76f02021a4c123a456adc2ba53c0f41987dc39` | feat(ai): add bilingual semantic product recommendations |
+| TASK 18 / ISSUE 11, 02, 32 and 17.3 | `e1848ce8cfac26829706bfcc7b41ff5c7d5b62c1` | fix(core): resolve final acceptance defects and synchronize documentation |
 
 ## Issue register
 
@@ -147,6 +150,17 @@ Checkpoint recorded 2026-11-27. Batches 01–08 and the four post-Batch 07 remed
 - Both delivered images ran by digest with `--no-build`. The isolated stack verified all six image IDs, init exit 0, service readiness, the 60-product seed and the default `0.0.0.0:8080` binding. Storefront, health and Mailpit returned HTTP 200. Receipt access worked with a valid token and returned 404 for missing or invalid tokens. Stale Admin saves returned 409. The first smoke stopped at the search assertion because `intel` had no seed matches. The rerun found results for `Northstar` via Elasticsearch and passed 2/2 Playwright smoke tests. Local runs used temporary IPAM overrides because the host address pool was exhausted. The overrides were kept outside committed Compose and both smoke stacks stopped with volumes retained.
 - This progress checkpoint records final acceptance and verification of the four remediation fixes. Previously accepted statuses and outstanding external verification still apply.
 
+## Batch 09 final technical acceptance
+
+- Final implementation `e1848ce8cfac26829706bfcc7b41ff5c7d5b62c1` has parent `3c76f02021a4c123a456adc2ba53c0f41987dc39`. Two independent reviewers accepted the remediation after re-review. The technical advisor granted Final Technical Acceptance after publication and delivered-image verification.
+- Accepted fixes are interactive LAN HTTP deployment with exact `APP_BASE_URL` matching and a secure UUID v4 fallback (ISSUE 11), exact variant attribute keys at public, Admin and inventory API boundaries (ISSUE 02), stale cost-price write protection in both PATCH directions and between competing inventory updates while preserving lock order and historical order snapshots (ISSUE 32), and numbered page 1 for AI recommendations without submitting the form or repeating inference (ISSUE 17.3).
+- `Readme.txt`, `docs/IMPLEMENTATION_STATUS.md` and `source/README.txt` were synchronized before publication. Their Batch 09 local verification statements accurately describe that checkpoint. TASK 20 must include the newly verified remote checkpoint in the final submission documentation.
+- Local and remote verification each passed **94/94** (60 backend/OAuth and 34 Playwright). Production builds passed. [Actions run 45882025076](https://github.com/PeterPhan2005/Obsidian-compute/actions/runs/45882025076) passed on its first attempt, verified model checksums and six application container image IDs, then exported verified artifact `15148201143`. The publish job loaded that artifact and pushed both full-SHA tags. Registry config digests matched the build image IDs.
+- GHCR Backend digest `sha256:628a93facf8431ea89fcf21049c668ea637b63e4790723d6c56933ecccadca83`. GHCR Frontend digest `sha256:ef0b4b294387ca0105b2c0805c4f3528edd029e62443169168caa9b13ad38b73`.
+- Delivered Compose pulled both digests and ran with `--no-build` using Compose files from the same commit. Init exited 0, both Core replicas were healthy, and all six image IDs matched in both modes. The stack verified storefront mapping `8080:80`, Mailpit loopback, 60 seed products, local images and 18 Elasticsearch results for `Northstar`. Real English and Vietnamese inference displayed numbered page 1 using same-origin ONNX and WASM.
+- Delivered smoke verified guest checkout on default localhost and Guest and Customer checkout on configured non-loopback LAN HTTP without `crypto.randomUUID()`. The LAN smoke confirmed live comment and rating updates and rejection of a mismatched origin by CSRF and WebSocket checks. Delivered API checks preserved `memory_type` and `memoryType`, rejected stale writes in both PATCH directions and recorded the latest cost in the next checkout. The isolated stack stopped with its volumes retained. The temporary IPAM override stayed outside Git.
+- Outstanding limits include real Google consent and callback, external SMTP, actual search-engine indexing, AI performance on physical mobile devices, the documented Sharp build/development advisories, and historical sensitive logs. Instructor assessment of sandbox payment, Mailpit and all four Bonus groups remains open. Authentic teamwork evidence, the final ZIP, narrated demo, instructor Rubrik and submission evidence remain pending.
+
 ## Implementation invariants and verification
 
 - `NodeJS Final Project.pdf` controls scope. Computers/components only, exactly one Admin role holder, guest ordering without manual registration, registration limited to the specified fields, 5-character alphanumeric coupons with no expiration and at most 10 uses, and no extra Admin modules. Treat the `TASK_01_REQUIREMENTS_COMPLIANCE_AUDIT.md` as historical where implementation has since changed.
@@ -163,4 +177,4 @@ Checkpoint recorded 2026-11-27. Batches 01–08 and the four post-Batch 07 remed
 - The validation stacks were stopped with their volumes retained. `npm run verify` creates a fresh isolated project, checks DB identity and ports before mutations, and stops only that project after each run. The verifier does not remove retained volumes. The primary `source/docker-compose.yml` is the documented one-command entry point.
 - Open verification includes real Google OAuth consent and callback, external SMTP, instructor assessment of payment sandbox, Mailpit and all four Bonus groups, actual search-engine indexing, teamwork evidence and final submission evidence, including ZIP reproducibility and the demo video. Historical receipt logs were left in place and may contain tokens from before the fix.
 
-- Remaining verification includes real Google OAuth consent and callback, external SMTP, instructor acceptance of sandbox payment and Mailpit, search indexing, final deployment, teamwork and submission evidence. Historical receipt and password-reset logs can retain previously recorded tokens. The demo video remains outstanding.
+- Remaining delivery verification includes reproducibility from the final submission ZIP and instructor access to the demo. Historical receipt and password-reset logs can retain previously recorded tokens. The demo video remains outstanding.
