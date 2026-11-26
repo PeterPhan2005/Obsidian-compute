@@ -51,6 +51,7 @@ export async function productDto(row, conn = db, admin = false) {
       return { ...c, isAvailable: row.is_active && v.is_active && v.stock > 0 };
     }),
     reviewSummary: { ...camel(summary), commentCount: Number(count) },
+    ...(admin ? { revision: row.revision } : {}),
     isActive: row.is_active,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -96,18 +97,21 @@ export async function listProducts(input = {}, admin = false, onSearchBackend) {
     "INVALID_RANGE",
     "Minimum price must not exceed maximum price.",
   );
-  if (!admin && q.q?.trim()) {
-    const matches = await searchProductText(q.q.trim());
+  if (admin) return listProductRows(db, q, page, pageSize, admin, null);
+
+  const keyword = q.q?.trim();
+  let matches = null;
+  if (keyword) {
+    matches = await searchProductText(keyword);
     onSearchBackend?.(matches ? "elasticsearch" : "postgresql");
     if (matches?.length === 0) {
       return { data: [], meta: meta(page, pageSize, 0), filters: { selected: q } };
     }
-    return db.transaction(
-      (conn) => listProductRows(conn, q, page, pageSize, admin, matches),
-      { isolationLevel: "repeatable read", readOnly: true },
-    );
   }
-  return listProductRows(db, q, page, pageSize, admin, null);
+  return db.transaction(
+    (conn) => listProductRows(conn, q, page, pageSize, admin, matches),
+    { isolationLevel: "repeatable read", readOnly: true },
+  );
 }
 
 async function listProductRows(conn, q, page, pageSize, admin, matches) {

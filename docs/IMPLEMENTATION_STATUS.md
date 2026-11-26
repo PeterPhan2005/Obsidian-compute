@@ -1,27 +1,36 @@
 # OBSIDIAN COMPUTE — trạng thái triển khai
 
-Cập nhật: 2026-11-08. Mã nguồn ứng dụng đã được xây và kiểm chứng bằng Docker Compose local. Không đồng nghĩa hồ sơ nộp bài/điểm số đã hoàn thành.
+Cập nhật 2026-11-26 theo checkpoint Batch 07 `f74cabeb48ec8b93f51423949ed9b829eba6f9c8`. Đánh giá của giảng viên và hồ sơ nộp bài vẫn đang mở.
 
 ## Đã triển khai
 
 - React storefront và Admin tiếng Anh, giao diện đen tối giản, responsive.
 - Catalog 60 sản phẩm demo / 6 danh mục / 120 variants; ảnh local có nguồn và attribution công khai. Chi tiết tên/giá/thông số là dữ liệu demo, ảnh minh họa theo nhóm sản phẩm.
 - Mọi section homepage và catalog có phân trang thật; search, sort, bộ lọc kết hợp, chọn variant và stock độc lập.
-- Guest comments, customer ratings, Socket.IO qua Redis giữa hai replica.
+- Guest comments và customer ratings từ hai Core API replicas được phát qua Redis Pub/Sub. Realtime Gateway đưa sự kiện đến product room trên Socket.IO.
 - Auth OTP/password/recovery, Google OIDC, profile, nhiều địa chỉ/default address và merge guest cart.
 - Checkout nhiều bước, sandbox thành công/thất bại, coupon, điểm, receipt, guest tự tạo tài khoản và xem lại đơn sau xác minh email.
 - Transaction checkout có khóa giỏ/variant/user/coupon và idempotency; order/status/items lưu snapshot; email outbox có worker/retry.
 - Admin product/category/inventory/upload, user ban/update, order/status, discount create/detail và hai dashboards tính từ DB.
-- Docker tự build/migrate/seed; Postgres/media volume bền vững, hai API sau Nginx, shared sessions/cart/pubsub.
+- Docker tự build/migrate/seed. Hai Core API replicas sau Nginx dùng chung PostgreSQL cho session/cart, cùng với Realtime Gateway và Notification Worker chạy bằng entrypoint riêng. PostgreSQL, media và Elasticsearch có volume riêng.
+
+## Bonus
+
+- **ISSUE 17.1 — CI/CD.** GitHub Actions build và verify trước khi phát hành hai image đã kiểm thử lên GHCR. Chạy image qua Docker Compose là bước triển khai riêng.
+- **ISSUE 17.2 — Microservices.** Core API, Realtime Gateway và Notification Worker chạy bằng cùng Backend image. Redis Pub/Sub chuyển sự kiện tương tác đến Gateway, còn PostgreSQL outbox chuyển công việc email đến Worker.
+- **ISSUE 17.4 — Elasticsearch.** Tìm kiếm từ khóa và relevance chạy qua Elasticsearch. PostgreSQL quyết định visibility, bộ lọc, sort tường minh, tổng và phân trang, đồng thời cung cấp SQL fallback. Với 60 sản phẩm demo, median/p95 của Elasticsearch là 23,7/32,1 ms và của SQL trực tiếp là 15,8/23,1 ms.
+- **ISSUE 17.3 — AI.** Chưa triển khai.
 
 ## Kiểm chứng tự động
 
 Chạy `npm run verify` từ `source/`. Mỗi lượt tạo một Compose project mới `obsidian-test-<random-id>`, xác minh PostgreSQL và cổng cách ly, rồi chạy các suite backend, OAuth fixture và Playwright. Script dừng project sau khi kiểm tra và giữ các volume để đối chiếu.
 
+Tại checkpoint Batch 07 `f74cabeb`, [Actions run 45803094915](https://github.com/PeterPhan2005/Obsidian-compute/actions/runs/45803094915) đạt 53 kết quả backend/OAuth và 29 Playwright, xác minh ID image của sáu container ứng dụng và phát hành hai image đã kiểm thử. Bằng chứng triển khai local cho checkpoint này gồm stack chạy bằng digest GHCR với `--no-build`.
+
 | Nhóm yêu cầu | Bằng chứng |
 |---|---|
 | A01–A09: Home/catalog/detail/filter/sort/pagination | Backend catalog assertions; E2E homepage, catalog và mobile detail |
-| A10–A13: Comments/ratings/realtime | Backend guest/customer permissions; hai WebSocket client ở API A/B nhận cùng event |
+| A10–A13: Comments/ratings/realtime | Backend guest/customer permissions. Realtime Gateway chuyển sự kiện từ cả hai Core replicas tới WebSocket clients |
 | A14–A19: Cart/guest checkout/account history | Cart API, E2E guest checkout, OTP vào tài khoản guest, customer pages |
 | A20, A22–A23: Register/password/address | Backend strict registration input, OTP single-use, change/reset, defaults; E2E address editing |
 | A21: Google login | Luồng OIDC đã triển khai; cấu hình thật được nạp vào bản chính. **Chưa xác nhận một lượt consent/callback với tài khoản Google thật** |
@@ -36,11 +45,12 @@ Chạy `npm run verify` từ `source/`. Mỗi lượt tạo một Compose projec
 | A47: Horizontal scaling | Hai API healthy, cùng session/cart; cross-instance comment/rating events |
 | A48: One-command startup | Stack mới khởi động bằng Compose: build → migration/seed → hai API healthy → Nginx |
 
-Một test có thể bao phủ nhiều mục; bảng này không khẳng định mỗi mục rubric có một test độc lập hoặc đã được giảng viên đánh giá. Các form đã được sửa nhãn truy cập sau lượt E2E đầu và chạy lại thành công.
+Một test có thể bao phủ nhiều mục. Bảng trên mô tả phạm vi kiểm chứng kỹ thuật. Đánh giá rubric thuộc giảng viên.
 
 - Test code: `source/backend/tests/`, `source/tests/e2e/`.
-- Ảnh demo đã lưu: `docs/evidence/`. Artifacts của lượt kiểm thử mới: `source/test-results/` và `source/playwright-report/`.
-- Dependency audit ở thời điểm triển khai: 0 vulnerabilities sau cập nhật Nodemailer và Sharp.
+- Checkpoint ban đầu `1def636` lưu 20 kết quả backend và 7 Playwright đạt tại [`docs/evidence/verification.txt`](evidence/verification.txt), cùng ảnh demo trong `docs/evidence/`. Các form đã được sửa nhãn truy cập sau lượt E2E đầu và chạy lại thành công ở checkpoint này.
+- Artifacts của mỗi lượt kiểm thử mới nằm trong `source/test-results/` và `source/playwright-report/`.
+- Dependency audit lúc triển khai ban đầu (báo cáo 2026-11-08) ghi nhận 0 vulnerabilities sau cập nhật Nodemailer và Sharp.
 
 ## Cần nhóm thực hiện trước bảo vệ/nộp
 
@@ -52,8 +62,7 @@ Một test có thể bao phủ nhiều mục; bảng này không khẳng định
 
 ## Giới hạn thực tế
 
-- Chưa có deployment public; Docker Compose là phương án nộp đã chọn.
+- Docker Compose là phương án nộp đã chọn. Owner giữ mapping `8080:80` và tài khoản demo công khai để giảng viên có thể truy cập qua mạng. Cấu hình mặc định dành cho môi trường demo được kiểm soát. Production cần giới hạn phạm vi truy cập và dùng thông tin đăng nhập riêng.
 - Thanh toán là sandbox nội bộ; Mailpit là inbox demo, không phải cổng thanh toán hay SMTP public.
 - SMTP có thể redeliver nếu worker bị dừng ngay sau khi SMTP nhận nhưng trước khi DB đánh dấu sent; không tuyên bố exactly-once delivery ngoài hệ thống.
-- Các bonus không được triển khai hoặc tự nhận điểm.
-- Trình duyệt tích hợp không khả dụng trong phiên làm việc; QA giao diện dùng bộ Playwright headless của dự án và ảnh chụp đã xem trực tiếp.
+- Ở checkpoint ban đầu `1def636`, QA giao diện dùng Playwright headless và rà soát trực tiếp ảnh chụp.

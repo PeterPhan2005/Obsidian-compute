@@ -6,10 +6,13 @@ import { navigateWithToken } from "./sensitive-navigation.js";
 test.use({ trace: "off", screenshot: "off", video: "off" });
 
 const receiptPath = "/checkout/success";
-const receiptApi = "/api/v1/checkout/receipts/";
+const receiptApi = "/api/v1/checkout/receipts";
 
-async function checkReceiptResponse(response) {
+async function checkReceiptResponse(response, token) {
   expect(response.status()).toBe(200);
+  expect(new URL(response.url()).search).toBe("");
+  expect(response.url().includes(token)).toBe(false);
+  expect((await response.request().headerValue("x-receipt-token")) === token).toBe(true);
   expect(await response.headerValue("cache-control")).toBe("no-store");
   expect(Boolean(await response.request().headerValue("referer"))).toBe(false);
 }
@@ -49,11 +52,10 @@ test("Guest receipt sends no referrer after SPA and legacy navigation", async ({
 
   const receiptResponse = () =>
     page.waitForResponse((r) =>
-      new URL(r.url()).pathname.startsWith(receiptApi),
+      new URL(r.url()).pathname === receiptApi,
     );
   const fromCheckout = receiptResponse();
   await page.getByRole("button", { name: "Place order & pay" }).click();
-  await checkReceiptResponse(await fromCheckout);
   await expect(
     page.getByRole("heading", { name: "Order placed" }),
   ).toBeVisible();
@@ -62,6 +64,7 @@ test("Guest receipt sends no referrer after SPA and legacy navigation", async ({
   expect(Boolean(success.search)).toBe(false);
   const token = new URLSearchParams(success.hash.slice(1)).get("receipt");
   expect(Boolean(token && /^[a-f0-9]{64}$/.test(token))).toBe(true);
+  await checkReceiptResponse(await fromCheckout, token);
 
   const imagePath = `/media/catalog/desktop-1.webp?receipt-check=${randomUUID()}`;
   const imageResponse = page.waitForResponse((r) =>
@@ -97,7 +100,7 @@ test("Guest receipt sends no referrer after SPA and legacy navigation", async ({
   const legacy = await document;
   expect(legacy.status()).toBe(200);
   expect(await legacy.headerValue("referrer-policy")).toBe("no-referrer");
-  await checkReceiptResponse(await fromLegacy);
+  await checkReceiptResponse(await fromLegacy, token);
   await expect(
     page.getByRole("heading", { name: "Order placed" }),
   ).toBeVisible();
@@ -154,10 +157,15 @@ test("Both Nginx access logs omit synthetic receipt tokens", async ({
 
   const token = randomBytes(32).toString("hex");
   const legacy = `${receiptPath}?receipt=${token}`;
-  const apiPath = `${receiptApi}${token}`;
+  const apiPath = `${receiptApi}/${token}`;
   const marker = `receipt-log-check-${randomUUID()}`;
   expect(await probe(baseURL, legacy)).toBe(200);
   expect(await probe(baseURL, apiPath)).toBe(404);
+  const headerResponse = await fetch(new URL(receiptApi, baseURL), {
+    headers: { "X-Receipt-Token": token },
+  });
+  expect(headerResponse.status).toBe(404);
+  await headerResponse.arrayBuffer();
   for (const [index, path] of [legacy, apiPath].entries()) {
     const ordinary = `/products?verify=${marker}-${index}`;
     expect(await probe(baseURL, ordinary, new URL(path, baseURL).href)).toBe(

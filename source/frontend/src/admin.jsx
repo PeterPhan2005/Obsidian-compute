@@ -697,6 +697,7 @@ export function ProductForm() {
         tagInput,
         initialTagInput: tagInput,
         images: p.imageDetails.map((i) => ({ url: i.url, alt: i.alt })),
+        expectedRevision: p.revision,
         variants: p.variants
           .filter((v) => v.isActive)
           .map((v) => ({

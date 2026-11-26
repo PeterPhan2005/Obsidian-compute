@@ -326,6 +326,14 @@ test("Concurrent identical guest checkout creates one order, one coupon use, one
     (await c.request(`/checkout/receipts/${receiptToken}`)).status,
     200,
   );
+  const receiptClient = new Client();
+  const receipt = await receiptClient.request("/checkout/receipts", "GET", undefined, {
+    "X-Receipt-Token": receiptToken,
+  });
+  assert.equal(receipt.status, 200);
+  assert.equal(receipt.body.data.id, order.id);
+  assert.equal(receipt.headers.get("cache-control"), "no-store");
+  assert.equal((await receiptClient.request("/checkout/receipts")).status, 404);
   assert.equal(
     (await new Client().request(`/me/orders/${order.id}`)).status,
     401,
@@ -437,13 +445,16 @@ test("Inventory revisions protect product edits, checkout and concurrent stock u
   assert.equal(checkout.status, 201);
   assert.equal((await readVariant(first.id)).stock, 19);
   const metadata = {
+    expectedRevision: initial.revision,
     shortDescription: "Description edited after checkout.",
     variants: initial.variants,
   };
-  assert.equal((await admin.request(productPath, "PATCH", metadata)).status, 200);
+  const metadataEdit = await admin.request(productPath, "PATCH", metadata);
+  assert.equal(metadataEdit.status, 200);
   assert.equal((await readVariant(first.id)).stock, 19);
 
   const stale = await admin.request(productPath, "PATCH", {
+    expectedRevision: metadataEdit.body.data.revision,
     variants: [setStock(first, 30), second],
   });
   assert.equal(stale.status, 409);
@@ -451,6 +462,7 @@ test("Inventory revisions protect product edits, checkout and concurrent stock u
   const current = (await admin.request(productPath)).body.data;
   const currentFirst = current.variants.find((v) => v.id === first.id);
   const intentional = await admin.request(productPath, "PATCH", {
+    expectedRevision: current.revision,
     variants: [setStock(currentFirst, 25), second],
   });
   assert.equal(intentional.status, 200);
@@ -460,6 +472,7 @@ test("Inventory revisions protect product edits, checkout and concurrent stock u
 
   const results = await Promise.all([
     admin.request(productPath, "PATCH", {
+      expectedRevision: intentional.body.data.revision,
       variants: [setStock(afterEdit, 31), second],
     }),
     admin.request(inventoryPath, "PATCH", {
@@ -482,6 +495,7 @@ test("Inventory revisions protect product edits, checkout and concurrent stock u
   assert.equal(restored.body.data.stock, 25);
   const beforeRollback = (await admin.request(productPath)).body.data;
   const rollback = await admin.request(productPath, "PATCH", {
+    expectedRevision: beforeRollback.revision,
     shortDescription: "This conflicting edit should roll back.",
     images: initial.imageDetails.map((image) => ({ ...image, alt: "Rollback image" })),
     variants: [setStock(second, 17), setStock(afterEdit, 35)],
@@ -500,6 +514,7 @@ test("Inventory revisions protect product edits, checkout and concurrent stock u
 
   const { id: existingId, ...newVariant } = second;
   const added = await admin.request(productPath, "PATCH", {
+    expectedRevision: beforeRollback.revision,
     variants: [
       ...beforeRollback.variants,
       { ...newVariant, sku: `INV-${suffix}-NEW`, stock: 7 },
@@ -516,6 +531,7 @@ test("Inventory revisions protect product edits, checkout and concurrent stock u
   const [sale, adjustment] = await Promise.all([
     submit(nextGuest, reviewed),
     admin.request(productPath, "PATCH", {
+      expectedRevision: added.body.data.revision,
       variants: added.body.data.variants.map((v) =>
         v.id === first.id ? setStock(v, 40) : v,
       ),
@@ -573,24 +589,28 @@ test("Product saves require distinct active variants and roll back invalid edits
   await assertActiveVariants();
 
   const duplicate = await admin.request(path, "PATCH", {
+    expectedRevision: original.revision,
     variants: [first, first],
   });
   assert.equal(duplicate.status, 400);
   assert.equal(duplicate.body.error.code, "DUPLICATE_VARIANT_ID");
 
   const duplicateSku = await admin.request(path, "PATCH", {
+    expectedRevision: original.revision,
     variants: [first, { ...second, sku: first.sku }],
   });
   assert.equal(duplicateSku.status, 400);
   assert.equal(duplicateSku.body.error.code, "DUPLICATE_SKU");
 
   const insufficient = await admin.request(path, "PATCH", {
+    expectedRevision: original.revision,
     variants: [first, { ...second, isActive: false }],
   });
   assert.equal(insufficient.status, 400);
   assert.equal(insufficient.body.error.code, "VARIANTS_REQUIRED");
 
   const invalid = await admin.request(path, "PATCH", {
+    expectedRevision: original.revision,
     shortDescription: "This edit must roll back.",
     variants: [
       {
@@ -608,6 +628,7 @@ test("Product saves require distinct active variants and roll back invalid edits
 
   const { id, ...replacement } = second;
   const changed = await admin.request(path, "PATCH", {
+    expectedRevision: original.revision,
     variants: [first, { ...replacement, sku: `${original.slug}-replacement` }],
   });
   assert.equal(changed.status, 200);
@@ -685,6 +706,43 @@ async function waitForBlockedQuery(blockerPid, queryPattern) {
   assert.fail(`No query matching ${queryPattern} blocked by PID ${blockerPid}`);
 }
 
+test("Concurrent product saves that both read the same revision commit only once", async () => {
+  const product = await createTestProduct();
+  const path = `/admin/products/${product.id}`;
+  const names = ["First concurrent edit", "Second concurrent edit"];
+  let saves = [];
+  try {
+    await db.transaction(async (gate) => {
+      await gate("products").where({ id: product.id }).forNoKeyUpdate().first();
+      saves = names.map((name) => admin.request(path, "PATCH", {
+        name,
+        expectedRevision: product.revision,
+      }));
+      // Both saves must finish their preflight read and wait at the write lock.
+      const deadline = Date.now() + 5000;
+      while (Date.now() < deadline) {
+        const { rows } = await db.raw(
+          `SELECT pid FROM pg_stat_activity WHERE datname = current_database()
+           AND wait_event_type = 'Lock' AND query LIKE 'select%from "products"%for no key update'`,
+        );
+        if (rows.length === 2) return;
+        await delay(20);
+      }
+      assert.fail("Both saves did not reach the product write lock");
+    });
+    const results = await Promise.all(saves);
+    assert.deepEqual(results.map((result) => result.status).sort(), [200, 409]);
+    const winner = results.findIndex((result) => result.status === 200);
+    assert.equal(results[1 - winner].body.error.code, "PRODUCT_CONFLICT");
+    const saved = (await admin.request(path)).body.data;
+    assert.equal(saved.name, names[winner]);
+    assert.equal(saved.revision, product.revision + 1);
+  } finally {
+    await Promise.allSettled(saves);
+    assert.equal((await admin.request(path, "DELETE")).status, 204);
+  }
+});
+
 test("Product create and reassignment serialize with category archive", async (t) => {
   async function openCategory() {
     const response = await admin.request("/admin/categories", "POST", {
@@ -702,7 +760,7 @@ test("Product create and reassignment serialize with category archive", async (t
       const category = await openCategory();
       const source = mode === "reassign" ? await createTestProduct() : null;
       const body = source
-        ? { categoryId: category.id }
+        ? { categoryId: category.id, expectedRevision: source.revision }
         : await testProductPayload(category.id);
       const save = () =>
         source

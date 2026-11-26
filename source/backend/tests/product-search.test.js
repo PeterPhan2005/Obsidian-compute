@@ -433,6 +433,7 @@ test(
 
       await mutation(apiB, path, "PATCH", 200, {
         categoryId: category.id,
+        expectedRevision: recovered.revision,
       });
       assert.deepEqual(
         ids(await search({ q: token, category: category.slug })),
@@ -462,6 +463,7 @@ test(
       assert.equal(reopened.id, category.id);
       const product = await mutation(apiB, path, "PATCH", 200, {
         isActive: true,
+        expectedRevision: (await apiB.request(path)).body.data.revision,
       });
       assert.deepEqual(ids(await search({ q: token })), [recovered.id]);
 
@@ -480,6 +482,7 @@ test(
       }
 
       await mutation(apiA, path, "PATCH", 200, {
+        expectedRevision: product.revision,
         variants: product.variants.map((v) => ({
           ...v,
           priceVnd: v.isActive ? v.priceVnd + 1000 : v.priceVnd,
@@ -504,15 +507,26 @@ test(
     const west = `${token}west`;
     const east = `${token}east`;
     const rejected = `${token}rejected`;
-    await mutation(apiA, path, "PATCH", 200, { name: oldTerm });
+    const initial = await mutation(apiA, path, "PATCH", 200, {
+      name: oldTerm,
+      expectedRevision: (await apiA.request(path)).body.data.revision,
+    });
     await matchingProduct(oldTerm, recovered.id);
 
     let finalName;
     await withIndexingPaused(async () => {
-      await Promise.all([
-        mutation(apiA, path, "PATCH", 200, { name: west }),
-        mutation(apiB, path, "PATCH", 200, { name: east }),
-      ]);
+      const edits = [[apiA, west], [apiB, east]];
+      const results = await Promise.all(edits.map(([client, name]) =>
+        client.request(path, "PATCH", { name, expectedRevision: initial.revision }),
+      ));
+      assert.deepEqual(results.map((result) => result.status).sort(), [200, 409]);
+      const stale = results.findIndex((result) => result.status === 409);
+      assert.equal(results[stale].body.error.code, "PRODUCT_CONFLICT");
+      const [retryingClient, retryName] = edits[stale];
+      await mutation(retryingClient, path, "PATCH", 200, {
+        name: retryName,
+        expectedRevision: results[1 - stale].body.data.revision,
+      });
       finalName = (
         await db("products").where({ id: recovered.id }).first("name")
       ).name;
@@ -526,6 +540,7 @@ test(
       const variants = product.variants.filter((v) => v.isActive);
       await mutation(apiB, path, "PATCH", 400, {
         name: rejected,
+        expectedRevision: product.revision,
         variants: [variants[0], { ...variants[1], id: randomUUID() }],
       });
       assert.equal(

@@ -111,14 +111,37 @@ admin.get("/dashboard/analytics", async (req, res) =>
 admin.get("/products", async (req, res) =>
   res.json(await listProducts(req.query, true)),
 );
+function readAdminProduct(productId) {
+  return db.transaction((tx) => getProduct(productId, tx, true), {
+    isolationLevel: "repeatable read",
+    readOnly: true,
+  });
+}
+
+function requireProductRevision(matches) {
+  check(
+    matches,
+    409,
+    "PRODUCT_CONFLICT",
+    "This product changed. Reload the product before saving.",
+  );
+}
+
 admin.get("/products/:productId", async (req, res) =>
-  ok(res, await getProduct(id.parse(req.params.productId), db, true)),
+  ok(res, await readAdminProduct(id.parse(req.params.productId))),
 );
 async function saveProduct(req, res, update = false) {
   const productId = update ? id.parse(req.params.productId) : randomUUID();
   let input = req.body;
+  let expectedRevision;
   if (update) {
-    const p = await getProduct(productId, db, true);
+    const { expectedRevision: revision, ...changes } = z
+      .object({ expectedRevision: z.number().int().nonnegative() })
+      .passthrough()
+      .parse(req.body);
+    expectedRevision = revision;
+    const p = await readAdminProduct(productId);
+    requireProductRevision(p.revision === expectedRevision);
     input = {
       name: p.name,
       slug: p.slug,
@@ -134,7 +157,7 @@ async function saveProduct(req, res, update = false) {
       })),
       variants: p.variants,
       isActive: p.isActive,
-      ...req.body,
+      ...changes,
     };
   }
   const b = productSchema.parse(input);
@@ -205,7 +228,11 @@ async function saveProduct(req, res, update = false) {
         .where({ product_id: productId })
         .orderBy("id")
         .forUpdate();
-      await tx("products").where({ id: productId }).update(p);
+      requireProductRevision(
+        await tx("products")
+          .where({ id: productId, revision: expectedRevision })
+          .update({ ...p, revision: expectedRevision + 1 }),
+      );
       await tx("product_images").where({ product_id: productId }).delete();
     } else await tx("products").insert({ id: productId, ...p });
     await tx("product_images").insert(
@@ -258,7 +285,7 @@ async function saveProduct(req, res, update = false) {
       .first();
     requireActiveVariants(count);
   });
-  ok(res, await getProduct(productId, db, true), update ? 200 : 201);
+  ok(res, await readAdminProduct(productId), update ? 200 : 201);
 }
 admin.post("/products", (req, res) => saveProduct(req, res));
 admin.patch("/products/:productId", (req, res) => saveProduct(req, res, true));
@@ -266,7 +293,7 @@ admin.delete("/products/:productId", async (req, res) => {
   check(
     await db("products")
       .where({ id: id.parse(req.params.productId) })
-      .update({ is_active: false }),
+      .update({ is_active: false, revision: db.raw("revision + 1") }),
     404,
     "NOT_FOUND",
     "Product not found.",

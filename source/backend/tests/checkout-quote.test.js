@@ -99,6 +99,7 @@ test("New checkout must match the reviewed product configuration, quantities and
   await assertRejectedWithoutWrites(reviewedContents, 409, "QUOTE_CHANGED");
 
   let selected = second;
+  let revision = product.body.data.revision;
   for (const changes of [
     { name: "Updated checkout quote product" },
     { variants: [first, { ...second, sku: `${second.sku}-updated` }] },
@@ -108,8 +109,12 @@ test("New checkout must match the reviewed product configuration, quantities and
     const update = changes.attributes
       ? { variants: [first, { ...selected, ...changes }] }
       : changes;
-    const saved = await admin.request(productPath, "PATCH", update);
+    const saved = await admin.request(productPath, "PATCH", {
+      ...update,
+      expectedRevision: revision,
+    });
     assert.equal(saved.status, 200, JSON.stringify(saved.body));
+    revision = saved.body.data.revision;
     selected = saved.body.data.variants.find((variant) => variant.id === second.id);
     assert.equal(selected.priceVnd, second.priceVnd);
     await assertRejectedWithoutWrites(reviewedConfiguration, 409, "QUOTE_CHANGED");
@@ -167,6 +172,7 @@ test("New checkout must match the reviewed product configuration, quantities and
   assert.equal(replay.body.data.order.id, order.body.data.order.id);
 
   const zeroPrice = await admin.request(productPath, "PATCH", {
+    expectedRevision: revision,
     variants: [first, { ...selected, priceVnd: 0 }],
   });
   assert.equal(zeroPrice.status, 200);

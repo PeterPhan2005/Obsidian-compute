@@ -198,7 +198,7 @@ test("Checkout success requires a receipt and handles an unavailable receipt", a
     ["0".repeat(64), "#"],
   ]) {
     const response = page.waitForResponse((r) =>
-      r.url().endsWith(`/api/v1/checkout/receipts/${receipt}`),
+      new URL(r.url()).pathname === "/api/v1/checkout/receipts",
     );
     await navigateWithToken(page, `/checkout/success${separator}receipt=${receipt}`);
     expect((await response).status()).toBe(404);
@@ -211,7 +211,7 @@ test("Checkout success requires a receipt and handles an unavailable receipt", a
   const pending = new Promise((resolve) => {
     releaseRequest = resolve;
   });
-  await page.route("**/api/v1/checkout/receipts/**", async (route) => {
+  await page.route("**/api/v1/checkout/receipts", async (route) => {
     await pending;
     await route.abort("failed");
   });

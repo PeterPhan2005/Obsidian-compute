@@ -577,15 +577,17 @@ export function shopRoutes(limiter) {
       ok(res, result, 201);
     },
   );
-  router.get("/checkout/receipts/:token", async (req, res) => {
+  router.get(["/checkout/receipts", "/checkout/receipts/:token"], async (req, res) => {
+    const token = req.params.token ?? req.get("X-Receipt-Token") ?? "";
+    res.set("Cache-Control", "no-store");
     check(
-      /^[a-f0-9]{64}$/.test(req.params.token),
+      /^[a-f0-9]{64}$/.test(token),
       404,
       "NOT_FOUND",
       "Receipt not found.",
     );
     const t = await db("receipt_tokens")
-      .where({ token_hash: hash(req.params.token) })
+      .where({ token_hash: hash(token) })
       .where("expires_at", ">", new Date())
       .first();
     check(
@@ -594,7 +596,6 @@ export function shopRoutes(limiter) {
       "NOT_FOUND",
       "Receipt expired. Sign in to view your order history.",
     );
-    res.set("Cache-Control", "no-store");
     ok(
       res,
       await orderDto(await db("orders").where({ id: t.order_id }).first()),

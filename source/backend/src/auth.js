@@ -234,9 +234,10 @@ async function createSession(user, tx) {
   return { session, refresh };
 }
 async function signIn(req, res, user, { session, refresh }) {
-  await setCookies(res, user, session, refresh);
+  const profile = await self(user);
   await mergeGuestCart(req, res, user);
-  return self(user);
+  await setCookies(res, user, session, refresh);
+  return profile;
 }
 export function csrf(req, res, next) {
   if (["GET", "HEAD", "OPTIONS"].includes(req.method)) return next();
@@ -756,8 +757,8 @@ export function authRoutes(redis, limiter) {
       }
       return { user, credentials: await createSession(user, tx) };
     });
-    await signIn(req, res, user, credentials);
     const hasAddress = await db("addresses").where({ user_id: user.id }).first();
+    await signIn(req, res, user, credentials);
     ok(res, { returnTo: hasAddress ? state.returnTo : "/account/addresses?welcome=1" });
   });
   router.get("/me", requireCustomer, async (req, res) =>

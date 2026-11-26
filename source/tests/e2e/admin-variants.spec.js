@@ -78,6 +78,23 @@ test("Admin product editing preserves untouched tags, saves typed tags and exclu
   expect(unchangedTags.shortDescription).toBe(description);
   expect(unchangedTags.tags).toEqual(["desktop", "GPU, compact"]);
 
+  const stale = await page.context().newPage();
+  const staleDescription = stale.getByLabel("Short description", { exact: true });
+  const editUrl = `/api/v1/admin/products/${product.id}`;
+  async function assertStaleSaveRejected() {
+    await staleDescription.fill("Unrelated metadata from the stale product form.");
+    const response = stale.waitForResponse((result) =>
+      result.url().endsWith(editUrl) && result.request().method() === "PATCH",
+    );
+    await stale.getByRole("button", { name: "Save product", exact: true }).click();
+    expect((await response).status()).toBe(409);
+    await expect(stale.getByRole("alert")).toHaveText(
+      "This product changed. Reload the product before saving.",
+    );
+  }
+  await stale.goto(editPath);
+  await expect(stale.locator(".variant-editor")).toHaveCount(3);
+
   await page.goto(editPath);
   await expect(editors).toHaveCount(3);
   await expect(editors.getByLabel("SKU", { exact: true }).last()).toHaveValue(
@@ -94,6 +111,7 @@ test("Admin product editing preserves untouched tags, saves typed tags and exclu
   await expect(tags).toHaveValue("desktop, gaming gear");
   await page.getByRole("button", { name: "Save product", exact: true }).click();
   await expect(page).toHaveURL(/\/admin\/products$/);
+  await assertStaleSaveRejected();
   await page.getByPlaceholder("Name, brand or description").fill(product.name);
   const row = page.getByRole("row", { name: new RegExp(product.name) });
   await expect(row.getByRole("cell").nth(1)).toHaveText("1,000,000₫");
@@ -108,6 +126,7 @@ test("Admin product editing preserves untouched tags, saves typed tags and exclu
     await page.request.get(`/api/v1/admin/products/${product.id}`)
   ).json();
   expect(persisted.tags).toEqual(["desktop", "gaming gear"]);
+  expect(persisted.shortDescription).toBe(description);
   expect(persisted.variants).toEqual(
     product.variants.map((variant) => ({
       ...variant,
@@ -116,10 +135,18 @@ test("Admin product editing preserves untouched tags, saves typed tags and exclu
     })),
   );
 
+  await stale.reload();
+  await expect(stale.locator(".variant-editor")).toHaveCount(2);
   await page.goto("/admin/products");
   await page.getByPlaceholder("Name, brand or description").fill(product.name);
   page.once("dialog", (dialog) => dialog.accept());
   await row.getByRole("button", { name: `Archive ${product.name}` }).click();
   await expect(row.getByRole("cell").nth(1)).toHaveText("—");
   await expect(row.getByRole("cell").nth(2)).toHaveText("0");
+  await assertStaleSaveRejected();
+  const { data: archived } = await (await page.request.get(editUrl)).json();
+  expect(archived.shortDescription).toBe(description);
+  expect(archived.isActive).toBe(false);
+  expect(archived.revision).toBe(persisted.revision + 1);
+  await stale.close();
 });

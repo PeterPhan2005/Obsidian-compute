@@ -1377,8 +1377,11 @@ export function Checkout() {
 }
 export function Success() {
   const receipt = readReceiptToken(useLocation());
-  const q = useData(`/checkout/receipts/${encodeURIComponent(receipt ?? "")}`, {
+  const path = "/checkout/receipts";
+  const q = useData(path, {
     enabled: !!receipt,
+    queryKey: [path, receipt],
+    queryFn: ({ signal }) => api(path, { signal, headers: { "X-Receipt-Token": receipt } }),
   });
   const order = q.data?.data;
   if (receipt && q.isPending) return <Loading />;

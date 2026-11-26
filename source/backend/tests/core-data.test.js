@@ -6,15 +6,15 @@ import { fileURLToPath } from "node:url";
 import argon2 from "argon2";
 import knex from "knex";
 import { analytics } from "../src/analytics.js";
-import { productDto } from "../src/catalog.js";
-import { db } from "../src/db.js";
+import { listProducts, productDto } from "../src/catalog.js";
+import { db, json } from "../src/db.js";
 
 const project = process.env.OBSIDIAN_VERIFY_PROJECT;
 const migrations = fileURLToPath(new URL("../migrations", import.meta.url));
 const init = fileURLToPath(new URL("../src/init.js", import.meta.url));
 after(() => db.destroy());
 
-async function isolatedSchema(t) {
+async function verifyTestDatabase() {
   assert.match(project, /^obsidian-test-[\da-f]{32}$/);
   const url = new URL(process.env.DATABASE_URL);
   assert.equal(url.host, "127.0.0.1:15433");
@@ -22,6 +22,11 @@ async function isolatedSchema(t) {
   assert.equal(url.search, "");
   const identity = await db.raw("SELECT current_database() AS db");
   assert.equal(identity.rows[0].db, "obsidian_test");
+  return url;
+}
+
+async function isolatedSchema(t) {
+  const url = await verifyTestDatabase();
   const schema = `core_data_${randomUUID().replaceAll("-", "")}`;
   await db.raw("CREATE SCHEMA ??", [schema]);
   url.searchParams.set("options", `-c search_path=${schema}`);
@@ -33,6 +38,55 @@ async function isolatedSchema(t) {
   assert.deepEqual(rows, [{ db: "obsidian_test", schema }]);
   return { conn, url };
 }
+
+test("Public catalog count and page share a snapshot across a committed archive", async (t) => {
+  await verifyTestDatabase();
+  const fixture = await db("products").where({ is_active: true }).first();
+  const brand = `Snapshot-${randomUUID()}`;
+  const productId = randomUUID();
+  const variant = await db("product_variants")
+    .where({ product_id: fixture.id, is_active: true }).first();
+  const variantId = randomUUID();
+  await db.transaction(async (tx) => {
+    await tx("products").insert({
+      ...fixture,
+      id: productId,
+      slug: brand.toLowerCase(),
+      brand,
+      description_lines: json(fixture.description_lines),
+      tags: json(fixture.tags),
+    });
+    await tx("product_variants").insert({
+      ...variant, id: variantId, sku: brand, product_id: productId,
+    });
+  });
+  t.after(async () => {
+    await db("product_variants").where({ id: variantId }).delete();
+    await db("products").where({ id: productId }).delete();
+  });
+
+  const dialect = Object.getPrototypeOf(db.client);
+  const query = dialect._query;
+  let archived = false;
+  t.mock.method(dialect, "_query", async function (connection, statement) {
+    const result = await query.call(this, connection, statement);
+    if (!archived && statement.sql.startsWith('select count("p"."id")') &&
+        statement.bindings.includes(brand)) {
+      archived = true;
+      // A connection outside the listing transaction commits before page SQL.
+      await db("products").where({ id: productId }).update({ is_active: false });
+    }
+    return result;
+  });
+
+  const reading = await listProducts({ brand, pageSize: 1 });
+  assert.equal(archived, true);
+  assert.equal(reading.meta.totalItems, 1);
+  assert.deepEqual(reading.data.map((product) => product.id), [productId]);
+  const next = await listProducts({ brand, pageSize: 1 });
+  assert.equal(next.meta.totalItems, 0);
+  assert.deepEqual(next.data, []);
+});
 
 const dateRange = {
   period: "custom",

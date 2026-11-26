@@ -95,6 +95,47 @@ function pauseVerifiedPasswords(t, password, count) {
   };
 }
 
+test("Failed profile reads and guest-cart merges do not issue authentication cookies", async (t) => {
+  for (const table of ["addresses", "carts"]) {
+    await t.test(`${table} query fails after session creation`, async (fault) => {
+      const account = await makeAccount();
+      const client = new Client(api);
+      const guestToken = randomUUID();
+      await db("carts").insert({ guest_token_hash: hash(guestToken) });
+      client.cookies.set("guest_cart", guestToken);
+      const dialect = Object.getPrototypeOf(db.client);
+      const query = dialect._query;
+      let injected = false;
+      const stub = fault.mock.method(dialect, "_query", function (connection, statement) {
+        if (statement.sql.includes(`from "${table}"`)) {
+          injected = true;
+          throw new Error("Controlled sign-in query failure");
+        }
+        return query.call(this, connection, statement);
+      });
+
+      const result = await client.request("/auth/login/password", "POST", {
+        email: account.email,
+        password: account.password,
+      });
+      assert.equal(result.status, 500);
+      assert.equal(injected, true);
+      assert.equal(
+        result.headers.getSetCookie().filter((cookie) => /^(access|refresh)_token=/.test(cookie)).length,
+        0,
+      );
+      assert.equal(client.cookies.get("guest_cart"), guestToken);
+
+      stub.mock.restore();
+      const success = await client.login(account.email, account.password);
+      assert.equal(success.body.data.user.id, account.id);
+      assert.ok(client.cookies.get("access_token"));
+      assert.ok(client.cookies.get("refresh_token"));
+      assert.ok(await db("carts").where({ user_id: account.id }).first());
+    });
+  }
+});
+
 test("Identity-scoped reads, writes and refresh only use their intended principal", async () => {
   const original = await makeAccount();
   const next = await makeAccount();
