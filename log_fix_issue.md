@@ -213,3 +213,27 @@
 **Vấn đề:** Review Batch 06 phát hiện trường hợp trình duyệt đã kết nối lại WebSocket nhưng lần kiểm tra sản phẩm nội bộ đầu tiên bị timeout. Socket vẫn mở mà chưa vào product room, nên có thể bỏ lỡ cập nhật sau khi Core phục hồi.
 
 **Khắc phục:** Client thử join lại khi không nhận được acknowledgement trên kết nối hiện tại, hủy retry khi socket ngắt hoặc trang unmount và tải lại trạng thái qua REST sau acknowledgement. Probe Playwright tái hiện lỗi lookup khi Gateway vừa khởi động lại và xác nhận client vào lại room, khôi phục dữ liệu. Run `45777143382` đạt 76/76.
+
+### 37. ISSUE 22 – Receipt Token Exposure in Error Logs
+
+**Vấn đề:** Frontend đặt bearer token trong URL API. Hai lớp Nginx có thể ghi URL chứa token vào error log khi xảy ra lỗi, làm lộ quyền xem receipt khi token còn hiệu lực.
+
+**Khắc phục:** Request mới gửi token qua `X-Receipt-Token`. API vẫn kiểm tra token và thời hạn, đồng thời giữ tương thích với link và API cũ. Chỉ tắt error log ở các route receipt liên quan. Probe lỗi có kiểm soát xác nhận token giả lập vắng mặt trong log mới và route thường vẫn ghi lỗi. Log lịch sử và trạng thái token hiện hữu được giữ nguyên.
+
+### 38. ISSUE 32 – Stale Product Form Updates
+
+**Vấn đề:** Form Admin giữ trạng thái sản phẩm và biến thể từ lúc mở. Nếu một tab khác archive sản phẩm hoặc bỏ biến thể, lần lưu form cũ có thể bật lại trạng thái vừa bị tắt.
+
+**Khắc phục:** Form gửi `expectedRevision`. API kiểm tra revision trong điều kiện `UPDATE` và trả `409 PRODUCT_CONFLICT` nếu dữ liệu đã đổi. Save và archive tăng revision. Bản sửa giữ `stockVersion`, thứ tự khóa và ID biến thể lịch sử.
+
+### 39. ISSUE 33 – Authentication Cookie Ordering
+
+**Vấn đề:** `signIn()` đặt auth cookie trước khi đọc profile và merge guest cart. Phản hồi lỗi có thể vẫn cấp cookie phiên mới, khiến trình duyệt nhận phiên dù giao diện báo đăng nhập thất bại.
+
+**Khắc phục:** Luồng password, OTP và Google hoàn tất các thao tác cần thiết trước khi đặt auth cookie. Test gây lỗi khi đọc profile và merge cart xác nhận phản hồi lỗi không cấp cookie xác thực mới.
+
+### 40. ISSUE 34 – Catalog Snapshot Consistency
+
+**Vấn đề:** Catalog public không có từ khóa chạy truy vấn đếm và truy vấn lấy trang trên các snapshot khác nhau. Một lần archive xen giữa có thể làm tổng báo còn sản phẩm trong khi trang trả về rỗng.
+
+**Khắc phục:** Dùng chung transaction `REPEATABLE READ READ ONLY` cho tổng, trang và DTO. Regression test commit thao tác archive giữa hai truy vấn để xác nhận cùng phản hồi vẫn đọc một snapshot. Luồng tìm kiếm Elasticsearch giữ nguyên hành vi.
