@@ -19,6 +19,7 @@ const expectedPorts = {
   "api-a": [3000, 3101],
   "api-b": [3000, 3102],
 };
+const useImages = process.argv.includes("--images");
 const compose = [
   "compose",
   "-p",
@@ -27,6 +28,7 @@ const compose = [
   "docker-compose.yml",
   "-f",
   "compose.test.yaml",
+  ...(useImages ? ["-f", "compose.images.yaml"] : []),
 ];
 const dockerEnv = Object.fromEntries(
   Object.entries(process.env).filter(([key]) => !/^COMPOSE_/i.test(key)),
@@ -82,6 +84,18 @@ function checkDockerEndpoint() {
 function checkComposeConfig() {
   const config = JSON.parse(docker(...compose, "config", "--format", "json"));
   requireCondition(config.name === project, "Unexpected Compose project name.");
+  if (useImages) {
+    for (const service of ["init", "api-a", "api-b", "worker", "frontend"]) {
+      const expected = service === "frontend"
+        ? dockerEnv.OBSIDIAN_FRONTEND_IMAGE
+        : dockerEnv.OBSIDIAN_BACKEND_IMAGE;
+      requireCondition(
+        expected && config.services[service].image === expected &&
+          !config.services[service].build,
+        `Expected the specified prebuilt image and no build for ${service}.`,
+      );
+    }
+  }
   for (const [service, { ports = [] }] of Object.entries(config.services)) {
     const expected = expectedPorts[service];
     const [binding] = ports;
@@ -286,7 +300,7 @@ try {
 
   console.log(`Starting a fresh verification project: ${project}`);
   startAttempted = true;
-  run("docker", [...compose, "up", "-d", "--build"]);
+  run("docker", [...compose, "up", "-d", useImages ? "--no-build" : "--build"]);
   await verifyRunningProject();
 
   for (const [index, file] of localTests.entries()) {

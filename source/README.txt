@@ -134,7 +134,7 @@ sessions and guest carts persist in PostgreSQL. An independent worker drains the
 email outbox to Mailpit. Uploaded images live in a shared volume.
 
 The application is a modular monolith with horizontal scaling, not a microservice
-bonus claim. No bonus features are claimed in this delivery.
+bonus claim.
 
 API base: /api/v1
 Health: /api/v1/health (X-Instance-Id header identifies the responding replica)
@@ -176,6 +176,70 @@ manual subdirectories. Existing demonstration screenshots stay in docs/evidence/
 The default browser is Playwright Chromium. To use an already installed
 Chromium browser instead, set PLAYWRIGHT_CHROMIUM_EXECUTABLE to its absolute path.
 
+CONTINUOUS INTEGRATION AND DELIVERY
+----------------------------------
+The CI and GHCR delivery workflow runs on GitHub-hosted Ubuntu runners for
+pushes to fix-issue and main, and pull requests targeting either branch. The
+progress and backup-main branches are excluded. From source/, CI runs npm ci,
+npx playwright install --with-deps chromium, npm run build, and
+npm run verify -- --images. The last command uses the existing verifier and
+isolated test settings while running prebuilt images through compose.images.yaml.
+
+CI builds Linux amd64 Backend and Frontend images from the checked-out commit.
+After the full verifier succeeds, an image archive from that same run is passed
+to the delivery job on pushes to fix-issue or main in the original repository.
+The delivery job uses GITHUB_TOKEN with packages: write to push the verified
+images to GHCR without rebuilding. Pull requests validate only. The full
+commit SHA is the tag and the image revision label. The delivery job summary
+records the digest reported by GHCR for each image.
+
+Actions: https://github.com/PeterPhan2005/Obsidian-compute/actions/workflows/ci-cd.yml
+Packages: https://github.com/PeterPhan2005?tab=packages
+Open the workflow run for the intended SHA, check both jobs, and copy the two
+image references with @sha256 digests from its summary. Inspect the same SHA
+versions under Packages. GHCR versions are available after a successful publish.
+
+RUN DELIVERED IMAGES
+--------------------
+Check out the matching commit for the Compose files, Nginx configuration and
+catalog media. Run the following from source/ using modern Compose v2 and Docker
+with Linux amd64 support. Ports 8080 and 8025 must be free. If the packages are
+private, sign in to ghcr.io with a classic PAT that has read:packages and
+access to both packages. Public packages can be pulled anonymously.
+
+PowerShell example. Replace the placeholders with the actual digest references.
+
+    $env:OBSIDIAN_BACKEND_IMAGE = '<backend image reference with digest>'
+    $env:OBSIDIAN_FRONTEND_IMAGE = '<frontend image reference with digest>'
+    docker compose -p obsidian-delivered -f docker-compose.yml -f compose.images.yaml up -d --no-build
+    docker compose -p obsidian-delivered -f docker-compose.yml -f compose.images.yaml ps --all
+    curl.exe --fail http://localhost:8080/api/v1/health
+
+After startup, open http://localhost:8080 and check that catalog images load.
+The override removes application build definitions. Init, both API replicas and
+the email worker use the same Backend image. The Frontend uses its own image.
+Named volumes keep the delivered stack's data separate from the source stack.
+To use the normal submission, run docker compose up -d without the override
+or any GHCR sign-in. The pipeline provides Continuous Delivery through GHCR.
+Starting the delivered stack is explicit. The workflow does not deploy to a server.
+
+Before the first publishing push, confirm Actions are enabled, GITHUB_TOKEN can
+create or write both package names, the intended pull audience can read them,
+and the applicable Actions and GHCR billing terms are approved. The image
+archive is retained as an Actions artifact for one day and uses artifact storage.
+Newly created GHCR packages start private. Package visibility is managed separately.
+
+CI/CD BONUS EVIDENCE
+--------------------
+After remote verification, put a short description and evidence in Bonus/:
+the successful development-push Actions run for a specific commit, both GHCR
+SHA tags and digests, and a clean Compose startup showing init completion,
+API health and the storefront from those digest references. Also capture the
+source-based one-command startup. Link the evidence in Readme.txt and record
+the verified result in Rubrik.docx. Show the Actions run, published versions
+and delivered storefront in the narrated 1080p demo.mp4. Keep credentials,
+test traces and private data out of the submission evidence.
+
 KNOWN BOUNDARIES
 ----------------
 - Product specifications/prices are fictional academic configurations. Wikimedia
@@ -186,7 +250,7 @@ KNOWN BOUNDARIES
   Message-ID. As with SMTP generally, a crash after server acceptance but before
   marking a message sent can cause redelivery; exactly-once external delivery is
   not claimed.
-- No real charges, refunds, order cancellation, extra admin modules or bonus
-  features are implemented outside the specified scope.
+- No real charges, refunds, order cancellation or extra admin modules are
+  implemented outside the specified scope.
 - The narrated demo.mp4, actual Git teamwork history and instructor-provided
   Rubrik.docx must be completed by the team before submission.

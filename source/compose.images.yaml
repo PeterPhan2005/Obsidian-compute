@@ -1,0 +1,22 @@
+# Combine with docker-compose.yml to run prebuilt application images.
+x-backend-image: &backend-image
+  image: ${OBSIDIAN_BACKEND_IMAGE:?Set OBSIDIAN_BACKEND_IMAGE to a delivered backend image}
+  platform: linux/amd64
+
+services:
+  init:
+    <<: *backend-image
+    build: !reset null
+  api-a:
+    <<: *backend-image
+    build: !reset null
+  api-b:
+    <<: *backend-image
+    build: !reset null
+  worker:
+    <<: *backend-image
+    build: !reset null
+  frontend:
+    build: !reset null
+    image: ${OBSIDIAN_FRONTEND_IMAGE:?Set OBSIDIAN_FRONTEND_IMAGE to a delivered frontend image}
+    platform: linux/amd64

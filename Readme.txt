@@ -20,6 +20,11 @@ Thanh toán sandbox nội bộ không thu tiền thật. Email được giữ t�
 Không đưa source/.env chứa credentials vào gói nộp hoặc Git.
 
 Nhóm cần hoàn thành video demo có lời thuyết minh, Git Insights thật và
-Rubrik.docx do giảng viên cung cấp. Chưa tuyên bố bonus nào hoàn thành.
+Rubrik.docx do giảng viên cung cấp.
+
+Bonus CI/CD (ISSUE 17.1): GitHub Actions kiểm thử và chuyển image đã kiểm thử
+đến GHCR trên nhánh fix-issue và main. Mục CONTINUOUS INTEGRATION AND DELIVERY
+trong source/README.txt hướng dẫn xem run, đối chiếu digest và chạy image.
+Chỉ ghi nhận bonus sau khi xác minh run, package và deployment thực tế.
 
 
