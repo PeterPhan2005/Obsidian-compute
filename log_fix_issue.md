@@ -207,3 +207,9 @@
 **Vấn đề:** Workflow chạy `git archive HEAD:source` từ thư mục `source/`, tạo archive rỗng. Docker không nhận stdin là build context và báo lỗi Dockerfile ở lần chạy `45767628794`. CI dừng tại bước build image và job publish được bỏ qua.
 
 **Khắc phục:** Chạy `git archive` từ workspace root, giải nén cây `source` đã commit vào thư mục tạm và chỉ rõ build context cùng đường dẫn Dockerfile của từng image. Lần chạy `45768557009` đạt 74/74, sau đó publish cả hai image lên GHCR. Compose khởi động sạch từ hai digest đã công bố.
+
+### 36. ISSUE 17.2 – Product Room Rejoin After Lookup Timeout
+
+**Vấn đề:** Review Batch 06 phát hiện trường hợp trình duyệt đã kết nối lại WebSocket nhưng lần kiểm tra sản phẩm nội bộ đầu tiên bị timeout. Socket vẫn mở mà chưa vào product room, nên có thể bỏ lỡ cập nhật sau khi Core phục hồi.
+
+**Khắc phục:** Client thử join lại khi không nhận được acknowledgement trên kết nối hiện tại, hủy retry khi socket ngắt hoặc trang unmount và tải lại trạng thái qua REST sau acknowledgement. Probe Playwright tái hiện lỗi lookup khi Gateway vừa khởi động lại và xác nhận client vào lại room, khôi phục dữ liệu. Run `45777143382` đạt 76/76.

@@ -1,11 +1,11 @@
 # Obsidian Compute — Project State
 
-Checkpoint recorded 2026-11-26. Batches 01–05 have received technical advisor acceptance and are finalized on `origin/fix-issue`. Batch 04 closes Core Acceptance in its verified technical scope. Batch 05 closes technical acceptance of CI/CD. Instructor assessment and remaining external Core verification are open.
+Checkpoint recorded 2026-11-26. Batches 01–06 have received technical advisor acceptance and are finalized on `origin/fix-issue`. Batch 04 closes Core Acceptance in its verified technical scope. Batches 05 and 06 close technical acceptance of CI/CD and Microservices, respectively. Instructor assessment and remaining external Core verification are open.
 
 ## Repository and decisions
 
 - The previous linked worktree was removed after verifying the accepted Git tree and local-file hashes.
-- HEAD and verified remote `fix-issue` are `ab48843896a2440c110dccbd00159392cbc6ae00`. Upstream is 0 ahead / 0 behind. The accepted Core baseline is `f53ab3dd659ad40d374d413c0d7cc81b38a2ab71`. [GitHub commit](https://github.com/PeterPhan2005/Obsidian-compute/commit/ab48843896a2440c110dccbd00159392cbc6ae00)
+- HEAD and verified remote `fix-issue` are `35d7324423b8a0e941d3c88d548842b86b74d70c`. Upstream is 0 ahead / 0 behind. The accepted Core baseline is `f53ab3dd659ad40d374d413c0d7cc81b38a2ab71`. [GitHub commit](https://github.com/PeterPhan2005/Obsidian-compute/commit/35d7324423b8a0e941d3c88d548842b86b74d70c)
 - GitHub repository visibility was verified as public. Remote `main` remains at `47a62730a071a316d61ee089fdfb435c5100abfc` (Batch 01 baseline). Local `main` remains at `f135e63e3bf48aadff564db22773c877b9c5660b` (TASK 01/02 runtime baseline). Checkpoint authorization covers the accepted `fix-issue` implementation and the two progress documents on `progress`.
 - Remote `backup-main` was independently verified at `47a62730a071a316d61ee089fdfb435c5100abfc`, preserving the pre-fast-forward `main` checkpoint. Both remote branches remain at that SHA.
 - Owner approved fixing the core issues on the shared `fix-issue` branch, completing mandatory requirements, then implementing all four Bonus groups. Category recreation with an archived slug reactivates that record and preserves its identity. Restore as a separate Admin feature was excluded.
@@ -33,7 +33,8 @@ Checkpoint recorded 2026-11-26. Batches 01–05 have received technical advisor 
 - Phase 3/6 **Batch 03, TASK 10–12 and 12.1**, covering ISSUE 05, 06, 07, 19 and 20, is accepted and finalized.
 - Phase 4/6 **Batch 04, TASK 13 — Core Acceptance** passed independent re-review and the technical advisor accepted the verified implementation. Git finalization published the implementation to `origin/fix-issue`.
 - Phase 4/6 follow-up **TASK 13.1** completed the independent Core defect audit at `7233d6e4fbe0b02b14402dd76c4d5c35f0d544c0`. **TASK 13.2** resolved ISSUE 23–31 and received technical advisor acceptance after focused re-review. The final isolated verifier passed 74 results (46 backend and OAuth fixture results and 28 Playwright tests on local Chrome). Production build passed. Fast-forward remains deferred.
-- Phase 5/6 **Batch 05, TASK 14, ISSUE 17.1 — CI/CD** is **ACCEPTED / FINALIZED**. GitHub Actions and GHCR delivery were introduced after Core Acceptance and remain active for subsequent Bonus development. Next implementation task is **Batch 06, TASK 15, ISSUE 17.2 — Microservices**.
+- Phase 5/6 **Batch 05, TASK 14, ISSUE 17.1 — CI/CD** is **ACCEPTED / FINALIZED**. GitHub Actions and GHCR delivery were introduced after Core Acceptance and remain active for subsequent Bonus development.
+- Phase 5/6 **Batch 06, TASK 15, ISSUE 17.2 — Microservices** is **ACCEPTED / FINALIZED**. The technical advisor accepted the published candidate after independent diff review, remote CI/CD and delivered-image deployment. Next implementation task is **Batch 07, TASK 16, ISSUE 17.4 — Elasticsearch Product Search**.
 
 | Phase | Batch | Tasks | Issues / Scope |
 |---|---|---|---|
@@ -43,8 +44,8 @@ Checkpoint recorded 2026-11-26. Batches 01–05 have received technical advisor 
 | 3 | 03 | TASK 10–12, 12.1 | ISSUE 05: Product Tags; ISSUE 06: Simple Dashboard; ISSUE 07: Advanced Dashboard; ISSUE 19: Catalog Sort; ISSUE 20: Dashboard Tooltip Resize — accepted and committed |
 | 4 | 04 | TASK 13 | Core Acceptance (ISSUE 10–13), ISSUE 21 and 22, and follow-ups to ISSUE 02, 09 and 11 — accepted and committed |
 | 5 | 05 | TASK 14 | ISSUE 17.1: CI/CD — accepted and finalized |
-| 5 | 06 | TASK 15 | ISSUE 17.2: Microservices — next implementation, preliminary design approved |
-| 5 | 07 | TASK 16 | ISSUE 17.4: Elasticsearch |
+| 5 | 06 | TASK 15 | ISSUE 17.2: Microservices — accepted and finalized |
+| 5 | 07 | TASK 16 | ISSUE 17.4: Elasticsearch — next implementation |
 | 5 | 08 | TASK 17 | ISSUE 17.3: AI Features |
 | 6 | 09 | TASK 18 | Final System Acceptance |
 | 6 | Delivery | TASK 19 | ISSUE 15: Teamworking evidence, tracked throughout development |
@@ -61,6 +62,7 @@ Checkpoint recorded 2026-11-26. Batches 01–05 have received technical advisor 
 | TASK 13.2 / ISSUE 23–31 | `f53ab3dd659ad40d374d413c0d7cc81b38a2ab71` | fix(core): resolve security, concurrency, and data integrity defects |
 | TASK 14 / ISSUE 17.1 | `f32426ac4bf84ebf155ec9583c144b925ff7eb6a` | ci(delivery): automate verification and container image delivery |
 | TASK 14 / ISSUE 17.1 | `ab48843896a2440c110dccbd00159392cbc6ae00` | fix(ci): use extracted Git archive as Docker build context |
+| TASK 15 / ISSUE 17.2 | `35d7324423b8a0e941d3c88d548842b86b74d70c` | feat(microservices): separate realtime gateway from core API |
 
 ## Issue register
 
@@ -104,12 +106,19 @@ Checkpoint recorded 2026-11-26. Batches 01–05 have received technical advisor 
 - Backend: `ghcr.io/peterphan2005/obsidian-compute-backend@sha256:0703f961b8b428cef8721499254fa493d920471862c8acad9acd0e9db7c30f1a`. Frontend: `ghcr.io/peterphan2005/obsidian-compute-frontend@sha256:3300d0e14dcdcc589eff545184398dafe717510afe0d2f2816e819af0c93ddb3`.
 - A fresh local Compose project started with the published digests and `--no-build`. Init exited with code 0, both API replicas were healthy, the worker was running and all five application containers matched the expected image IDs. API health, storefront, catalog media and Mailpit returned HTTP 200. The stack was stopped after verification. Source-based `docker compose up -d` compatibility was verified during Batch 05 local acceptance. GHCR provides Continuous Delivery; the evidence covers explicit local Compose deployment.
 
-**ISSUE 17.2 — Microservices** is **PENDING IMPLEMENTATION**. The preliminary Batch 06 design is approved: Core API, Realtime Gateway and Notification Worker, existing Redis Pub/Sub, and a shared Backend image with separate entrypoints. The requirement calls for at least three services in addition to the frontend and database, plus evidence of asynchronous decoupling. **ISSUE 17.3 — AI-related Features** and **ISSUE 17.4 — Elasticsearch Product Search** remain **PENDING**. Verify provider access, costs and grading evidence before external actions. See `NodeJS Final Project.pdf` (p. 6).
+**ISSUE 17.2 — Microservices** is **ACCEPTED / FINALIZED** at `35d7324423b8a0e941d3c88d548842b86b74d70c`. Core API (two replicas), Realtime Gateway and Notification Worker run as three application services with separate entrypoints in one Backend image. Core publishes comment and rating events to Redis Pub/Sub after database writes. Gateway relays to product rooms and checks active products through a bounded private Core HTTP request. Redis subscriber recovery triggers a REST refresh on connected browsers. The worker retains the transactional PostgreSQL email outbox. The requirement calls for three services beyond frontend and database plus evidence of asynchronous decoupling. See `NodeJS Final Project.pdf` (p. 6).
+
+- [Actions run 45777143382](https://github.com/PeterPhan2005/Obsidian-compute/actions/runs/45777143382) passed production build and **76/76** results (47 backend/OAuth, 29 Playwright). Coverage includes events from both Core replicas, product-room and Origin isolation, Gateway and Redis subscriber recovery, and checkout with the worker stopped followed by outbox delivery after restart. Both CI/CD P3 improvements were verified: explicit timeouts of 20 minutes for `verify` and 10 for `publish`, and runtime image ID checks for all six application containers including the completed init container and Gateway.
+- GHCR published both verified images from the same run after CI success. Both full-SHA tags and OCI revision labels match the accepted commit. Backend: `ghcr.io/peterphan2005/obsidian-compute-backend@sha256:bdc3f001d9bb6aed724bc5250c29ddea200d23cc3f5c6ae60901b084a2a5d5b6`. Frontend: `ghcr.io/peterphan2005/obsidian-compute-frontend@sha256:34bb9d57eba34adee11e44349884d226f108ba59e81f2d3b4e3f6adc0c08085e`.
+- Fresh source-based and local-image Compose deployments passed before publication. A fresh delivered-image deployment pulled both GHCR digests and started with `--no-build`. Init exited 0, both Core replicas and Gateway were healthy, worker ran, and all six image IDs matched. A comment written through `api-a` returned HTTP 201 and arrived through Redis and the Gateway WebSocket with the same product and comment IDs. The test stack was stopped.
+- Redis Pub/Sub is non-durable. An isolated publisher failure can drop a UI notification after the business write commits, even with an active subscriber and browser connection. PostgreSQL remains shared and the Gateway runs as one instance. The verification establishes service isolation and recovery in Compose. It establishes neither exactly-once delivery nor full service high availability.
+
+**ISSUE 17.3 — AI-related Features** and **ISSUE 17.4 — Elasticsearch Product Search** remain **PENDING**. Verify provider access, costs and grading evidence before external actions.
 
 ## Implementation invariants and verification
 
 - `NodeJS Final Project.pdf` controls scope. Computers/components only, exactly one Admin role holder, guest ordering without manual registration, registration limited to the specified fields, 5-character alphanumeric coupons with no expiration and at most 10 uses, and no extra Admin modules. Treat the `TASK_01_REQUIREMENTS_COMPLIANCE_AUDIT.md` as historical where implementation has since changed.
-- Node.js/Express, React/Vite, PostgreSQL/Knex, Redis/Socket.IO, Nginx, two API replicas, and Mailpit/email worker under Compose. Checkout retains existing payment-state and transaction semantics. Guest receipt is token-based and time-limited; private Customer history is account-scoped. Neither the payment nor the order state machine changed in Batch 01.
+- Node.js/Express, React/Vite, PostgreSQL/Knex, Redis Pub/Sub, Socket.IO Realtime Gateway, Nginx, two Core API replicas, and Mailpit/Notification Worker run under Compose. Checkout retains existing payment-state and transaction semantics. Guest receipt is token-based and time-limited; private Customer history is account-scoped. Neither the payment nor the order state machine changed in Batch 01.
 - [Stock migration](https://github.com/PeterPhan2005/Obsidian-compute/blob/7233d6e4fbe0b02b14402dd76c4d5c35f0d544c0/source/backend/migrations/002_variant_stock_version.js) adds `stock_version` default 0 without changing existing stock. Admin reads receive `stockVersion`. Inventory PATCH requires `expectedStockVersion`; Product PATCH updates existing variant stock only when that field is present. Stale versions return `409 STOCK_CONFLICT`. Checkout updates stock and version together.
 - [Admin transactions](https://github.com/PeterPhan2005/Obsidian-compute/blob/7233d6e4fbe0b02b14402dd76c4d5c35f0d544c0/source/backend/src/admin.js) lock the destination category before locking the product and variant rows. Product save and category archive serialize on the category row. Variant row locking follows ascending ID as in checkout. Category reactivation uses conditional upsert on unique slug. Keep seed and test DB separation.
 - Verification tied to candidates: TASK 02 `f135e63…` had 6 unit, 14 integration and 7 E2E passes. TASK 03 changes on `47a62730…`, later committed as `fb27773…`, had 6 unit, 15 integration and 7 E2E passes across runs; an initial E2E login rate-limit failure passed on the separate rerun. Batch 01 combined candidate `afa2cc9…` had 9 targeted integration and 4 targeted E2E passes. ISSUE 18 candidate `a42d857…` had 10 selected integration test results pass, including three lock-ordered HTTP scenarios. Independent acceptance reused each matching candidate's evidence. Checkpoint push introduced no tracked changes or test run.
