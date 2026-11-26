@@ -33,6 +33,8 @@ jobs:
           node-version: '24'
           package-manager-cache: false
       - run: npm ci
+        env:
+          ONNXRUNTIME_NODE_INSTALL_CUDA: skip
       - run: npx playwright install --with-deps chromium
       - run: npm run build
       - name: Build candidate images from the checked-out commit

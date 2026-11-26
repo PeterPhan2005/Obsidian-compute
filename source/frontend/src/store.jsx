@@ -53,6 +53,7 @@ import {
   useSession,
 } from "./ui";
 import "./catalog-tags.css";
+import { Recommendations } from "./recommendations";
 
 function useStoreMetadata(title, description) {
   useEffect(() => {
@@ -275,6 +276,7 @@ export function Catalog() {
       >
         Computers and components. Nothing ordinary.
       </PageTitle>
+      <Recommendations categories={cats.data?.data ?? []} />
       <div className="catalog-toolbar">
         <div className="catalog-search">
           <input
