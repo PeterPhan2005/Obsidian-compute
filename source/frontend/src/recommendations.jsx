@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ArrowUpRight, Sparkles } from "lucide-react";
 import { api, money, queryString } from "./api";
 import { ErrorBox, Field, Pagination, useSession } from "./ui";
@@ -8,7 +8,7 @@ import "./recommendations.css";
 const maxCandidates = 64;
 const requestTimeout = 120_000;
 const negativeRequirement =
-  /\b(?:not|no|without|don['’]t|exclude|avoid)\b|(?<!\p{L})(?:không(?!\s+(?:gian|dây|chỉ)\b)|chẳng|đừng|ngoại trừ|loại trừ)(?!\p{L})/iu;
+  /\b(?:not|no|without|don['’]t|exclude|avoid)\b|(?<![\p{L}\p{M}\p{N}_])(?:không(?!\s+(?:gian|dây|chỉ)(?![\p{L}\p{M}\p{N}_]))|chẳng|đừng|ngoại trừ|loại trừ)(?![\p{L}\p{M}\p{N}_])/iu;
 const capacityRequirement = /\b\d+(?:[.,]\d+)?\s*(?:gb|tb|gib|tib)\b/iu;
 
 function eligibleVariant(product, category, maxPrice) {
@@ -37,6 +37,21 @@ function productText(product) {
     ),
     details: product.descriptionLines.slice(0, 5),
   };
+}
+
+async function checkRecommendation(candidate, category, maxPrice, signal) {
+  try {
+    const { data: product } = await api(`/products/${candidate.slug}`, { signal });
+    const variant = eligibleVariant(product, category, maxPrice);
+    if (
+      product.id === candidate.id &&
+      variant &&
+      JSON.stringify(productText(product)) === JSON.stringify(productText(candidate))
+    )
+      return { product, variant };
+  } catch (error) {
+    if (error.status !== 404) throw error;
+  }
 }
 
 function rank(worker, payload, signal, onStatus) {
@@ -102,17 +117,75 @@ export function Recommendations({ categories }) {
 
 function RecommendationForm({ categories }) {
   const [status, setStatus] = useState("idle");
-  const [results, setResults] = useState([]);
+  const [recommendation, setRecommendation] = useState(null);
   const worker = useRef(null);
   const request = useRef(null);
+  const availabilityRequest = useRef(null);
+  const openingResult = useRef(false);
+  const navigate = useNavigate();
+  const results = recommendation?.results ?? [];
   const busy = ["catalog", "loading", "ranking"].includes(status);
   useEffect(
     () => () => {
       request.current?.abort();
+      availabilityRequest.current?.controller.abort();
       worker.current?.terminate();
     },
     [],
   );
+
+  function refreshAvailability() {
+    if (availabilityRequest.current) return availabilityRequest.current.promise;
+    const controller = new AbortController();
+    const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(5000)]);
+    const { category, maxPrice } = recommendation;
+    const promise = Promise.all(results.map(async ({ product }) => {
+      try {
+        return await checkRecommendation(product, category, maxPrice, signal);
+      } catch {
+        // A transient error leaves a detail link without an availability claim.
+        return { product };
+      }
+    })).then((checked) => {
+      if (controller.signal.aborted) return;
+      const available = checked.filter(Boolean);
+      setRecommendation({ category, maxPrice, results: available });
+      return available;
+    }).finally(() => {
+      if (availabilityRequest.current?.controller === controller)
+        availabilityRequest.current = null;
+    });
+    availabilityRequest.current = { controller, promise };
+    return promise;
+  }
+
+  useEffect(() => {
+    if (!recommendation?.results.length) return;
+    function refreshOnReturn() {
+      if (document.visibilityState === "visible") void refreshAvailability();
+    }
+    window.addEventListener("focus", refreshOnReturn);
+    document.addEventListener("visibilitychange", refreshOnReturn);
+    return () => {
+      window.removeEventListener("focus", refreshOnReturn);
+      document.removeEventListener("visibilitychange", refreshOnReturn);
+    };
+  }, [recommendation]);
+
+  async function openResult(event, product) {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.altKey || event.shiftKey)
+      return;
+    event.preventDefault();
+    if (openingResult.current) return;
+    openingResult.current = true;
+    try {
+      const available = await refreshAvailability();
+      if (available?.some((result) => result.product.id === product.id))
+        navigate(`/products/${product.slug}`);
+    } finally {
+      openingResult.current = false;
+    }
+  }
 
   async function submit(event) {
     event.preventDefault();
@@ -122,7 +195,9 @@ function RecommendationForm({ categories }) {
     const category = form.get("category");
     const budget = form.get("budget");
     const maxPrice = budget === "" ? undefined : Number(budget);
-    setResults([]);
+    availabilityRequest.current?.controller.abort();
+    availabilityRequest.current = null;
+    setRecommendation(null);
     if (query.length < 5) {
       setStatus("invalid");
       return;
@@ -178,28 +253,13 @@ function RecommendationForm({ categories }) {
         setStatus,
       );
       const current = await Promise.all(
-        ids.slice(0, 3).map(async (id) => {
-          const candidate = byId.get(id);
-          try {
-            const { data: product } = await api(`/products/${candidate.slug}`, {
-              signal,
-            });
-            const variant = eligibleVariant(product, category, maxPrice);
-            if (
-              product.id === id &&
-              variant &&
-              JSON.stringify(productText(product)) ===
-                JSON.stringify(productText(candidate))
-            )
-              return { product, variant };
-          } catch (error) {
-            if (error.status !== 404) throw error;
-          }
-        }),
+        ids.slice(0, 3).map((id) =>
+          checkRecommendation(byId.get(id), category, maxPrice, signal),
+        ),
       );
       signal.throwIfAborted();
       const available = current.filter(Boolean);
-      setResults(available);
+      setRecommendation({ category, maxPrice, results: available });
       setStatus(available.length ? "done" : "empty");
     } catch {
       if (signal.reason?.name !== "AbortError") {
@@ -261,13 +321,13 @@ function RecommendationForm({ categories }) {
         {status === "ranking" && "Matching your needs to available products…"}
         {status === "narrow" &&
           `More than ${maxCandidates} products match these filters. Choose a category or lower your budget.`}
-        {status === "empty" &&
+        {(status === "empty" || (status === "done" && results.length === 0)) &&
           "No suitable products available. Try a different description or adjust your filters."}
         {status === "invalid" &&
           "Describe what you need in at least five characters."}
         {status === "clarify" &&
           "Describe the intended use in positive terms. Use the category and budget filters, and check exact specifications on product pages."}
-        {status === "done" &&
+        {status === "done" && results.length > 0 &&
           `${results.length} recommended ${results.length === 1 ? "product" : "products"}`}
       </div>
       {status === "failed" && (
@@ -289,6 +349,7 @@ function RecommendationForm({ categories }) {
                 <Link
                   className="recommendation-result"
                   to={`/products/${product.slug}`}
+                  onClick={(event) => openResult(event, product)}
                 >
                   <img
                     src={product.thumbnailUrl}
@@ -297,8 +358,14 @@ function RecommendationForm({ categories }) {
                   />
                   <span>
                     <strong>{product.name}</strong>
-                    <small>{Object.values(variant.attributes).join(" · ")}</small>
-                    <span>{money(variant.priceVnd)} · In stock</span>
+                    {variant ? (
+                      <>
+                        <small>{Object.values(variant.attributes).join(" · ")}</small>
+                        <span>{money(variant.priceVnd)} · In stock</span>
+                      </>
+                    ) : (
+                      <span>Check availability</span>
+                    )}
                   </span>
                   <ArrowUpRight size={16} aria-hidden="true" />
                 </Link>

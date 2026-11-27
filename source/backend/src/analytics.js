@@ -1,5 +1,5 @@
 import { DateTime } from "luxon";
-import { db } from "./db.js";
+import { db, readSnapshot } from "./db.js";
 import { check } from "./lib.js";
 const zone = "Asia/Ho_Chi_Minh";
 export function timeRange(q = {}, now = DateTime.now().setZone(zone)) {
@@ -263,18 +263,19 @@ export async function analytics(q, conn = db) {
     byCategory: [...byCategory.values()],
   };
 }
-export async function summary(days = 30) {
-  const orders = await db("orders");
-  const items = await db("order_items");
+export function summary(days = 30) {
+  return readSnapshot((conn) => summaryRows(conn, days));
+}
+
+async function summaryRows(conn, days) {
+  const orders = await conn("orders");
+  const items = await conn("order_items");
   const totals = metrics(orders, items);
-  const [{ count: totalUsers }, { count: newUsers }] = await Promise.all([
-    db("users").where({ role: "CUSTOMER" }).count().first(),
-    db("users")
-      .where({ role: "CUSTOMER" })
-      .where("created_at", ">=", new Date(Date.now() - days * 86400000))
-      .count()
-      .first(),
-  ]);
+  const customers = conn("users").where({ role: "CUSTOMER" }).count();
+  const { count: totalUsers } = await customers.clone().first();
+  const { count: newUsers } = await customers
+    .where("created_at", ">=", new Date(Date.now() - days * 86400000))
+    .first();
   const products = {};
   for (const o of orders)
     for (const i of allocatedItems(
@@ -290,7 +291,7 @@ export async function summary(days = 30) {
       p.quantitySold += i.quantity;
       p.revenueVnd += i.revenueVnd;
     }
-  const annual = await analytics({});
+  const annual = await analytics({}, conn);
   return {
     totals: {
       ...totals,

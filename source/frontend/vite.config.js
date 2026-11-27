@@ -1,4 +1,17 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwind from '@tailwindcss/vite';
-export default defineConfig({plugins:[react(),tailwind()],server:{proxy:{'/api':'http://localhost:3000','/media':'http://localhost:3000','/socket.io':{target:'http://localhost:3000',ws:true}}},build:{chunkSizeWarningLimit:1000}});
+
+export default defineConfig({
+  plugins: [react(), tailwind()],
+  // The dependency scanner does not discover imports in the lazy worker.
+  optimizeDeps: { include: ['@huggingface/transformers'] },
+  server: {
+    proxy: {
+      '/api': 'http://localhost:3000',
+      '/media': 'http://localhost:3000',
+      '/socket.io': { target: 'http://localhost:3000', ws: true },
+    },
+  },
+  build: { chunkSizeWarningLimit: 1000 },
+});

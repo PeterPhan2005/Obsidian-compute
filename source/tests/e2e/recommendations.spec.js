@@ -1,12 +1,18 @@
 import { expect, test } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import pg from "pg";
+import { createServer } from "vite";
 
 const seed = JSON.parse(
   readFileSync(new URL("../../backend/seeds/catalog.json", import.meta.url)),
 );
 const portability = "A portable notebook for reading documents while I travel";
+const travelAndWork = "Tôi cần laptop nhẹ không chỉ để làm việc mà còn để mang đi du lịch";
 const gpuNeed = "Tôi muốn chơi trò chơi và dựng cảnh ba chiều";
 const panel = (page) =>
   page.getByRole("region", { name: "AI product recommendations" });
@@ -14,8 +20,8 @@ const results = (page) =>
   panel(page).getByRole("list", { name: "Recommended products" });
 const status = (page) => panel(page).getByRole("status");
 
-async function open(page) {
-  await page.goto("/products");
+async function open(page, url = "/products") {
+  await page.goto(url);
   await expect(page.locator(".product-card").first()).toBeVisible();
   const toggle = panel(page).getByRole("button", {
     name: "AI product recommendations",
@@ -64,6 +70,7 @@ test("English and Vietnamese needs rank different real catalog products without 
     [portability, "laptop"],
     ["I fly often and need a portable notebook for documents", "laptop"],
     ["Tôi cần một chiếc laptop nhỏ nhẹ để làm việc khi đi xa", "laptop"],
+    [travelAndWork, "laptop"],
     ["A screen with more room for several windows side by side", "monitor"],
     ["Một màn hình lớn để đặt nhiều cửa sổ làm việc cạnh nhau", "monitor"],
     ["Tôi muốn xem phim trên một màn hình lớn", "monitor"],
@@ -138,6 +145,62 @@ test("English and Vietnamese needs rank different real catalog products without 
   expect(external).toEqual([]);
 });
 
+test("A cold Vite optimizer keeps the first AI request running with local WASM", async ({
+  page,
+  baseURL,
+}) => {
+  test.setTimeout(120_000);
+  const cacheDir = await mkdtemp(join(tmpdir(), "obsidian-vite-cold-"));
+  let dev;
+  try {
+    dev = await createServer({
+      root: fileURLToPath(new URL("../../frontend/", import.meta.url)),
+      cacheDir,
+      server: {
+        host: "127.0.0.1",
+        proxy: {
+          "/api": baseURL,
+          "/media": baseURL,
+          // Use the verifier's packaged model even when the host has no prepared model assets.
+          "/recommendation-assets": baseURL,
+        },
+      },
+    });
+    await dev.listen();
+    const origin = new URL(dev.resolvedUrls.local[0]).origin;
+    const assets = [];
+    let navigations = 0;
+    page.on("response", (response) => {
+      if (/\.(?:onnx|wasm)$/.test(new URL(response.url()).pathname))
+        assets.push(response);
+    });
+    page.on("framenavigated", (frame) => {
+      if (frame === page.mainFrame()) navigations++;
+    });
+    await open(page, `${origin}/products`);
+    expect(assets).toHaveLength(0);
+    const before = navigations;
+
+    await ask(page, travelAndWork);
+    await expect(results(page).getByRole("link").first()).toBeVisible({ timeout: 45_000 });
+    expect(navigations).toBe(before);
+    await expect(panel(page).getByRole("textbox")).toHaveValue(travelAndWork);
+    const model = assets.find((response) => new URL(response.url()).pathname.endsWith(".onnx"));
+    const wasm = assets.find((response) =>
+      response.request().resourceType() === "fetch" &&
+      new URL(response.url()).pathname.endsWith(".wasm"),
+    );
+    expect(model?.ok()).toBe(true);
+    expect(wasm?.ok()).toBe(true);
+    expect(new URL(model.url()).origin).toBe(origin);
+    expect(new URL(wasm.url()).origin).toBe(origin);
+    expect(wasm.headers()["content-type"]).toMatch(/^application\/wasm\b/);
+  } finally {
+    await dev?.close();
+    await rm(cacheDir, { recursive: true, force: true });
+  }
+});
+
 test("Recommendations respect the category and show the available variant price and detail link on mobile", async ({
   page,
 }) => {
@@ -178,6 +241,58 @@ test("Recommendations respect the category and show the available variant price 
   const href = await links.first().getAttribute("href");
   await links.first().click();
   await expect(page).toHaveURL(href);
+});
+
+test("Rendered recommendations refresh archived products and current offers without reranking", async ({ page }) => {
+  test.setTimeout(90_000);
+  await page.addInitScript(() => {
+    const post = Worker.prototype.postMessage;
+    window.recommendationRuns = 0;
+    Worker.prototype.postMessage = function (payload, ...transfer) {
+      if (payload?.query && Array.isArray(payload.candidates)) window.recommendationRuns++;
+      return post.call(this, payload, ...transfer);
+    };
+  });
+  await open(page);
+  await panel(page).getByLabel("Product category").selectOption("laptop");
+  await panel(page).getByLabel("Maximum budget (VND)").fill("50000000");
+  await ask(page, portability);
+  const links = results(page).getByRole("link");
+  await expect(links).toHaveCount(3, { timeout: 45_000 });
+  const paths = await links.evaluateAll((items) => items.map((item) => item.pathname));
+  const archived = new Set([paths[0]]);
+  const repriced = paths[1];
+  await page.route("**/api/v1/products/*", async (route) => {
+    const path = new URL(route.request().url()).pathname.slice("/api/v1".length);
+    if (archived.has(path)) {
+      await route.fulfill({ status: 404, json: { error: { code: "NOT_FOUND" } } });
+      return;
+    }
+    if (path !== repriced) return route.continue();
+    const response = await route.fetch();
+    const { data } = await response.json();
+    data.variants = [
+      { ...data.variants[0], isAvailable: false, stock: 0 },
+      { ...data.variants[1], isAvailable: true, stock: 3, priceVnd: 49_500_000 },
+    ];
+    await route.fulfill({ response, json: { data } });
+  });
+
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+  await expect(links).toHaveCount(paths.length - 1);
+  await expect(links.first()).toHaveAttribute("href", repriced);
+  await expect(links.first()).toContainText("49,500,000₫ · In stock");
+  expect(await links.evaluateAll((items) => items.map((item) => item.pathname))).toEqual(paths.slice(1));
+  await expect(panel(page).getByRole("button", { name: "Page 1" })).toBeVisible();
+
+  archived.add(repriced);
+  await links.evaluateAll(([first, second]) => {
+    first.click();
+    second.click();
+  });
+  await expect(links).toHaveCount(paths.length - 2);
+  await expect(page).toHaveURL(/\/products$/);
+  expect(await page.evaluate(() => window.recommendationRuns)).toBe(1);
 });
 
 test("Real catalog entries outside the bound or without an eligible visible offer are not ranked", async ({

@@ -198,7 +198,12 @@ export function Field({ label, children, hint, ...props }) {
     </label>
   );
 }
-export function AddressFields({ value, onChange, registration = false }) {
+export function AddressFields({
+  value,
+  onChange,
+  registration = false,
+  phoneOptional = false,
+}) {
   const fields = registration
     ? [
         ["line1", "Street address"],
@@ -221,7 +226,8 @@ export function AddressFields({ value, onChange, registration = false }) {
           key={key}
           label={label}
           value={value[key] || ""}
-          required
+          required={key !== "phone" || !phoneOptional}
+          hint={key === "phone" && phoneOptional ? "Optional" : undefined}
           onChange={(e) =>
             onChange({ ...value, [key]: e.target.value, country: "VN" })
           }

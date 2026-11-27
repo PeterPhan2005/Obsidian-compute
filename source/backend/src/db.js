@@ -13,6 +13,9 @@ export const db = knex({
     "postgres://obsidian:local-db-password@localhost:5432/obsidian",
   pool: { min: 0, max: 10 },
 });
+export function readSnapshot(work) {
+  return db.transaction(work, { isolationLevel: "repeatable read", readOnly: true });
+}
 export const camel = (value) => {
   if (Array.isArray(value)) return value.map(camel);
   if (value instanceof Date) return value.toISOString();

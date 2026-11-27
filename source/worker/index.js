@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
 import { db } from "../backend/src/db.js";
-import { escapeHtml } from "../backend/src/lib.js";
+import { escapeHtml, hash, id, keyedHash } from "../backend/src/lib.js";
 const smtpHost = process.env.SMTP_HOST || "localhost";
 const smtpSecure = process.env.SMTP_SECURE === "true";
 const smtpUser = process.env.SMTP_USER;
@@ -30,6 +30,41 @@ function orderMail(o) {
   const a = o.shippingAddress;
   return `Thank you for your order, ${o.buyerName}.\n\nOrder ${o.orderNumber}\n${lines}\n\nSubtotal: ${money(o.subtotalVnd)}\nShipping: ${money(o.shippingFeeVnd)}\nTax: ${money(o.taxVnd)}\nCoupon: -${money(o.couponDiscountVnd)}\nPoints: -${money(o.pointsDiscountVnd)}\nTotal paid: ${money(o.totalPaidVnd)}\nPayment: sandbox — no real charge\nStatus: ${o.status}\nPoints earned: ${o.pointsEarned}\n\nDelivery: ${a.recipientName}, ${a.phone}\n${a.line1}, ${a.ward}, ${a.district}, ${a.city}, ${a.country}\n\nSign in with this email to view your purchase history.\nOBSIDIAN COMPUTE`;
 }
+
+async function isAuthMailCurrent(tx, { type, payload }) {
+  const { challengeId, to, text } = payload ?? {};
+  if (typeof to !== "string" || typeof text !== "string") return false;
+
+  const isOtp = type === "OTP";
+  const challenge = isOtp
+    ? tx("login_otps as c")
+        .join("users as u", "u.email", "c.email")
+        .select("c.consumed_at as invalidated_at", "c.attempts")
+    : tx("password_reset_tokens as c")
+        .join("users as u", "u.id", "c.user_id")
+        .select("c.used_at as invalidated_at");
+  challenge.select("c.expires_at").where({ "u.email": to, "u.is_banned": false });
+  if (challengeId !== undefined) {
+    if (!id.safeParse(challengeId).success) return false;
+    challenge.where("c.id", challengeId);
+  } else if (isOtp) {
+    const code = /^Your sign-in code is (\d{6})\./.exec(text)?.[1];
+    if (!code) return false;
+    challenge.where("c.code_hash", keyedHash(`${to}:${code}`));
+  } else {
+    const token = /\/reset-password[?#]token=([A-Za-z0-9_-]{43})(?=\s|$)/.exec(text)?.[1];
+    if (!token) return false;
+    challenge.where("c.token_hash", hash(token));
+  }
+
+  // A legacy OTP reused across two challenges cannot identify one issuance.
+  // Read committed state without holding account/challenge locks during SMTP.
+  const rows = await challenge.limit(2);
+  const [row] = rows;
+  return rows.length === 1 && !row.invalidated_at &&
+    row.expires_at > new Date() && (!isOtp || row.attempts < 5);
+}
+
 let running = true;
 process.on("SIGTERM", () => {
   running = false;
@@ -49,6 +84,13 @@ while (running) {
         .skipLocked()
         .first();
       if (!job) return false;
+      if (["OTP", "RESET"].includes(job.type) && !(await isAuthMailCurrent(tx, job))) {
+        await tx("email_outbox").where({ id: job.id }).update({
+          status: "discarded",
+          last_error: "AUTH_CHALLENGE_INVALID",
+        });
+        return true;
+      }
       try {
         const p = job.payload,
           text = p.order ? orderMail(p.order) : p.text;

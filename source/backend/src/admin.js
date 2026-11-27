@@ -9,7 +9,7 @@ import { db, camel, json } from "./db.js";
 import { check, id, text, money, ok, paging, meta } from "./lib.js";
 import { requireAdmin } from "./auth.js";
 import { listProducts, getProduct, variantDto } from "./catalog.js";
-import { listOrders, orderDto } from "./orders.js";
+import { listOrders, orderDto, readOrder } from "./orders.js";
 import { analytics, summary, timeRange } from "./analytics.js";
 const mediaDir = process.env.MEDIA_DIR || path.resolve("media");
 const categoryNames = {
@@ -535,18 +535,13 @@ admin.get("/orders", async (req, res) => {
             r.end.toJSDate(),
           );
       },
-      db,
       true,
     ),
   );
 });
-admin.get("/orders/:orderId", async (req, res) => {
-  const row = await db("orders")
-    .where({ id: id.parse(req.params.orderId) })
-    .first();
-  check(row, 404, "NOT_FOUND", "Order not found.");
-  ok(res, await orderDto(row, db, true));
-});
+admin.get("/orders/:orderId", async (req, res) =>
+  ok(res, await readOrder({ id: id.parse(req.params.orderId) }, true)),
+);
 admin.patch("/orders/:orderId/status", async (req, res) => {
   const b = z
     .object({
@@ -556,10 +551,10 @@ admin.patch("/orders/:orderId/status", async (req, res) => {
     .strict()
     .parse(req.body);
   const orderId = id.parse(req.params.orderId);
-  const order = await db.transaction(async (tx) => {
+  const dto = await db.transaction(async (tx) => {
     const o = await tx("orders").where({ id: orderId }).forUpdate().first();
     check(o, 404, "NOT_FOUND", "Order not found.");
-    if (o.status === b.newStatus) return o;
+    if (o.status === b.newStatus) return orderDto(o, tx, true);
     check(
       o.status === b.expectedCurrentStatus &&
         { pending: "confirmed", confirmed: "shipping", shipping: "delivered" }[
@@ -577,10 +572,10 @@ admin.patch("/orders/:orderId/status", async (req, res) => {
       order_id: o.id,
       status: b.newStatus,
       changed_by: req.user.id,
+      changed_at: tx.raw("clock_timestamp()"),
     });
-    return updated;
+    return orderDto(updated, tx, true);
   });
-  const dto = await orderDto(order, db, true);
   ok(res, { order: dto, statusHistory: dto.statusHistory });
 });
 admin.get("/coupons", async (req, res) => {

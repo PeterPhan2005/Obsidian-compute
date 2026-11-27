@@ -191,9 +191,9 @@ async function listProductRows(conn, q, page, pageSize, admin, matches) {
     filters: { selected: q },
   };
 }
-export async function categories() {
+export async function categories(conn = db) {
   return camel(
-    await db("categories as c")
+    await conn("categories as c")
       .leftJoin("products as p", function () {
         this.on("p.category_id", "=", "c.id").andOnVal("p.is_active", true);
       })
@@ -204,25 +204,48 @@ export async function categories() {
       .orderBy("c.name"),
   );
 }
-const homeSections = [
+const homeCollections = [
   ["new", "Fresh arrivals"],
   ["best_sellers", "The crowd favourites"],
-  ["category:laptop", "Take your work anywhere"],
-  ["category:monitor", "See the bigger picture"],
-  ["category:gpu", "A new level of performance"],
 ];
-function sectionQuery(key, query = {}) {
-  check(
-    homeSections.some((s) => s[0] === key),
-    404,
-    "NOT_FOUND",
-    "Collection not found.",
+const preferredHomeCategories = new Map([
+  ["laptop", "Take your work anywhere"],
+  ["monitor", "See the bigger picture"],
+  ["gpu", "A new level of performance"],
+]);
+
+async function homeCategorySections(conn) {
+  const available = await conn("categories as c")
+    .select("c.slug", "c.name")
+    .where("c.is_active", true)
+    .whereExists(
+      conn("products as p")
+        .join("product_variants as v", "v.product_id", "p.id")
+        .whereColumn("p.category_id", "c.id")
+        .where("p.is_active", true)
+        .where("v.is_active", true)
+        .select("p.id"),
+    )
+    .orderBy("c.name")
+    .orderBy("c.slug");
+  const availableSlugs = new Set(available.map(({ slug }) => slug));
+  const preferred = [...preferredHomeCategories].filter(([slug]) =>
+    availableSlugs.has(slug),
   );
+  const alternatives = available
+    .filter(({ slug }) => !preferredHomeCategories.has(slug))
+    .map(({ slug, name }) => [slug, name]);
+  return [...preferred, ...alternatives]
+    .slice(0, preferredHomeCategories.size)
+    .map(([slug, title]) => [`category:${slug}`, title]);
+}
+
+function sectionQuery(key, query = {}) {
   return {
     ...query,
     pageSize: query.pageSize || 8,
     ...(key.startsWith("category:")
-      ? { category: key.split(":")[1] }
+      ? { category: key.slice("category:".length) }
       : { collection: key }),
   };
 }
@@ -268,20 +291,36 @@ catalog.get("/products", (req, res) => listPublicProducts(res, req.query));
 catalog.get("/products/:slug", async (req, res) =>
   ok(res, await getProduct(req.params.slug)),
 );
-catalog.get("/home/sections/:key/products", async (req, res) =>
-  listPublicProducts(res, sectionQuery(req.params.key, req.query)),
-);
-catalog.get("/home", async (req, res) =>
-  ok(res, {
-    sections: await Promise.all(
-      homeSections.map(async ([key, title]) => {
-        const r = await listProducts(sectionQuery(key));
-        return { key, title, products: r.data, meta: r.meta };
-      }),
-    ),
-    categories: await categories(),
-  }),
-);
+catalog.get("/home/sections/:key/products", async (req, res) => {
+  const { key } = req.params;
+  const category = key.startsWith("category:") &&
+    await db("categories").where({
+      slug: key.slice("category:".length), is_active: true,
+    }).first("id");
+  check(
+    category || homeCollections.some(([collection]) => collection === key),
+    404, "NOT_FOUND", "Collection not found.",
+  );
+  await listPublicProducts(res, sectionQuery(key, req.query));
+});
+
+catalog.get("/home", async (_req, res) => {
+  const result = await db.transaction(async (conn) => {
+    const selected = [...homeCollections, ...await homeCategorySections(conn)];
+    const sections = await Promise.all(selected.map(async ([key, title]) => {
+      const q = sectionQuery(key);
+      const { data, meta: pagingMeta } = await listProductRows(conn, q, 1, q.pageSize, false, null);
+      return { key, title, products: data, meta: pagingMeta };
+    }));
+    return { sections, categories: await categories(conn) };
+  }, { isolationLevel: "repeatable read", readOnly: true });
+  ok(res, result);
+});
+
+function publicComment({ id, product_id, author_name, body, created_at }) {
+  return camel({ id, product_id, author_name, body, created_at });
+}
+
 export function reviewRoutes(requireCustomer, limiter, publishProductEvent) {
   catalog.get("/products/:slug/comments", async (req, res) => {
     const p = await db("products")
@@ -295,14 +334,14 @@ export function reviewRoutes(requireCustomer, limiter, publishProductEvent) {
     const total = await base.clone().count("c.id as count").first();
     const rows = await base
       .select(
-        "c.*",
+        "c.id", "c.product_id", "c.body", "c.created_at",
         db.raw("COALESCE(u.full_name,c.guest_name) AS author_name"),
       )
       .orderBy("c.created_at", "desc")
       .orderBy("c.id")
       .limit(pageSize)
       .offset((page - 1) * pageSize);
-    res.json({ data: camel(rows), meta: meta(page, pageSize, total.count) });
+    res.json({ data: rows.map(publicComment), meta: meta(page, pageSize, total.count) });
   });
   catalog.post(
     "/products/:slug/comments",
@@ -330,11 +369,11 @@ export function reviewRoutes(requireCustomer, limiter, publishProductEvent) {
           guest_name: req.user ? null : body.guestName,
           body: body.body,
         })
-        .returning("*");
-      const comment = {
-        ...camel(row),
-        authorName: req.user?.full_name || body.guestName,
-      };
+        .returning(["id", "product_id", "body", "created_at"]);
+      const comment = publicComment({
+        ...row,
+        author_name: req.user?.full_name ?? body.guestName,
+      });
       const { count } = await db("comments")
         .where({ product_id: p.id })
         .count()

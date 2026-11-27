@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   Link,
   useLocation,
@@ -448,22 +448,35 @@ export function Catalog() {
 }
 export function ProductDetail() {
   const { slug } = useParams(),
-    q = useData(`/products/${slug}`),
+    path = `/products/${slug}`,
+    q = useData(path, {
+      queryFn: async ({ signal }) => {
+        try {
+          return await api(path, { signal });
+        } catch (error) {
+          if (error.status === 404) return { data: null };
+          throw error;
+        }
+      },
+    }),
     [selected, setSelected] = useState(null),
     [image, setImage] = useState(0),
     [quantity, setQuantity] = useState(1),
     [commentPage, setCommentPage] = useState(1),
     [added, setAdded] = useState(false),
     [stars, setStars] = useState(0);
-  const comments = useData(`/products/${slug}/comments?page=${commentPage}`),
+  const p = q.data?.data;
+  const unavailable = p === null;
+  const comments = useData(`/products/${slug}/comments?page=${commentPage}`, {
+      enabled: !!p?.id,
+    }),
     action = useAction(),
     commentAction = useAction(),
     ratingAction = useAction(),
     client = useQueryClient(),
     { user, cacheScope } = useSession();
-  const p = q.data?.data;
   useStoreMetadata(
-    p?.name || (q.isError ? "Product unavailable" : "Product details"),
+    p?.name || (unavailable ? "Product unavailable" : "Product details"),
     p?.shortDescription || "Explore products from Obsidian Compute.",
   );
   useEffect(() => {
@@ -477,7 +490,7 @@ export function ProductDetail() {
     if (!p?.id) return;
     const socket = io({ transports: ["websocket"] });
     const refresh = () => {
-      client.invalidateQueries({ queryKey: [`/products/${slug}`] });
+      client.invalidateQueries({ queryKey: [path] });
       client.invalidateQueries({
         predicate: (q) =>
           q.queryKey[0]?.startsWith(`/products/${slug}/comments`),
@@ -502,8 +515,16 @@ export function ProductDetail() {
       socket.emit("product.leave", { productId: p.id });
       socket.disconnect();
     };
-  }, [p?.id, slug, client]);
+  }, [p?.id, path, slug, client]);
   if (q.isPending) return <Loading />;
+  if (unavailable)
+    return (
+      <main className="container page">
+        <Empty title="Product unavailable">
+          This product is no longer available.
+        </Empty>
+      </main>
+    );
   if (!p)
     return (
       <main className="container page">
@@ -525,6 +546,14 @@ export function ProductDetail() {
         <ChevronRight size={13} />
         <span>{p.name}</span>
       </div>
+      {q.isError && (
+        <ErrorBox
+          error={{
+            message:
+              "Product details could not be refreshed. Showing the last loaded information.",
+          }}
+        />
+      )}
       <div className="product-detail">
         <div className="gallery">
           <div className="main-product-image">
@@ -805,6 +834,18 @@ export function Cart() {
   const q = useData("/cart"),
     action = useAction();
   const cart = q.data?.data;
+  const setQuantity = (item, quantity) =>
+    action.run(async () => {
+      try {
+        return await api(`/cart/items/${item.id}`, {
+          method: "PATCH",
+          body: { quantity },
+        });
+      } catch (error) {
+        if (error.code === "INSUFFICIENT_STOCK") await q.refetch();
+        throw error;
+      }
+    });
   if (q.isPending) return <Loading />;
   return (
     <main className="container page">
@@ -832,22 +873,24 @@ export function Cart() {
                   </Link>
                   <small>{Object.values(i.attributes).join(" / ")}</small>
                   <span>{money(i.unitPriceVnd)}</span>
-                  {i.quantity > i.availableStock && (
+                  {i.availableStock === 0 ? (
                     <small className="danger">
-                      Only {i.availableStock} available. Update your quantity.
+                      This item is unavailable. Remove it to continue.
                     </small>
-                  )}
+                  ) : i.quantity > i.availableStock ? (
+                    <small className="danger">
+                      Only {i.availableStock} available. Decrease your quantity to
+                      continue.
+                    </small>
+                  ) : null}
                   <div className="quantity">
                     <button
                       aria-label={`Decrease ${i.name}`}
-                      disabled={action.pending || i.quantity <= 1}
+                      disabled={
+                        action.pending || i.quantity <= 1 || i.availableStock === 0
+                      }
                       onClick={() =>
-                        action.run(() =>
-                          api(`/cart/items/${i.id}`, {
-                            method: "PATCH",
-                            body: { quantity: i.quantity - 1 },
-                          }),
-                        )
+                        setQuantity(i, Math.min(i.quantity - 1, i.availableStock))
                       }
                     >
                       <Minus size={14} />
@@ -858,14 +901,7 @@ export function Cart() {
                       disabled={
                         action.pending || i.quantity >= i.availableStock
                       }
-                      onClick={() =>
-                        action.run(() =>
-                          api(`/cart/items/${i.id}`, {
-                            method: "PATCH",
-                            body: { quantity: i.quantity + 1 },
-                          }),
-                        )
-                      }
+                      onClick={() => setQuantity(i, i.quantity + 1)}
                     >
                       <Plus size={14} />
                     </button>
@@ -945,9 +981,54 @@ function checkoutIdempotencyKey() {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
+function pendingCheckoutKey(cartId) {
+  if (!cartId) return null;
+  try {
+    const key = sessionStorage.getItem(`obsidian-checkout:${cartId}`);
+    return /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(key)
+      ? key
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function savePendingCheckout(cartId, key) {
+  try {
+    sessionStorage.setItem(`obsidian-checkout:${cartId}`, key);
+  } catch {
+    // The in-page retry remains available when browser storage is blocked.
+  }
+}
+
+function clearPendingCheckout(cartId, key) {
+  try {
+    if (pendingCheckoutKey(cartId) === key)
+      sessionStorage.removeItem(`obsidian-checkout:${cartId}`);
+  } catch {
+    // Browser storage can become unavailable during checkout.
+  }
+}
+
 export function Checkout() {
+  const cartQ = useData("/cart");
+  const currentCartId = cartQ.data?.data.id;
+  const [lastCartId, setLastCartId] = useState(null);
+  if (currentCartId && currentCartId !== lastCartId) setLastCartId(currentCartId);
+  // The layout remounts Checkout on session changes. Keep the same form on
+  // transient cart failures within that session so an in-page retry can finish.
+  const cartId = currentCartId ?? lastCartId;
+  return <CheckoutForm key={cartId ?? "cart-loading"} cartId={cartId} cartQ={cartQ} />;
+}
+
+function CheckoutForm({ cartId, cartQ }) {
+  const cart = cartQ.data?.data;
+  const mounted = useRef(false);
+  useLayoutEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
   const { user } = useSession(),
-    cartQ = useData("/cart"),
     addresses = useData("/me/addresses", {
       enabled: user?.role === "CUSTOMER",
     }),
@@ -959,12 +1040,14 @@ export function Checkout() {
     [appliedCoupon, setAppliedCoupon] = useState(""),
     [points, setPoints] = useState(0),
     [paymentToken, setPaymentToken] = useState(""),
-    [review, setReview] = useState(null);
+    [review, setReview] = useState(null),
+    [recoveryKey, setRecoveryKey] = useState(() => pendingCheckoutKey(cartId)),
+    [checkPrevious, setCheckPrevious] = useState(() => Boolean(recoveryKey)),
+    [recoveryNotice, setRecoveryNotice] = useState(null);
   const validPaymentToken =
     paymentToken === "DEMO-APPROVE" || paymentToken === "DEMO-DECLINE";
   const action = useAction(),
-    navigate = useNavigate(),
-    cart = cartQ.data?.data;
+    navigate = useNavigate();
   useEffect(() => {
     if (user) setBuyer({ fullName: user.fullName, email: user.email });
   }, [user?.id]);
@@ -1031,7 +1114,7 @@ export function Checkout() {
     action.clearError();
     setReview({
       quote: snapshot,
-      key: checkoutIdempotencyKey(),
+      key: recoveryKey ?? checkoutIdempotencyKey(),
       body: {
         ...(!user ? { buyer } : {}),
         shippingAddress: address,
@@ -1046,7 +1129,36 @@ export function Checkout() {
     });
     setStep(3);
   };
+  const finishCheckout = (key, receiptToken) => {
+    clearPendingCheckout(cartId, key);
+    navigate(receiptHref(receiptToken), { replace: true });
+  };
+  const recover = async () => {
+    const result = await action.run(() =>
+      api("/checkout/recovery", {
+        method: "POST",
+        headers: { "Idempotency-Key": recoveryKey },
+      }),
+    );
+    if (!mounted.current || !result) return;
+    if (result.data.state === "complete") {
+      finishCheckout(recoveryKey, result.data.receiptToken);
+      return;
+    }
+    if (result.data.state === "expired") {
+      clearPendingCheckout(cartId, recoveryKey);
+      setRecoveryKey(null);
+      setRecoveryNotice("Your order was placed. This receipt has expired. Sign in to view your order history.");
+    } else {
+      // A delayed original submission may still arrive. Keep the same key.
+      setRecoveryNotice("No completed order was found. Review your bag before submitting again.");
+    }
+    setStep(0);
+    setCheckPrevious(false);
+  };
   const submit = async () => {
+    savePendingCheckout(cartId, review.key);
+    setRecoveryKey(review.key);
     const result = await action.run(async () => {
       try {
         return await api("/checkout/orders", {
@@ -1065,6 +1177,9 @@ export function Checkout() {
           await Promise.all([cartQ.refetch(), quote.refetch()]);
           setReview(null);
           setStep(2);
+        } else if (error.code === "IDEMPOTENCY_CONFLICT") {
+          setReview(null);
+          setCheckPrevious(true);
         } else if (error.code === "PAYMENT_FAILED") {
           setReview({ ...review, uncertain: false });
         } else if (!error.status || error.status >= 500 || review.uncertain) {
@@ -1073,10 +1188,8 @@ export function Checkout() {
         throw error;
       }
     });
-    if (result)
-      navigate(receiptHref(result.data.receiptToken), {
-        replace: true,
-      });
+    if (mounted.current && result)
+      finishCheckout(review.key, result.data.receiptToken);
   };
   if (denied)
     return (
@@ -1085,10 +1198,22 @@ export function Checkout() {
       </main>
     );
   if (cartQ.isPending && !review) return <Loading />;
+  if (checkPrevious)
+    return (
+      <main className="container page">
+        <PageTitle title="Check your previous checkout" />
+        <ErrorBox error={action.error} />
+        <p>Check whether your order was placed before continuing.</p>
+        <button className="button" onClick={recover} disabled={action.pending}>
+          {action.pending ? "Checking…" : "Check order status"}
+        </button>
+      </main>
+    );
   if (!cart?.items.length && !review)
     return (
       <main className="container page">
         <ErrorBox error={action.error || cartQ.error} />
+        {recoveryNotice && <p role="status">{recoveryNotice}</p>}
         <Empty title="Your bag is empty" />
       </main>
     );
@@ -1114,6 +1239,7 @@ export function Checkout() {
       <div className="checkout-layout">
         <section className="panel checkout-form">
           <ErrorBox error={action.error} />
+          {recoveryNotice && <p role="status">{recoveryNotice}</p>}
           {step === 0 && (
             <>
               <h2>A final look at your bag</h2>

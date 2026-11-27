@@ -259,10 +259,10 @@ export function csrf(req, res, next) {
   );
   next();
 }
-async function enqueue(tx, type, to, subject, textBody) {
+async function enqueueAuthMail(tx, type, challengeId, to, subject, textBody) {
   await tx("email_outbox").insert({
     type,
-    payload: json({ to, subject, text: textBody }),
+    payload: json({ challengeId, to, subject, text: textBody }),
   });
 }
 async function sendOtp(user, tx) {
@@ -271,14 +271,17 @@ async function sendOtp(user, tx) {
     .where({ email: user.email })
     .whereNull("consumed_at")
     .update({ consumed_at: new Date() });
-  await tx("login_otps").insert({
-    email: user.email,
-    code_hash: keyedHash(`${user.email}:${code}`),
-    expires_at: new Date(Date.now() + 600000),
-  });
-  await enqueue(
+  const [challenge] = await tx("login_otps")
+    .insert({
+      email: user.email,
+      code_hash: keyedHash(`${user.email}:${code}`),
+      expires_at: new Date(Date.now() + 600000),
+    })
+    .returning("id");
+  await enqueueAuthMail(
     tx,
     "OTP",
+    challenge.id,
     user.email,
     "Your Obsidian sign-in code",
     `Your sign-in code is ${code}. It expires in 10 minutes. If you did not request it, ignore this email.`,
@@ -533,14 +536,17 @@ export function authRoutes(redis, limiter) {
             .where({ user_id: u.id })
             .whereNull("used_at")
             .update({ used_at: new Date() });
-          await tx("password_reset_tokens").insert({
-            user_id: u.id,
-            token_hash: hash(t),
-            expires_at: new Date(Date.now() + 30 * 60000),
-          });
-          await enqueue(
+          const [challenge] = await tx("password_reset_tokens")
+            .insert({
+              user_id: u.id,
+              token_hash: hash(t),
+              expires_at: new Date(Date.now() + 30 * 60000),
+            })
+            .returning("id");
+          await enqueueAuthMail(
             tx,
             "RESET",
+            challenge.id,
             u.email,
             "Reset your Obsidian password",
             `Reset your password within 30 minutes: ${baseUrl}/reset-password#token=${t}\nIgnore this message if you did not request it.`,

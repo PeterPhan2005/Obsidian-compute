@@ -253,3 +253,30 @@ test("Recovery navigation suppresses referrers and both Nginx access logs omit t
   await expect.poll(() => Boolean(new URL(page.url()).hash)).toBe(false);
   await submitReset(fragment);
 });
+
+test("Both running Nginx layers disable error logging for legacy reset pages", async () => {
+  const project = process.env.OBSIDIAN_VERIFY_PROJECT;
+  test.skip(!project, "Run the isolated verifier to inspect both proxy configurations.");
+  expect(/^obsidian-test-[a-f0-9]{32}$/.test(project)).toBe(true);
+
+  for (const service of ["nginx", "frontend"]) {
+    const config = execFileSync("docker", [
+      "exec", `${project}-${service}-1`, "nginx", "-T",
+    ], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+    const resetLocations = [...config.matchAll(/location ~\* ([^{}\r\n]+) \{([^{}]+)\}/g)]
+      .filter(([, pattern]) => new RegExp(pattern, "i").test("/reset-password"));
+
+    expect(resetLocations, `Reset location in ${service}`).toHaveLength(1);
+    const [, pattern, directives] = resetLocations[0];
+    const match = new RegExp(pattern, "i");
+    expect(match.test("/RESET-PASSWORD/")).toBe(true);
+    expect(match.test("/reset-password/help")).toBe(false);
+    expect(match.test("/products")).toBe(false);
+    expect(directives).toMatch(/error_log\s+\/dev\/null\s*;/);
+    const storefront = [...config.matchAll(/location \/ \{([^{}]+)\}/g)]
+      .map(([, body]) => body)
+      .find((body) => /proxy_pass http:\/\/frontend:80|try_files/.test(body));
+    expect(storefront).toBeDefined();
+    expect(storefront).not.toMatch(/error_log\s+\/dev\/null/);
+  }
+});

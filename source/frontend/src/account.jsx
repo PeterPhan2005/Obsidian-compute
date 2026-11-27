@@ -636,7 +636,7 @@ export function Addresses() {
               if (r) setEditing(null);
             }}
           >
-            <AddressFields value={form} onChange={setForm} />
+            <AddressFields value={form} onChange={setForm} phoneOptional />
             <label className="checkbox">
               <input
                 type="checkbox"

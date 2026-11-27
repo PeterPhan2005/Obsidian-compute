@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { db, camel, json } from "./db.js";
+import { db, camel, json, readSnapshot } from "./db.js";
 import {
   check,
   id,
@@ -23,13 +23,16 @@ import {
 } from "./cart-service.js";
 import { quoteTotals } from "./pricing.js";
 import { requireCustomer } from "./auth.js";
-export async function orderDto(row, conn = db, admin = false) {
-  const [items, history] = await Promise.all([
-    conn("order_items").where({ order_id: row.id }).orderBy("id"),
-    conn("order_status_history")
-      .where({ order_id: row.id })
-      .orderBy("changed_at", "desc"),
-  ]);
+export async function orderDto(row, conn, admin = false) {
+  const items = await conn("order_items")
+    .where({ order_id: row.id })
+    .orderBy("id");
+  const history = await conn("order_status_history")
+    .where({ order_id: row.id })
+    // Keep the current transition first even if its legacy timestamp was
+    // captured before the transaction waited for the order lock.
+    .orderByRaw("(status = ?) DESC", [row.status])
+    .orderBy("changed_at", "desc");
   const result = {
     ...camel(row),
     shippingAddress: row.shipping_snapshot,
@@ -54,7 +57,21 @@ export async function orderDto(row, conn = db, admin = false) {
   if (!admin) delete result.paymentReference;
   return result;
 }
-export async function listOrders(query, filter, conn = db, admin = false) {
+async function getOrder(where, conn, admin = false) {
+  const row = await conn("orders").where(where).first();
+  check(row, 404, "NOT_FOUND", "Order not found.");
+  return orderDto(row, conn, admin);
+}
+
+export function readOrder(where, admin = false) {
+  return readSnapshot((conn) => getOrder(where, conn, admin));
+}
+
+export function listOrders(query, filter, admin = false) {
+  return readSnapshot((conn) => listOrderRows(query, filter, conn, admin));
+}
+
+async function listOrderRows(query, filter, conn, admin) {
   const { page, pageSize } = paging(query, admin ? 20 : 10);
   const q = conn("orders");
   if (filter) filter(q);
@@ -71,10 +88,9 @@ export async function listOrders(query, filter, conn = db, admin = false) {
     .orderBy("id")
     .limit(pageSize)
     .offset((page - 1) * pageSize);
-  return {
-    data: await Promise.all(rows.map((o) => orderDto(o, conn, admin))),
-    meta: meta(page, pageSize, count),
-  };
+  const data = [];
+  for (const row of rows) data.push(await orderDto(row, conn, admin));
+  return { data, meta: meta(page, pageSize, count) };
 }
 const couponInput = z
   .string()
@@ -151,6 +167,11 @@ function quoteFingerprint(cartId, items, couponCode, couponValid, totals) {
     estimatedEarnedPoints: totals.estimatedEarnedPoints,
   })}`);
 }
+
+async function lockCheckoutKey(tx, key) {
+  await tx.raw("SELECT pg_advisory_xact_lock(hashtext(?))", [`checkout:${key}`]);
+}
+
 export function shopRoutes(limiter) {
   const router = Router();
   router.get("/cart", async (req, res) =>
@@ -281,6 +302,35 @@ export function shopRoutes(limiter) {
     });
   });
   router.post(
+    "/checkout/recovery",
+    limiter("checkout-recovery", 30, 60),
+    async (req, res) => {
+      const key = id.parse(req.get("Idempotency-Key"));
+      const resolvedCart = await resolveCart(req, res, { create: false });
+      res.set("Cache-Control", "no-store");
+      const result = await db.transaction(async (tx) => {
+        // Wait for an in-flight submission, then recheck current cart ownership.
+        await lockCheckoutKey(tx, key);
+        const cart = resolvedCart && (await lockCart(resolvedCart, tx));
+        if (!cart) return { state: "unconfirmed" };
+        const previous = await tx("checkout_idempotency")
+          .where({ key, cart_id: cart.id })
+          .first("order_id");
+        if (!previous) return { state: "unconfirmed" };
+
+        const receiptToken = keyedHash(`receipt:${key}:${previous.order_id}`);
+        const receipt = await tx("receipt_tokens")
+          .where({ order_id: previous.order_id, token_hash: hash(receiptToken) })
+          .where("expires_at", ">", new Date())
+          .first("order_id");
+        return receipt
+          ? { state: "complete", receiptToken }
+          : { state: "expired" };
+      });
+      ok(res, result);
+    },
+  );
+  router.post(
     "/checkout/orders",
     limiter("checkout", 30, 60),
     async (req, res) => {
@@ -307,9 +357,7 @@ export function shopRoutes(limiter) {
         }),
       );
       const result = await db.transaction(async (tx) => {
-        await tx.raw("SELECT pg_advisory_xact_lock(hashtext(?))", [
-          `checkout:${key}`,
-        ]);
+        await lockCheckoutKey(tx, key);
         const cart = resolvedCart && (await lockCart(resolvedCart, tx));
         const previous = await tx("checkout_idempotency")
           .where({ key })
@@ -322,8 +370,10 @@ export function shopRoutes(limiter) {
             "IDEMPOTENCY_CONFLICT",
             "This checkout key was already used for a different request.",
           );
+          // Keep a concurrent status update from committing within this replay DTO.
           const row = await tx("orders")
             .where({ id: previous.order_id })
+            .forShare()
             .first();
           return {
             order: await orderDto(row, tx),
@@ -586,20 +636,20 @@ export function shopRoutes(limiter) {
       "NOT_FOUND",
       "Receipt not found.",
     );
-    const t = await db("receipt_tokens")
-      .where({ token_hash: hash(token) })
-      .where("expires_at", ">", new Date())
-      .first();
-    check(
-      t,
-      404,
-      "NOT_FOUND",
-      "Receipt expired. Sign in to view your order history.",
-    );
-    ok(
-      res,
-      await orderDto(await db("orders").where({ id: t.order_id }).first()),
-    );
+    const order = await readSnapshot(async (conn) => {
+      const t = await conn("receipt_tokens")
+        .where({ token_hash: hash(token) })
+        .where("expires_at", ">", new Date())
+        .first();
+      check(
+        t,
+        404,
+        "NOT_FOUND",
+        "Receipt expired. Sign in to view your order history.",
+      );
+      return getOrder({ id: t.order_id }, conn);
+    });
+    ok(res, order);
   });
   router.get("/me/orders", requireCustomer, async (req, res) =>
     res.json(
@@ -607,12 +657,8 @@ export function shopRoutes(limiter) {
     ),
   );
   router.get("/me/orders/:orderId", requireCustomer, async (req, res) => {
-    id.parse(req.params.orderId);
-    const o = await db("orders")
-      .where({ id: req.params.orderId, user_id: req.user.id })
-      .first();
-    check(o, 404, "NOT_FOUND", "Order not found.");
-    ok(res, await orderDto(o));
+    const orderId = id.parse(req.params.orderId);
+    ok(res, await readOrder({ id: orderId, user_id: req.user.id }));
   });
   return router;
 }
