@@ -273,3 +273,91 @@
 **Vấn đề:** Danh sách kết quả AI giới hạn ba sản phẩm nhưng thiếu số trang, vi phạm yêu cầu PDF về phân trang có số kể cả khi chỉ có một trang.
 
 **Khắc phục:** Dùng `Pagination` với metadata một trang và nhãn riêng của danh sách đề xuất. Nút có `type="button"`, hai nút chuyển trang bị vô hiệu hóa. Playwright xác nhận Page 1 xuất hiện khi có kết quả, không gửi lại form, không chạy lại inference và không đổi trang Catalog.
+
+## Post-Acceptance Remediation
+
+Các số 47–60 là số thứ tự trong sổ theo dõi. Các mục có `ISSUE` dẫn chiếu ID đã có của dự án.
+
+### 47. Nginx giữ địa chỉ upstream cũ khi tái tạo Core
+
+**Vấn đề:** Nginx phân giải tên các Core replica khi nạp cấu hình. Sau khi container được tái tạo với IP khác, các request qua proxy có thể tiếp tục đi tới địa chỉ cũ, ảnh hưởng cả API công khai và tra cứu sản phẩm nội bộ của Realtime Gateway.
+
+**Khắc phục:** Cấu hình upstream dùng shared zone và phân giải lại hai tên dịch vụ qua Docker DNS. Smoke trên image GHCR xác nhận cả hai container Core đổi ID và IP, Nginx giữ nguyên ID và thời điểm khởi động, các request công khai và tra cứu nội bộ đi qua cả hai replica. Khi dừng một replica, tám health request đều đi qua replica còn lại.
+
+### 48. Khôi phục Checkout sau khi gián đoạn phản hồi hoặc reload
+
+**Vấn đề:** Khi phản hồi Checkout đã commit bị mất, frontend có thể chỉ thấy giỏ rỗng. Reload làm mất khóa idempotency trong bộ nhớ, khiến người mua chưa biết đơn đã được đặt hay chưa.
+
+**Khắc phục:** Lưu khóa đang chờ theo giỏ trong `sessionStorage` khi có thể và dùng cùng khóa khi retry. API recovery chỉ đọc kết quả đã commit của giỏ hiện tại và giữ nguyên thời hạn receipt. Nếu chưa có đơn, người mua phải review lại trước khi gửi với cùng khóa. Backend và Playwright xác nhận receipt gốc được khôi phục sau reload, retry trả cùng đơn và không tạo thêm order, lượt dùng coupon hay outbox row.
+
+### 49. Giảm số lượng trong giỏ khi tồn kho giảm
+
+**Vấn đề:** Sau khi tồn giảm nhiều đơn vị, thao tác giảm từng đơn vị vẫn có thể yêu cầu số lượng vượt mức còn bán. Backend từ chối và người mua bị kẹt với số lượng cũ.
+
+**Khắc phục:** Hiển thị số lượng khả dụng và cho nút giảm đưa số lượng về mức tồn còn lại. Khi hết tồn, giao diện hướng dẫn xóa món. Nếu API báo `INSUFFICIENT_STOCK`, giỏ tải lại dữ liệu. Playwright xác nhận có thể giảm từ 3 xuống 1 sau khi tồn giảm và tiếp tục review.
+
+### 50. Product Details còn thao tác sau khi sản phẩm bị archive
+
+**Vấn đề:** Khi refetch nhận `404`, trang có thể giữ dữ liệu đã cache cùng nút thêm vào giỏ, bình luận, đánh giá và kết nối realtime của sản phẩm cũ.
+
+**Khắc phục:** Xử lý `404` như trạng thái `Product unavailable`, bỏ các thao tác cũ và đóng kết nối realtime của trang. Lỗi tải tạm thời được báo riêng khi còn dữ liệu hợp lệ đã tải. Playwright kiểm tra lỗi tạm thời trước khi archive, `404` sau archive và lỗi `503` sau đó không làm các thao tác cũ xuất hiện lại.
+
+### 51. ISSUE 17.3 – Kết quả AI giữ thông tin bán hàng đã cũ
+
+**Vấn đề:** Sau khi inference hoàn tất, thẻ đề xuất có thể tiếp tục báo còn hàng hoặc hiện giá cũ dù sản phẩm đã bị archive, hết tồn, đổi giá hoặc không còn variant đáp ứng bộ lọc.
+
+**Khắc phục:** Kiểm tra sản phẩm và variant theo Category và ngân sách khi quay lại tab hoặc bấm mở kết quả. Cập nhật thẻ theo dữ liệu hiện hành, bỏ kết quả đã mất tính phù hợp và hiển thị `Check availability` khi kiểm tra gặp lỗi tạm thời. Playwright xác nhận thẻ được làm mới mà không xếp hạng lại.
+
+### 52. ISSUE 17.3 – Nhận diện phủ định tiếng Việt và cụm `không chỉ`
+
+**Vấn đề:** Biểu thức phát hiện phủ định có thể chặn nhầm câu mô tả mục đích khẳng định chứa `không chỉ`, khiến truy vấn hợp lệ không chạy inference.
+
+**Khắc phục:** Dùng ranh giới từ tương thích Unicode cho mẫu tiếng Việt và loại trừ các cụm `không chỉ`, `không dây`, `không gian` khỏi nhánh phát hiện từ `không`. Playwright xác nhận câu `không chỉ … mà còn …` chạy model thật và trả sản phẩm laptop, còn câu phủ định được kiểm tra vẫn yêu cầu diễn đạt lại.
+
+### 53. ISSUE 17.3 – Vite tải lại trang trong yêu cầu AI đầu tiên
+
+**Vấn đề:** Ở lần chạy lạnh, trình quét dependency của Vite không phát hiện import trong Worker tải lười. Khi browser gửi yêu cầu AI đầu tiên, Vite mới tối ưu dependency và có thể reload trang giữa chừng.
+
+**Khắc phục:** Khai báo `@huggingface/transformers` trong `optimizeDeps.include`. Playwright khởi động Vite với cache riêng mới, xác nhận yêu cầu đầu giữ nguyên trang và nội dung đã nhập, có kết quả inference, tải model và WASM cùng origin với WASM được phục vụ đúng MIME type.
+
+### 54. ISSUE 25 – Bảo vệ error log cho link reset mật khẩu cũ
+
+**Vấn đề:** Xác nhận cả hai lớp Nginx thiếu cấu hình chặn error log riêng cho trang reset. Link cũ còn có thể mang token trong query. Khả năng token đã xuất hiện trong log lịch sử hoặc bị ghi khi upstream lỗi vẫn `NOT_VERIFIED`.
+
+**Khắc phục:** Bổ sung cấu hình tắt error log đúng trang reset ở cả hai lớp Nginx, giữ hỗ trợ link cũ, link fragment, `Referrer-Policy` và `Cache-Control`. Playwright xác nhận cấu hình đang chạy. Smoke request thông thường bằng dữ liệu giả lập không ghi query cũ vào log và route đối chứng vẫn ghi log. Phạm vi bằng chứng là cấu hình và request thông thường.
+
+### 55. Worker gửi email xác thực có challenge hết hiệu lực
+
+**Vấn đề:** Email OTP hoặc reset có thể vẫn nằm trong `pending` khi Worker dừng. Khi Worker chạy lại, challenge có thể đã hết hạn, được dùng hoặc bị thay thế.
+
+**Khắc phục:** Job mới lưu ID challenge. Trước khi gửi, Worker kiểm tra challenge còn hiệu lực, hỗ trợ đối chiếu các job cũ còn chờ và chuyển job không hợp lệ sang `discarded`. Kiểm thử Worker recovery xác nhận sáu job không hợp lệ bị loại và bốn job còn hiệu lực đến Mailpit, gồm job cũ. Kiểm thử gửi email đơn hàng sau khi Worker khởi động lại cũng PASS.
+
+### 56. Home chọn danh mục thay thế khi section không còn sản phẩm
+
+**Vấn đề:** Home từng dùng ba danh mục cố định. Khi một danh mục không còn sản phẩm public đủ điều kiện, section có thể rỗng dù danh mục khác còn sản phẩm.
+
+**Khắc phục:** Giữ danh mục ưu tiên đang đủ điều kiện và dùng danh mục đủ điều kiện khác để lấp tối đa ba section danh mục. Heading, liên kết, sản phẩm và phân trang dùng cùng danh mục được chọn. Khi thiếu danh mục đủ điều kiện, Home hiển thị số section thực có. Playwright kiểm tra cả trường hợp thay thế, phân trang của section thay thế và số danh mục giảm. Hai section sản phẩm mới và bán chạy giữ hành vi hiện có.
+
+### 57. Số điện thoại tùy chọn trong form địa chỉ đã lưu
+
+**Vấn đề:** Form thêm và sửa địa chỉ dùng trường điện thoại bắt buộc dù API địa chỉ cho phép để trống, khiến Customer không lưu được địa chỉ hợp lệ qua giao diện.
+
+**Khắc phục:** Đặt điện thoại là tùy chọn riêng cho form địa chỉ đã lưu. Playwright xác nhận có thể tạo và sửa địa chỉ với điện thoại trống, còn Checkout vẫn yêu cầu số điện thoại giao hàng hợp lệ.
+
+### 58. DTO bình luận công khai chứa UUID tài khoản
+
+**Vấn đề:** Phản hồi danh sách bình luận lấy trường định danh tài khoản nội bộ. Trường này không cần thiết để công khai tên người viết, nội dung hoặc thời điểm bình luận.
+
+**Khắc phục:** Dùng một DTO chỉ gồm `id`, `productId`, `authorName`, `body`, `createdAt` cho GET, phản hồi POST và sự kiện realtime. Backend test kiểm tra đúng các trường cho cả Guest và Customer, dữ liệu phân trang và quyền sở hữu nội bộ vẫn được giữ.
+
+### 59. Simple Dashboard đọc KPI và biểu đồ từ snapshot khác nhau
+
+**Vấn đề:** Các truy vấn đơn hàng, dòng hàng, người dùng và doanh thu chạy ở các thời điểm khác nhau. Checkout commit giữa các truy vấn có thể làm KPI, Best Sellers hoặc biểu đồ trong một phản hồi không nhất quán.
+
+**Khắc phục:** Đọc toàn bộ dữ liệu của một phản hồi Simple Dashboard trong transaction `REPEATABLE READ READ ONLY`, giữ công thức và kỳ báo cáo. Backend test điều phối commit giữa các truy vấn, xác nhận phản hồi đang đọc giữ snapshot cũ và lần đọc tiếp theo cập nhật nhất quán doanh thu, lợi nhuận, số đơn, số lượng và thống kê liên quan.
+
+### 60. Trạng thái và timeline đơn hàng đọc từ snapshot khác nhau
+
+**Vấn đề:** Status hiện tại và timeline được đọc ở các thời điểm khác nhau, nên một lần đổi trạng thái có thể xuất hiện ở một phần của phản hồi. Timestamp lịch sử lấy trước lúc chờ khóa cũng có thể làm trạng thái hiện tại nằm sai vị trí trong timeline.
+
+**Khắc phục:** Dùng một snapshot cho danh sách, chi tiết và receipt. Admin dựng DTO ngay trong transaction cập nhật, ghi thời gian thực sau khi đã lấy khóa và trình bày trạng thái hiện tại trước kể cả khi timestamp cũ lệch thứ tự. Backend test điều phối commit khi đang đọc qua Admin, Customer và receipt, rồi kiểm tra lại quyền truy cập, chuyển trạng thái và timeline.

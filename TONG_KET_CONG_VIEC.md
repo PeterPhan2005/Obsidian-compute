@@ -10,21 +10,21 @@ Công việc của mình trong dự án gồm ba phần chính:
 
 ## 2. Các vấn đề đã khắc phục
 
-Tổng cộng có 46 mục sửa lỗi được ghi nhận trong `log_fix_issue.md`, bao gồm các nhóm sau:
+`log_fix_issue.md` ghi nhận 60 mục công việc, gồm 46 mục trước đợt hậu nghiệm thu và 14 mục bổ sung (47–60). Nhật ký bao gồm cả sửa lỗi, hoàn thiện tính năng và gia cố phòng vệ.
 
 | Nhóm chức năng | Công việc đã thực hiện |
 |---|---|
-| Sản phẩm và tồn kho | Sửa lỗi mất số lượng tồn kho, trùng variant, mất thuộc tính sản phẩm, ghi đè giá vốn và cập nhật dữ liệu đồng thời. |
-| Danh mục | Sửa lỗi khôi phục danh mục đã xóa, ngăn xung đột giữa cập nhật sản phẩm và xóa danh mục. |
-| Tìm kiếm và giao diện | Hoàn thiện Product Tags, bộ lọc, sắp xếp, phân trang, SEO metadata và sửa các lỗi hiển thị trên thiết bị di động. |
-| Tài khoản và bảo mật | Hoàn thiện Google OAuth, sửa lỗi session, đăng xuất, khôi phục mật khẩu và ngăn dữ liệu tài khoản bị lẫn giữa người dùng. |
-| Giỏ hàng và thanh toán | Sửa lỗi khởi tạo giỏ hàng, thanh toán sandbox, thay đổi đơn hàng sau khi xác nhận và ngăn tạo trùng đơn hàng khi gửi lại yêu cầu. |
-| Đơn hàng và email | Sửa màn hình đặt hàng thành công, bảo vệ thông tin truy cập hóa đơn, hoàn thiện gửi email và cơ chế gửi lại khi gặp lỗi. |
-| Dashboard | Sửa biểu đồ sản phẩm bán chạy, thống kê danh mục, múi giờ, hiển thị biểu đồ và tính chính xác của dữ liệu lợi nhuận. |
-| Realtime | Sửa lỗi xử lý WebSocket, cập nhật bình luận và đánh giá giữa nhiều người dùng. |
-| Triển khai | Hoàn thiện Docker Compose, kiểm thử tự động, khả năng chạy trên localhost và truy cập tương tác qua LAN. |
+| Sản phẩm và tồn kho | Sửa lỗi mất số lượng tồn kho, trùng variant, mất thuộc tính, ghi đè giá vốn và cập nhật đồng thời. Cho phép giảm số lượng giỏ về mức còn hàng và gỡ thao tác mua khi Product Details xác nhận sản phẩm đã bị archive. |
+| Danh mục | Sửa lỗi khôi phục danh mục đã xóa và xung đột giữa cập nhật sản phẩm và xóa danh mục. Trang Home chọn danh mục còn sản phẩm và thay thế section thiếu, với phân trang theo section đang hiển thị. |
+| Tìm kiếm và giao diện | Hoàn thiện Product Tags, bộ lọc, sắp xếp, phân trang, SEO metadata và giao diện mobile. AI làm mới đề xuất khi giá hoặc khả năng bán thay đổi, hiểu đúng mẫu câu `không chỉ … mà còn …` và chạy lượt đầu khi Vite tối ưu dependency từ cache trống. |
+| Tài khoản và bảo mật | Hoàn thiện Google OAuth, sửa session, đăng xuất, khôi phục mật khẩu và ngăn lẫn dữ liệu tài khoản. Cho phép để trống số điện thoại ở địa chỉ đã lưu. Bổ sung cấu hình phòng vệ cho error log của trang reset mật khẩu cũ. |
+| Giỏ hàng và thanh toán | Sửa khởi tạo giỏ và việc xác nhận lại báo giá khi giỏ thay đổi. Checkout giữ yêu cầu nhập số điện thoại. Khi mất phản hồi hoặc tải lại trang, trình duyệt có thể tìm lại đơn đã hoàn tất mà không tạo đơn trùng. |
+| Đơn hàng và email | Sửa màn hình đặt hàng thành công và bảo vệ dữ liệu truy cập hóa đơn. Trạng thái đơn và timeline đọc cùng snapshot. Notification Worker bỏ qua yêu cầu gửi OTP/reset đã hết hạn, đã dùng hoặc đã bị thay thế. |
+| Dashboard | Sửa biểu đồ sản phẩm bán chạy, thống kê danh mục, múi giờ, hiển thị và dữ liệu lợi nhuận. Chỉ số tổng hợp và chuỗi doanh thu của Simple Dashboard đọc cùng snapshot khi có đơn hàng commit đồng thời. |
+| Realtime | Sửa xử lý WebSocket và cập nhật bình luận/đánh giá giữa nhiều người dùng. Payload bình luận công khai qua HTTP và realtime chỉ giữ các trường công khai cần dùng. |
+| Triển khai | Hoàn thiện Docker Compose, kiểm thử tự động, localhost và LAN. Nginx tiếp tục chuyển request khi Core container được tạo lại với địa chỉ IP mới. |
 
-Các lỗi được kiểm tra trước và sau khi sửa, đồng thời kiểm thử lại những chức năng liên quan để tránh phát sinh lỗi mới.
+Sau Batch 09, Independent Full-System Review ghi nhận bảy lỗi đã tái hiện (A1–C3), sáu lỗi được xác nhận thêm và một điểm cần gia cố phòng vệ. Owner cho phép triển khai, sau đó candidate qua review độc lập và re-review. Cả 14 mục đã được nghiệm thu. Với trang reset cũ, điểm được xác nhận là thiếu cấu hình phòng vệ. Khả năng lộ token trong log lịch sử hoặc khi upstream lỗi vẫn chưa được xác minh.
 
 Chi tiết nguyên nhân và cách khắc phục từng lỗi nằm trong `log_fix_issue.md`.
 
@@ -66,7 +66,12 @@ Mỗi image được đánh dấu bằng commit SHA để xác định chính x�
 
 **Kết quả**
 
-Pipeline cuối cùng đã vượt qua 94/94 kiểm tra và phát hành thành công cả hai image.
+Commit được Final Technical Acceptance là `068bb1eca89283241544310186b3da95e122abee` trên `origin/fix-issue`. Pipeline tại commit này build production và cả hai image thành công. Job `verify` đạt **112/112** (66 Backend/OAuth, 46 Playwright). Job `publish` nạp artifact `verified-images` (ID `15190671043`) để đưa hai image đã kiểm thử lên GHCR. [GitHub Actions run 45983344230, attempt 1](https://github.com/PeterPhan2005/Obsidian-compute/actions/runs/45983344230)
+
+- Backend: `ghcr.io/peterphan2005/obsidian-compute-backend@sha256:14ed59c43493822c49e35d6d7da430e55507292f1df9241870c782dd01dd3d61`
+- Frontend: `ghcr.io/peterphan2005/obsidian-compute-frontend@sha256:58777cd5614050c915acbef7e180ba1f85cafb469f0c6560d564c08e12363e14`
+
+Technical advisor đã kiểm tra độc lập commit và phạm vi thay đổi trên GitHub, kết quả Actions, thông tin artifact và đối chiếu hai registry manifest digest trên GHCR với log publish của GitHub Actions. Codex thực hiện và báo cáo riêng việc đối chiếu image configuration digest tại local và chạy hai image tải theo digest, với Compose tại đúng commit và `--no-build`. Lượt này đạt **112/112**, init thoát `0` và cả sáu container ứng dụng dùng đúng image.
 
 Đây là Continuous Integration và Continuous Delivery, chưa phải tự động triển khai website lên máy chủ public.
 
@@ -88,7 +93,7 @@ Tách những nhóm công việc khác nhau của Backend thành các service ri
 
 Ba service chạy dưới các tiến trình và container riêng, sử dụng chung Backend Image.
 
-Core API có hai instance và được Nginx phân phối request để hỗ trợ Horizontal Scaling.
+Core API có hai instance và được Nginx phân phối request để hỗ trợ Horizontal Scaling. Smoke trên image phát hành xác nhận cả hai Core container được tạo lại với IP mới. Nginx vẫn phân phối request và Gateway tiếp tục tra cứu qua listener nội bộ, không cần khởi động lại Nginx.
 
 **Workflow 1 — Bình luận và đánh giá realtime**
 
@@ -110,7 +115,7 @@ Ví dụ: Hai người đang xem cùng một sản phẩm. Khi một người b�
 5. Worker gửi email đến Mailpit trong môi trường demo.
 6. Nếu gửi thất bại, Worker có thể thử lại sau.
 
-Nhờ vậy, khi dịch vụ email gặp sự cố, chức năng đặt hàng vẫn có thể hoạt động.
+Nhờ vậy, khi Worker dừng, checkout vẫn có thể hoàn tất và email chờ được gửi khi Worker chạy lại. Trong kiểm thử phục hồi xác thực, Worker chỉ gửi OTP hoặc liên kết reset cho yêu cầu còn hiệu lực, kể cả khi hàng chờ có job theo định dạng cũ. Kiểm thử realtime xác nhận trình duyệt nhận cập nhật trở lại sau khi Gateway restart hoặc Redis mất subscriber.
 
 ---
 
@@ -136,6 +141,8 @@ AI hỗ trợ cả tiếng Việt và tiếng Anh, chạy trực tiếp trên tr
 6. Hệ thống so sánh mức độ tương đồng về ngữ nghĩa giữa nhu cầu và từng sản phẩm.
 7. Chọn các sản phẩm phù hợp nhất.
 8. Kiểm tra lại giá và tình trạng tồn kho trước khi hiển thị tối đa ba đề xuất.
+
+Khi người dùng quay lại tab Catalog hoặc mở một đề xuất, giao diện kiểm tra lại giá và tình trạng bán của các đề xuất đã hiển thị, gỡ mục đã archive và dùng offer còn đủ điều kiện. Thao tác này dùng lại thứ hạng hiện có. Test song ngữ đã chạy inference thật với cả câu tiếng Việt có `không chỉ … mà còn …`. Test Vite riêng dùng cache tối ưu dependency mới và xác nhận lượt AI đầu hoàn tất bằng WASM local.
 
 **Ví dụ**
 
@@ -196,7 +203,7 @@ Cơ chế này được gọi là SQL Fallback.
 
 Khi tìm kiếm từ khóa `Northstar`, Elasticsearch xác định các sản phẩm liên quan, còn PostgreSQL cung cấp giá bán, trạng thái sản phẩm và dữ liệu hiện hành.
 
-Elasticsearch hỗ trợ tìm kiếm theo mức độ liên quan và khả năng phục hồi khi gặp sự cố. Với 60 sản phẩm demo hiện tại, chưa có bằng chứng cho thấy Elasticsearch nhanh hơn PostgreSQL.
+Verifier trên image phát hành xác nhận cả hai Core API đều tìm qua Elasticsearch, tìm kiếm vẫn có kết quả khi Elasticsearch timeout hoặc dừng và các cập nhật được đồng bộ bù khi Elasticsearch chạy lại. Các phép đo với 60 sản phẩm demo chỉ mô tả tải nhẹ. Hiệu năng ở quy mô production chưa được đo.
 
 ---
 
@@ -214,16 +221,21 @@ Toàn bộ quá trình phát triển được chia thành từng batch:
 8. Kiểm tra CI/CD và chạy thử image đã phát hành.
 9. Cập nhật tài liệu và nhật ký sửa lỗi.
 
-Mục tiêu là đảm bảo những tính năng mới không làm hỏng các chức năng đã hoạt động trước đó.
+Kết quả kiểm thử tăng qua ba checkpoint. Batch 09 đạt **94/94** (60 Backend/OAuth, 34 Playwright). Bản sửa A1–C3 đạt **102/102** (61 Backend/OAuth, 41 Playwright). Bản tích lũy cuối đạt **112/112** (66 Backend/OAuth, 46 Playwright). Actions và verifier trên image đã publish đều đạt **112/112** tại checkpoint cuối. Smoke local trên hai image phát hành còn xác nhận storefront, Catalog, health và guest checkout trên localhost lẫn LAN HTTP.
+
+Ứng dụng ở trạng thái **ACCEPTED / FINALIZED** trong phạm vi kỹ thuật đã kiểm chứng. Google OAuth consent/callback thật, SMTP ngoài Mailpit, search-engine indexing, hiệu năng AI trên thiết bị di động thật, tải production, log nhạy cảm lịch sử và khả năng lộ legacy reset token khi upstream lỗi vẫn cần bằng chứng riêng. Các advisory của dependency build/dev đã ghi nhận vẫn còn trong phạm vi theo dõi. Điểm cho sandbox thanh toán, Mailpit và cả bốn Bonus do giảng viên đánh giá.
+
+Bằng chứng teamwork thực tế, khả năng chạy từ ZIP cuối, demo video, Rubrik và bằng chứng nộp bài vẫn đang chờ. TASK 19 và TASK 20 vẫn pending.
 
 ## 5. Tài liệu tham khảo
 
-- `log_fix_issue.md`: Chi tiết 46 mục sửa lỗi.
+- `log_fix_issue.md`: Chi tiết 60 mục công việc, gồm 14 mục hậu nghiệm thu.
 - `PROJECT_STATE.md`: Tiến độ và trạng thái toàn bộ dự án.
+- `HUONG_DAN_KIEM_CHUNG_E2E.md`: Cách kiểm chứng checkpoint hiện tại, hai image phát hành và 60 mục trong nhật ký.
 - `Bonus/01_CI_CD.md`: Hướng dẫn CI/CD.
 - `Bonus/02_Microservices.md`: Hướng dẫn Microservices.
 - `Bonus/03_Elasticsearch.md`: Hướng dẫn Elasticsearch.
 - `Bonus/04_AI_Product_Recommendation.md`: Hướng dẫn AI.
 - `source/README.txt`: Hướng dẫn chạy và kiểm thử ứng dụng.
 
-Hai tài liệu tiến độ nằm trên nhánh `progress`. Source code đã nghiệm thu nằm trên nhánh `fix-issue`. Các guide Bonus được lưu tại thư mục local `Bonus/`.
+Bản tài liệu này được soạn từ checkpoint `900d0f2175bdef162f6aae7cd9fb1e98242138d1` của nhánh `progress` để review trước khi xuất bản. Source code đã nghiệm thu nằm trên `fix-issue`. Các guide Bonus được lưu tại thư mục local `Bonus/`.

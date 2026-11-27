@@ -6,13 +6,14 @@ Hướng dẫn này giúp thành viên trong nhóm:
 
 - Chạy phiên bản project đã được sửa lỗi.
 - Kiểm tra các chức năng ban đầu vẫn hoạt động.
-- Kiểm chứng lại 46 mục trong nhật ký sửa lỗi.
+- Đối chiếu 60 mục trong nhật ký sửa lỗi và các kết quả kiểm chứng tương ứng.
 - Kiểm tra trực tiếp cả bốn Bonus.
 
 **Phiên bản kiểm chứng:**
 
 - Branch: `fix-issue`.
-- Commit: `e1848ce8cfac26829706bfcc7b41ff5c7d5b62c1`.
+- Commit: `068bb1eca89283241544310186b3da95e122abee`.
+- Trạng thái: `ACCEPTED / FINALIZED` trong phạm vi Final Technical Acceptance.
 
 Thứ tự thực hiện: Khởi chạy project → Kiểm thử tự động → Kiểm tra chức năng và lỗi đã sửa → Kiểm tra Bonus.
 
@@ -39,7 +40,7 @@ Clone project sang thư mục mới để không ảnh hưởng dữ liệu đan
 ```powershell
 git clone --branch fix-issue --single-branch https://github.com/PeterPhan2005/Obsidian-compute.git obsidian-verify
 cd obsidian-verify
-git switch --detach e1848ce8cfac26829706bfcc7b41ff5c7d5b62c1
+git switch --detach 068bb1eca89283241544310186b3da95e122abee
 git rev-parse HEAD
 cd source
 ```
@@ -143,9 +144,9 @@ Không cần tự khởi tạo database hoặc viết thêm test.
 
 **Kết quả mong đợi:**
 
-- Backend/OAuth: 60/60.
-- Playwright: 34/34.
-- Tổng cộng: 94/94.
+- Backend/OAuth: 66/66.
+- Playwright: 46/46.
+- Tổng cộng: 112/112.
 - Terminal có thông báo `Verification passed.`.
 
 Các cổng kiểm thử 8081, 8026, 15433, 3101 và 3102 phải còn trống.
@@ -235,9 +236,9 @@ Kiểm tra số điểm trước và sau khi mua, sau đó thử sử dụng đi
 
 Google OAuth thật cần cấu hình theo `docs/GOOGLE_OAUTH_SETUP.md`. Test fixture không thay thế việc đăng nhập bằng tài khoản Google thật.
 
-### 4.2. Kiểm chứng 46 mục sửa lỗi
+### 4.2. Đối chiếu 60 mục trong nhật ký sửa lỗi
 
-Các số bên dưới tương ứng số thứ tự trong `log_fix_issue.md`.
+Các số bên dưới tương ứng số thứ tự trong `log_fix_issue.md`. Mục 47–60 thuộc đợt Post-Acceptance Remediation và được đánh số theo thứ tự nhật ký.
 
 **Cách sử dụng bảng:**
 
@@ -337,6 +338,25 @@ git status --short
 git -C .. diff -- docs/evidence/
 ```
 
+#### F. Post-Acceptance Remediation
+
+| Mục log | Nội dung | Cách kiểm tra → Kết quả mong đợi | Test hoặc bằng chứng đối chiếu |
+|---|---|---|---|
+| 47 | Nginx giữ địa chỉ upstream cũ | Thực hiện demo tái tạo Core tại mục 5.2. Xác nhận ID và IP mạng `default` của cả hai Core thay đổi, ID và `StartedAt` của Nginx giữ nguyên. Sau khi Core healthy, health trả HTTP `200` từ cả hai replica. | Smoke delivery `delivered-routing.log`. |
+| 48 | Khôi phục checkout sau khi gián đoạn hoặc reload | Verifier làm mất response sau khi đơn đã commit. Retry trả lại đúng đơn. Reload khôi phục receipt gốc mà không gửi lại checkout. Test đồng thời đối chiếu chỉ có một đơn, một lượt dùng coupon và một outbox row. | `checkout-quote.spec.js` · `Retry after a lost committed response replays the same order with a now-empty cart`, `Reload after a committed checkout recovers the original receipt without resubmitting`. `integration.test.js` · `Concurrent identical guest checkout creates one order, one coupon use, one outbox row; receipt is private`. |
+| 49 | Giảm số lượng giỏ sau khi tồn kho giảm | Verifier thêm 3 sản phẩm rồi giảm tồn xuống 1. Một lần giảm tới số lượng vẫn vượt tồn trả `409` và hiển thị tồn thực. Lần giảm tiếp đưa giỏ về 1 và Review phản ánh đúng tổng. Khi tồn bằng 0, nút tăng/giảm bị khóa và vẫn có thể xóa mặt hàng. | `catalog-availability.spec.js` · `A cart quantity above remaining inventory can be reduced and reviewed`. |
+| 50 | Product Details sau khi archive | Verifier mở Product Details và kiểm tra hai trạng thái. Lỗi mạng tạm thời giữ dữ liệu gần nhất kèm cảnh báo. Khi refetch nhận `404`, trang hiện `Product unavailable`, bỏ thao tác mua, bình luận, đánh giá và đóng WebSocket của sản phẩm. | `catalog-availability.spec.js` · `Product Details discards stale actions only after a definitive not found response`. |
+| 51 | Tính khả dụng của đề xuất AI thay đổi | Verifier chạy inference một lần, mô phỏng archive một kết quả và thay đổi giá/tồn của kết quả khác, rồi đưa lại focus cho trang. Thẻ archive biến mất, offer mới cập nhật, thứ tự các thẻ còn lại giữ nguyên và bộ đếm inference vẫn là 1. | `recommendations.spec.js` · `Rendered recommendations refresh archived products and current offers without reranking`. |
+| 52 | Cụm khẳng định tiếng Việt `không chỉ` | Chạy nhóm test AI hoặc dùng câu `Tôi cần laptop nhẹ không chỉ để làm việc mà còn để mang đi du lịch` tại mục 5.3 → Có đề xuất Laptop. Đối chiếu với câu phủ định thực trong bảng mẫu AI, hệ thống yêu cầu diễn đạt lại. | `recommendations.spec.js` · `English and Vietnamese needs rank different real catalog products without remote inference`. |
+| 53 | Vite tối ưu dependency lần đầu | Verifier tạo cache Vite tạm trống, mở Catalog rồi yêu cầu AI lần đầu → Có đề xuất, ô nhập giữ nguyên và trang không tự reload. Model ONNX và WASM được tải từ cùng origin, WASM có `Content-Type: application/wasm`. | `recommendations.spec.js` · `A cold Vite optimizer keeps the first AI request running with local WASM`. |
+| 54 | Bảo vệ error log cho trang reset mật khẩu legacy | Verifier đọc `nginx -T` ở ingress và frontend, xác nhận `/reset-password` có `error_log /dev/null` và việc tắt log chỉ áp dụng trên route phù hợp. Phép kiểm xác nhận cấu hình phòng vệ đang nạp. Khả năng lộ legacy reset token khi upstream lỗi và nội dung log lịch sử vẫn `NOT_VERIFIED`. | `receipt-privacy.spec.js` · `Both running Nginx layers disable error logging for legacy reset pages`. |
+| 55 | Job OTP/reset hết hạn, đã dùng hoặc bị thay thế | Verifier dừng Worker trong stack riêng rồi tạo các job fixture. Khi Worker chạy lại, 6 job không còn hợp lệ có trạng thái `discarded`, không gửi email. Mailpit chỉ nhận 4 email còn hiệu lực, gồm job thay thế và job legacy hợp lệ. | `auth-outbox.test.js` · `Worker recovery sends only current OTP and reset challenges, including pending legacy jobs`. |
+| 56 | Home chọn danh mục thay thế và phân trang | Verifier vô hiệu hóa tạm các variant active của danh mục ưu tiên trong DB kiểm thử. Home chọn danh mục đủ điều kiện để thay thế. `View collection` và `Page 2` dùng đúng danh mục thay thế. Khi chỉ còn hai danh mục đủ điều kiện, Home hiển thị hai section danh mục. | `home-addresses.spec.js` · `Home fills available category slots and keeps fallback pagination in the matching section`. |
+| 57 | Số điện thoại trong địa chỉ đã lưu và tại checkout | Trong Account → Addresses, tạo và sửa địa chỉ khi số điện thoại trống. API trả `phone: null`, có thể bổ sung số ở lần sửa sau. Tại Guest checkout, bỏ trống `Phone number` sẽ chặn bước payment. | `home-addresses.spec.js` · `Saved addresses accept blank phone numbers while checkout still requires one`. |
+| 58 | DTO bình luận công khai | Verifier đối chiếu phản hồi tạo bình luận, danh sách HTTP có phân trang và `comment.created` qua realtime cho Guest lẫn Customer. DTO chỉ có `id`, `productId`, `authorName`, `body`, `createdAt`. Liên kết tài khoản nội bộ vẫn được lưu cho bình luận Customer. | `public-comments.test.js` · `Public guest and Customer comments use one DTO across HTTP and realtime`. |
+| 59 | Snapshot của Simple Dashboard | Verifier kiểm soát thời điểm commit giao dịch bán hàng giữa các câu đọc. Phản hồi đang đọc giữ nguyên snapshot, phản hồi kế tiếp cập nhật tổng và chuỗi doanh thu cùng lúc. | `order-consistency.test.js` · `Simple Dashboard metrics and revenue series share a snapshot across a committed sale`. |
+| 60 | Snapshot trạng thái đơn và timeline | Verifier commit cập nhật trạng thái trong khi Admin, Customer và receipt đang đọc. Phản hồi đang đọc giữ trạng thái và timeline cùng phiên bản. Lần đọc sau thấy `confirmed` cùng lịch sử cập nhật. Test kiểm tra thêm transition hợp lệ và việc từ chối transition sai. | `order-consistency.test.js` · `Admin, Customer and receipt reads keep order state and timeline on one snapshot`. |
+
 ### 4.3. Kiểm tra riêng receipt error log
 
 Kiểm tra cấu hình đang chạy:
@@ -418,17 +438,16 @@ LAN HTTP chỉ dùng trên mạng demo được kiểm soát. Mailpit vẫn truy
 
 **Bước 1 — Kiểm tra Actions**
 
-Mở:
+Trong [GitHub Actions run 45983344230](https://github.com/PeterPhan2005/Obsidian-compute/actions/runs/45983344230), chọn attempt `1` và đối chiếu commit `068bb1eca89283241544310186b3da95e122abee`.
 
-https://github.com/PeterPhan2005/Obsidian-compute/actions/runs/45882025076
-
-Kiểm tra commit `e1848ce`, job `verify`, 94/94 kết quả và job `publish`.
+- Job `verify` (`140452548674`) hoàn tất production build, build hai image và đạt 112/112 (66 Backend/OAuth, 46 Playwright).
+- Job `publish` (`140455407773`) nạp hai image từ artifact `verified-images` ID `15190671043` để publish, không build lại. SHA-256 của artifact ZIP là `fe31fdb75a6d3298fbd2d370b945efc854000df54855f698e55bed1a9d31eeef`.
 
 **Bước 2 — Kiểm tra GHCR**
 
 Mở https://github.com/PeterPhan2005?tab=packages
 
-Kiểm tra hai package Backend và Frontend có tag tương ứng commit.
+Kiểm tra hai package Backend và Frontend có tag là SHA đầy đủ của commit và manifest có digest như ở bước 3. Technical advisor đã đối chiếu commit, jobs, kết quả test và artifact, đồng thời xác minh độc lập registry manifest digest bằng cách đối chiếu với log publish của GitHub Actions. Codex thực hiện và báo cáo riêng việc đối chiếu image configuration digest tại local và chạy hai image đã phát hành.
 
 **Bước 3 — Chạy image đã phát hành**
 
@@ -441,12 +460,12 @@ docker compose -p $demo stop
 Khai báo và tải hai image:
 
 ```powershell
-$env:OBSIDIAN_BACKEND_IMAGE = "ghcr.io/peterphan2005/obsidian-compute-backend@sha256:628a93facf8431ea89fcf21049c668ea637b63e4790723d6c56933ecccadca83"
+$env:OBSIDIAN_BACKEND_IMAGE = "ghcr.io/peterphan2005/obsidian-compute-backend@sha256:14ed59c43493822c49e35d6d7da430e55507292f1df9241870c782dd01dd3d61"
 
-$env:OBSIDIAN_FRONTEND_IMAGE = "ghcr.io/peterphan2005/obsidian-compute-frontend@sha256:ef0b4b294387ca0105b2c0805c4f3528edd029e62443169168caa9b13ad38b73"
+$env:OBSIDIAN_FRONTEND_IMAGE = "ghcr.io/peterphan2005/obsidian-compute-frontend@sha256:58777cd5614050c915acbef7e180ba1f85cafb469f0c6560d564c08e12363e14"
 
-docker pull $env:OBSIDIAN_BACKEND_IMAGE
-docker pull $env:OBSIDIAN_FRONTEND_IMAGE
+docker pull --platform linux/amd64 $env:OBSIDIAN_BACKEND_IMAGE
+docker pull --platform linux/amd64 $env:OBSIDIAN_FRONTEND_IMAGE
 ```
 
 Chạy đúng image đã phát hành, không build lại:
@@ -459,15 +478,15 @@ docker compose -p $delivered -f docker-compose.yml -f compose.images.yaml up -d 
 docker compose -p $delivered -f docker-compose.yml -f compose.images.yaml ps --all
 ```
 
-Mở website, kiểm tra Catalog, checkout và AI.
+Xác nhận `init` thoát `0`, hai Core healthy và health trả HTTP `200`. Mở website, kiểm tra Catalog, checkout và AI. Bằng chứng local của Codex ghi nhận checkout HTTP `201` trên cả localhost và origin LAN đã cấu hình.
 
-Muốn chạy toàn bộ test trên hai image GHCR:
+Muốn chạy toàn bộ test trên hai image GHCR, giữ hai biến digest, chuẩn bị dependencies như mục 3.1 và bảo đảm các cổng kiểm thử còn trống. Verifier dùng Compose tại đúng commit đã checkout, tự tạo project test riêng và chạy `--no-build`:
 
 ```powershell
 npm run verify -- --images
 ```
 
-**Kết quả mong đợi:** 94/94 và đúng image ID của sáu container ứng dụng.
+**Kết quả mong đợi:** 112/112 (66 Backend/OAuth, 46 Playwright) và đúng image ID của sáu container ứng dụng `init`, `api-a`, `api-b`, `realtime`, `worker`, `frontend`. Lần kiểm chứng delivery local do Codex chạy đã đạt các kết quả này.
 
 Không cần tạo commit mới để kiểm tra CI/CD.
 
@@ -539,6 +558,16 @@ Có thể thử tương tự bằng cách dừng Mailpit, tạo đơn rồi kh�
 
 Đây là bằng chứng phân phối request, không phải phép đo khả năng chịu tải production.
 
+**Demo 4 — Tái tạo Core và kiểm tra định tuyến (mục 47)**
+
+1. Dùng một project Compose mới dành riêng cho phép kiểm. Bảo đảm cổng 8080 và 8025 còn trống. Nếu stack demo của chính mình đang dùng các cổng này, dừng stack đó theo mục 6.2. Trước lần khởi động đầu tiên, thêm override IPAM tạm vào Compose. Chọn subnet chưa dùng cho mạng `default`, giới hạn pool IP cấp động trong subnet đó và giữ hai địa chỉ thuộc subnet nhưng nằm ngoài pool để cấp tĩnh cho `api-a` và `api-b` ở bước sau.
+2. Khởi động stack với override IPAM rồi dùng `docker inspect` ghi lại ID và IP trên mạng `default` của hai Core, cùng ID và `State.StartedAt` của Nginx. Chạy health như demo 3 để thấy `api-a` và `api-b`.
+3. Thêm override tạm thứ hai để đặt `services.api-a.networks.default.ipv4_address` và `services.api-b.networks.default.ipv4_address` bằng hai địa chỉ đã dành riêng. Dùng cùng project, cùng các tệp Compose ban đầu và hai override, chạy `up -d --force-recreate --no-deps api-a api-b`. Khi dùng image đã publish, thêm `--no-build`. Giữ nguyên kết nối mạng `search` của hai Core.
+4. Dùng `docker inspect` xác nhận **cả ID lẫn IP của từng Core đã đổi** và ID cùng `State.StartedAt` của Nginx vẫn nguyên. Khi hai Core healthy, lặp lại demo 3 → HTTP `200` và `X-Instance-Id` xuất hiện từ cả hai. Nếu IP được dùng lại hoặc Nginx đã restart, lần thử đó chưa kiểm chứng điều kiện cần.
+5. Dùng cùng project và các tệp Compose đã chạy để `stop`, giữ volume. Smoke delivery của Codex còn xác nhận tra cứu nội bộ từ Gateway đến được cả hai Core, và khi `api-a` dừng, cả 8 request health đều đến `api-b` trước khi phân tải lại sang cả hai.
+
+Các bước trên dùng để tự kiểm chứng. Kết quả đã ghi nhận theo quy trình chạy của Codex nằm trong `source/test-results/post-accept-delivery-068bb1e/delivered-routing.log` trên máy kiểm chứng.
+
 ### 5.3. AI Product Recommendation
 
 **Mục đích kiểm tra:** AI hiểu nhu cầu bằng tiếng Việt và tiếng Anh, đề xuất sản phẩm trong Catalog.
@@ -549,6 +578,7 @@ Mở Catalog → AI product recommendations → Nhập nhu cầu → Get recomme
 |---|---|
 | A portable notebook for reading documents while I travel | Laptop |
 | Tôi cần một chiếc laptop nhỏ nhẹ để làm việc khi đi xa | Laptop |
+| Tôi cần laptop nhẹ không chỉ để làm việc mà còn để mang đi du lịch | Laptop |
 | Một màn hình lớn để đặt nhiều cửa sổ làm việc cạnh nhau | Monitor |
 | Tôi cần thêm dung lượng để lưu nhiều tệp dự án lớn | SSD |
 | Tôi muốn đặt bánh sinh nhật vị sô cô la | Không có đề xuất phù hợp |
@@ -685,9 +715,9 @@ Không xóa index hoặc volume để kiểm tra. Chưa có bằng chứng Elast
 
 - [ ] Project chạy bằng Docker Compose.
 - [ ] Production build thành công.
-- [ ] Backend/OAuth đạt 60/60 và Playwright đạt 34/34.
+- [ ] Backend/OAuth đạt 66/66 và Playwright đạt 46/46, tổng 112/112.
 - [ ] Các chức năng Core hoạt động đúng.
-- [ ] Đã đối chiếu đủ 46 mục sửa lỗi.
+- [ ] Đã đối chiếu đủ 60 mục nhật ký, gồm 14 mục Post-Acceptance Remediation.
 - [ ] Checkout localhost và LAN HTTP hoạt động.
 - [ ] CI/CD và image GHCR hoạt động.
 - [ ] Microservices, realtime và email bất đồng bộ hoạt động.
@@ -697,9 +727,12 @@ Không xóa index hoặc volume để kiểm tra. Chưa có bằng chứng Elast
 
 Nếu gặp lỗi, ghi lại chức năng, các bước tái hiện, kết quả mong đợi, kết quả thực tế và ảnh/log minh chứng không chứa thông tin nhạy cảm.
 
-PASS chỉ xác nhận phạm vi đã kiểm thử, không chứng minh tuyệt đối hệ thống không còn lỗi.
+Final Technical Acceptance áp dụng cho phạm vi đã kiểm chứng tại commit nêu ở mục 1. Các giới hạn còn lại gồm:
 
-Google OAuth thật, SMTP ngoài, search-engine indexing và hiệu năng AI trên thiết bị di động thật vẫn cần xác minh riêng.
+- Google OAuth consent/callback thật, SMTP ngoài, search-engine indexing, hiệu năng AI trên thiết bị di động thật và khả năng chịu tải production.
+- Kiểm tra log nhạy cảm lịch sử và khả năng lộ legacy reset token khi upstream lỗi. Mục 54 xác nhận cấu hình phòng vệ đang chạy.
+- Advisory còn ghi nhận ở dependency build/dev. Đánh giá của giảng viên về thanh toán sandbox, Mailpit và cả bốn Bonus.
+- Bằng chứng làm việc nhóm thực tế, khả năng tái lập từ ZIP cuối, video demo, Rubrik và bằng chứng nộp bài.
 
 ### 6.2. Dừng stack
 
@@ -720,7 +753,7 @@ Giữ lại volume để đối chiếu khi cần. Không sử dụng `docker co
 ### 6.3. Tài liệu đối chiếu
 
 - `TONG_KET_CONG_VIEC.md`: Tổng quan công việc.
-- `log_fix_issue.md`: Chi tiết 46 mục sửa lỗi.
+- `log_fix_issue.md`: Chi tiết 60 mục nhật ký, gồm 14 mục mới đã được nghiệm thu.
 - `PROJECT_STATE.md`: Trạng thái và checkpoint dự án.
 - `source/README.txt`: Hướng dẫn chạy và cấu hình.
 - `docs/DEMO_WALKTHROUGH.md`: Demo Core.
